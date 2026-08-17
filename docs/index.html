@@ -182,6 +182,40 @@ main{ flex:1; padding: 4px 16px calc(28px + var(--safe-bottom)); }
   margin-top:6px; font-family:var(--font-mono); font-size:9.5px; color:var(--text-3); letter-spacing:.04em;
 }
 
+/* ---------------- MAIN MENU (2-per-row cards) ---------------- */
+.menu-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.menu-card{
+  position:relative; display:flex; flex-direction:column; align-items:flex-start; text-align:left;
+  background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius-m);
+  padding:16px 14px 14px; overflow:hidden; transition:.18s ease; min-height:118px;
+}
+.menu-card:active{ transform:scale(.97); background:var(--bg-panel-hover); border-color:var(--cyan-dim); }
+.menu-card.accent{ border-color:var(--amber-dim); background:linear-gradient(180deg, rgba(255,145,66,.07), transparent 45%), var(--bg-panel); }
+.menu-card .mc-icn{
+  position:relative; width:42px; height:42px; border-radius:12px; margin-bottom:12px;
+  display:flex; align-items:center; justify-content:center; font-size:21px;
+  background:var(--bg-panel-2); border:1px solid var(--border-soft);
+  animation: mc-float 3.2s ease-in-out infinite;
+}
+.menu-card .mc-icn::after{
+  content:""; position:absolute; inset:-1px; border-radius:inherit;
+  box-shadow:0 0 0 0 var(--cyan-glow); animation: mc-pulse 2.6s ease-out infinite;
+}
+.menu-card.accent .mc-icn{ background:var(--amber-dim); border-color:var(--amber-dim); }
+.menu-card.accent .mc-icn::after{ box-shadow:0 0 0 0 var(--amber-glow); }
+.menu-card:nth-child(2n) .mc-icn{ animation-delay:.5s; }
+.menu-card:nth-child(2n) .mc-icn::after{ animation-delay:.5s; }
+.menu-card .mc-body{ display:flex; flex-direction:column; gap:4px; width:100%; padding-right:6px; }
+.menu-card .mc-title{ font-family:var(--font-display); font-weight:600; font-size:14px; line-height:1.28; color:var(--text-1); }
+.menu-card .mc-sub{ font-size:11px; line-height:1.4; color:var(--text-2); }
+.menu-card .mc-chev{ position:absolute; top:14px; right:12px; color:var(--text-3); font-size:13px; }
+@keyframes mc-float{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
+@keyframes mc-pulse{
+  0%{ box-shadow:0 0 0 0 var(--cyan-glow); }
+  70%{ box-shadow:0 0 0 7px rgba(0,0,0,0); }
+  100%{ box-shadow:0 0 0 0 rgba(0,0,0,0); }
+}
+
 /* ---------------- LIST (issues / brands) ---------------- */
 .list{ display:flex; flex-direction:column; gap:8px; }
 .list-title{
