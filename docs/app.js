@@ -629,10 +629,11 @@
       { icon:'📞', title:t().menuContact, sub:t().menuContactSub, action:function(){ push({ view:'contact' }); } },
     ];
     var cardsHtml = items.map(function(it, i){
+      var titleClean = it.title.replace(/^\S+\s?/, '');
       return '<button class="menu-card' + (it.accent ? ' accent' : '') + '" data-mi="' + i + '" ' +
         'style="animation:view-in .25s ' + (i*0.04) + 's both">' +
-        '<span class="mc-icn">' + it.icon.replace(/^\S+\s?/, '') + '</span>' +
-        '<span class="mc-body"><span class="mc-title">' + it.title + '</span>' +
+        '<span class="mc-icn">' + it.icon + '</span>' +
+        '<span class="mc-body"><span class="mc-title">' + titleClean + '</span>' +
         '<span class="mc-sub">' + it.sub + '</span></span>' +
         '<span class="mc-chev">→</span></button>';
     }).join('');
@@ -1670,4 +1671,3 @@
 
   render();
 })();
-
