@@ -1,3 +1,4 @@
+
 # Cynet Diagnostika + Online Ustaxona — Web App
 
 Telegram bot ichida ochiladigan **to'liq funksional** web-ilova. Endi
@@ -115,4 +116,6 @@ Kelajakda `last.py`da diagnostika matnlariga yangi holat qo'shsangiz
 yoki xizmatlar/hududlar ro'yxati o'zgarsa: **🔄 last.py'dan yangilash →
 🌐 Push qilish** — ikki tugma bosish kifoya, hech narsa qo'lda
 tahrirlanmaydi.
+
+
 
