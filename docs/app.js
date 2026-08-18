@@ -213,6 +213,42 @@
       backToMenu: "🏠 Bosh menyu",
       viloyat: "Hudud", xizmat: "Xizmat", fio: "F.I.",
 
+      // ── Anketa to'ldirish (usta bo'lish) ──
+      menuAnketa: "📝 Anketani to'ldirish",
+      menuAnketaSub: "Usta sifatida ro'yxatdan o'ting",
+      anketaChecking: "Tekshirilmoqda...",
+      anketaAlreadyActiveTitle: "✅ Siz allaqachon ro'yxatdan o'tgan ustasiz!",
+      anketaAlreadyActiveHint: "Ma'lumotlaringizni o'zgartirish uchun \"Mening profilim\" bo'limidan foydalaning.",
+      anketaAlreadyPendingTitle: "⏳ Anketangiz ko'rib chiqilmoqda",
+      anketaAlreadyPendingHint: "Qayta yuborishning hojati yo'q — admin tez orada javob beradi.",
+      anketaAlreadyRejectedTitle: "❌ Anketangiz avval rad etilgan",
+      anketaAlreadyRejectedHint: "Qayta yuborish mumkin emas. Savol bo'lsa: @online_ustaxona",
+      anketaChooseViloyat: "Qaysi hududda ishlaysiz?",
+      anketaChooseTuman: "Qaysi tuman(lar)da xizmat ko'rsatasiz?",
+      anketaTumanHint: "Bir nechtasini tanlashingiz mumkin",
+      anketaFormTitle: "📝 Anketa ma'lumotlari",
+      fYil: "Tug'ilgan yil", fYilPh: "Masalan: 1995",
+      fPasport: "Pasport seriya va raqami", fPasportPh: "Masalan: AC1234567",
+      fPasportHint: "Faqat shartnoma va identifikatsiya uchun, mijozlarga ko'rsatilmaydi",
+      anketaChooseServices: "Ko'rsatadigan xizmatlaringiz",
+      anketaPhotoLabel: "O'z suratingiz",
+      anketaPhotoHint: "Yuklash uchun bosing",
+      anketaPhotoGot: "✅ Rasm tanlandi",
+      anketaLocHint: "Ish faoliyatingiz manzili (ixtiyoriy) — mijozlar yaqinlikka qarab topadi",
+      anketaErrRequired: "Barcha maydonlarni to'ldiring",
+      anketaErrYil: "Tug'ilgan yilni to'g'ri kiriting (1950-2005)",
+      anketaErrPasport: "Pasport seriya/raqamini to'g'ri kiriting",
+      anketaErrPhoto: "Iltimos, suratingizni yuklang",
+      anketaContractTitle: "📜 Xizmat ko'rsatishda vositachilik shartnomasi",
+      anketaContractHint: "Davom etishdan oldin shartnoma bilan tanishib chiqing",
+      anketaContractAgree: "✅ Roziman va imzolayman",
+      anketaContractDecline: "❌ Rad etaman",
+      anketaContractDeclinedMsg: "Shartnoma imzolanmasdan turib usta sifatida ro'yxatdan o'tib bo'lmaydi.",
+      anketaSubmitting: "Yuborilmoqda...",
+      anketaSuccessTitle: "✅ Anketa qabul qilindi!",
+      anketaSuccessHint: "Anketangiz adminlarga yuborildi. Ko'rib chiqish vaqti — 1-2 ish kuni.",
+      anketaBecomeMaster: "📝 Usta sifatida ro'yxatdan o'tish",
+
       // ── Biz haqimizda / Bog'lanish ──
       aboutTitle: "ℹ️ Online Ustaxona",
       aboutText:
@@ -375,6 +411,42 @@
       backToMenu: "🏠 Главное меню",
       viloyat: "Регион", xizmat: "Услуга", fio: "Ф.И.",
 
+      // ── Заполнение анкеты (стать мастером) ──
+      menuAnketa: "📝 Заполнить анкету",
+      menuAnketaSub: "Зарегистрируйтесь как мастер",
+      anketaChecking: "Проверка...",
+      anketaAlreadyActiveTitle: "✅ Вы уже зарегистрированный мастер!",
+      anketaAlreadyActiveHint: "Чтобы изменить данные, используйте раздел \"Мой профиль\".",
+      anketaAlreadyPendingTitle: "⏳ Ваша анкета рассматривается",
+      anketaAlreadyPendingHint: "Повторно отправлять не нужно — администратор скоро ответит.",
+      anketaAlreadyRejectedTitle: "❌ Ваша анкета была отклонена",
+      anketaAlreadyRejectedHint: "Повторная отправка недоступна. Вопросы: @online_ustaxona",
+      anketaChooseViloyat: "В каком регионе вы работаете?",
+      anketaChooseTuman: "В каком(их) районе(ах) оказываете услуги?",
+      anketaTumanHint: "Можно выбрать несколько",
+      anketaFormTitle: "📝 Данные анкеты",
+      fYil: "Год рождения", fYilPh: "Например: 1995",
+      fPasport: "Серия и номер паспорта", fPasportPh: "Например: AC1234567",
+      fPasportHint: "Только для договора и идентификации, клиентам не показывается",
+      anketaChooseServices: "Ваши услуги",
+      anketaPhotoLabel: "Ваше фото",
+      anketaPhotoHint: "Нажмите, чтобы загрузить",
+      anketaPhotoGot: "✅ Фото выбрано",
+      anketaLocHint: "Адрес вашей рабочей зоны (необязательно) — клиенты найдут вас по близости",
+      anketaErrRequired: "Заполните все поля",
+      anketaErrYil: "Введите корректный год рождения (1950-2005)",
+      anketaErrPasport: "Введите корректную серию/номер паспорта",
+      anketaErrPhoto: "Пожалуйста, загрузите своё фото",
+      anketaContractTitle: "📜 Договор о посреднических услугах",
+      anketaContractHint: "Ознакомьтесь с договором перед продолжением",
+      anketaContractAgree: "✅ Согласен и подписываю",
+      anketaContractDecline: "❌ Отказываюсь",
+      anketaContractDeclinedMsg: "Без подписания договора регистрация мастером невозможна.",
+      anketaSubmitting: "Отправка...",
+      anketaSuccessTitle: "✅ Анкета принята!",
+      anketaSuccessHint: "Анкета отправлена администраторам. Срок рассмотрения — 1-2 рабочих дня.",
+      anketaBecomeMaster: "📝 Зарегистрироваться как мастер",
+
       // ── О нас / Связаться ──
       aboutTitle: "ℹ️ Online Ustaxona",
       aboutText:
@@ -397,7 +469,8 @@
   var state = {
     lang: localStorage.getItem('cynet_lang') || 'uz',
     stack: [{ view: (localStorage.getItem(OFERTA_KEY) === '1') ? 'mainMenu' : 'oferta' }],
-    orderForm: {}
+    orderForm: {},
+    anketaForm: {}
   };
 
   function t(){ return STR[state.lang]; }
@@ -584,6 +657,12 @@
     if (entry.view === 'profileMasterJobs') return t().profileJobsTitle;
     if (entry.view === 'profileEditMaster') return t().profileEditTitle;
     if (entry.view === 'profileUserOrders') return t().profileOrdersTitle;
+    if (entry.view === 'anketaGate') return t().menuAnketa;
+    if (entry.view === 'anketaViloyat') return t().menuAnketa;
+    if (entry.view === 'anketaTuman') return entry.viloyat;
+    if (entry.view === 'anketaForm') return entry.viloyat;
+    if (entry.view === 'anketaContract') return t().anketaContractTitle;
+    if (entry.view === 'anketaSuccess') return t().menuAnketa;
     return null;
   }
 
@@ -625,6 +704,7 @@
       { icon:'🔍', title:t().menuTopish, sub:t().menuTopishSub, accent:true, action:function(){ push({ view:'topishViloyat' }); } },
       { icon:'📋', title:t().menuOrder, sub:t().menuOrderSub, accent:true, action:function(){ push({ view:'orderGate' }); } },
       { icon:'👤', title:t().menuProfile, sub:t().menuProfileSub, accent:true, action:function(){ push({ view:'profileGate' }); } },
+      { icon:'📝', title:t().menuAnketa, sub:t().menuAnketaSub, accent:true, action:function(){ push({ view:'anketaGate' }); } },
       { icon:'ℹ️', title:t().menuAbout, sub:t().menuAboutSub, action:function(){ push({ view:'about' }); } },
       { icon:'📞', title:t().menuContact, sub:t().menuContactSub, action:function(){ push({ view:'contact' }); } },
     ];
@@ -1277,12 +1357,17 @@
       '</div>' +
       '<div class="profile-actions">' +
       '<button class="row" id="btnUserOrders"><span class="idx">📋</span><span class="lbl">' + t().profileUserOrdersBtn + '</span><span class="chev">→</span></button>' +
+      '<button class="row" id="btnBecomeMaster"><span class="idx">📝</span><span class="lbl">' + t().anketaBecomeMaster + '</span><span class="chev">→</span></button>' +
       '</div>' +
       '</div>';
 
     mainView.querySelector('#btnUserOrders').addEventListener('click', function(){
       haptic('select');
       push({ view:'profileUserOrders', offset: 0 });
+    });
+    mainView.querySelector('#btnBecomeMaster').addEventListener('click', function(){
+      haptic('select');
+      push({ view:'anketaGate' });
     });
   }
 
@@ -1402,6 +1487,328 @@
       }).catch(function(){
         mainView.querySelector('#ordersBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
       });
+  }
+
+  // ================= ANKETA (USTA BO'LISH) =================
+
+  function resizeImageToDataUrl(file){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = function(){
+        var img = new Image();
+        img.onerror = reject;
+        img.onload = function(){
+          var maxDim = 1280;
+          var w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+            else { w = Math.round(w * maxDim / h); h = maxDim; }
+          }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderAnketaBlocked(title, hint){
+    mainView.innerHTML =
+      '<div class="view"><div class="detail-head">' +
+      '<div class="eyebrow"><span class="ping"></span>' + t().menuAnketa + '</div>' +
+      '<h2>' + title + '</h2></div>' +
+      '<p class="note">' + hint + '</p>' +
+      '<button class="btn-primary" id="anketaBackBtn" style="width:100%;padding:13px;border-radius:11px;margin-top:14px">' +
+      t().backToMenu + '</button></div>';
+    mainView.querySelector('#anketaBackBtn').addEventListener('click', function(){ resetHome(); });
+  }
+
+  function renderAnketaGate(){
+    mainView.innerHTML = '<div class="view"><div class="empty">' + t().anketaChecking + '</div></div>';
+    if (!getInitData()) {
+      mainView.innerHTML = '<div class="view"><div class="empty">' + t().topishNoInitData + '</div></div>';
+      return;
+    }
+    if (!API_BASE) {
+      mainView.innerHTML = '<div class="view"><div class="empty">' + t().topishApiMissing + '</div></div>';
+      return;
+    }
+    apiGet('/api/public/anketa/status?init_data=' + encodeURIComponent(getInitData())).then(function(res){
+      if (!res || !res.ok) {
+        mainView.innerHTML = '<div class="view"><div class="empty">' + t().orderErrGeneric + '</div></div>';
+        return;
+      }
+      if (res.status === 'active') {
+        renderAnketaBlocked(t().anketaAlreadyActiveTitle, t().anketaAlreadyActiveHint);
+      } else if (res.status === 'pending') {
+        renderAnketaBlocked(t().anketaAlreadyPendingTitle, t().anketaAlreadyPendingHint);
+      } else if (res.status === 'rejected') {
+        renderAnketaBlocked(t().anketaAlreadyRejectedTitle, t().anketaAlreadyRejectedHint);
+      } else {
+        state.anketaForm = {};
+        state.stack[state.stack.length - 1] = { view:'anketaViloyat' };
+        render();
+      }
+    }).catch(function(){
+      mainView.innerHTML = '<div class="view"><div class="empty">' + t().orderErrGeneric + '</div></div>';
+    });
+  }
+
+  function renderAnketaViloyat(){
+    mainView.innerHTML = '<div class="view"><div class="list-title">📝 ' + t().menuAnketa +
+      '<span class="tag">' + t().anketaChooseViloyat + '</span></div>' +
+      '<div class="list" id="avList"><div class="empty">' + t().topishSearching + '</div></div></div>';
+    apiGet('/api/public/profile/meta').then(function(res){
+      var list = (res && res.viloyatlar) || [];
+      var html = list.map(function(v, i){
+        return '<button class="row" data-v="' + esc(v) + '" style="animation:view-in .2s ' + (Math.min(i,10)*0.03) + 's both">' +
+          '<span class="idx">📍</span><span class="lbl">' + esc(v) + '</span><span class="chev">→</span></button>';
+      }).join('');
+      var listEl = mainView.querySelector('#avList');
+      listEl.innerHTML = html || '<div class="empty">' + t().notFound + '</div>';
+      listEl.querySelectorAll('[data-v]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          haptic('select');
+          push({ view:'anketaTuman', viloyat: btn.getAttribute('data-v') });
+        });
+      });
+    }).catch(function(){
+      mainView.querySelector('#avList').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
+    });
+  }
+
+  function renderAnketaTuman(entry){
+    mainView.innerHTML =
+      '<div class="view"><div class="list-title">📍 ' + esc(entry.viloyat) +
+      '<span class="tag">' + t().anketaChooseTuman + '</span></div>' +
+      '<p class="note" style="margin:-6px 0 12px">' + t().anketaTumanHint + '</p>' +
+      '<div class="chip-toggle-list" id="atList"><div class="empty">' + t().topishSearching + '</div></div>' +
+      '</div>';
+    apiGet('/api/public/profile/meta').then(function(res){
+      var list = (res && res.tumanlar && res.tumanlar[entry.viloyat]) || [];
+      var selected = state.anketaForm.tuman_list || [];
+      var box = mainView.querySelector('#atList');
+      box.innerHTML = list.map(function(tm){
+        return '<button type="button" class="chip-toggle' + (selected.indexOf(tm) > -1 ? ' active' : '') + '" data-tm="' + esc(tm) + '">' + esc(tm) + '</button>';
+      }).join('') || '<div class="empty">' + t().notFound + '</div>';
+      box.querySelectorAll('.chip-toggle').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          haptic('select');
+          btn.classList.toggle('active');
+        });
+      });
+
+      var bar = document.createElement('div');
+      bar.className = 'action-bar'; bar.style.position = 'static'; bar.style.background = 'none'; bar.style.backdropFilter = 'none';
+      bar.innerHTML = '<button class="btn-primary" id="atNext" style="width:100%">' + t().continueBtn + '</button>';
+      mainView.querySelector('.view').appendChild(bar);
+
+      mainView.querySelector('#atNext').addEventListener('click', function(){
+        var chosen = Array.prototype.slice.call(mainView.querySelectorAll('#atList .chip-toggle.active')).map(function(b){ return b.getAttribute('data-tm'); });
+        if (chosen.length === 0) {
+          alert(t().anketaErrRequired);
+          return;
+        }
+        state.anketaForm.tuman_list = chosen;
+        haptic('select');
+        push({ view:'anketaForm', viloyat: entry.viloyat });
+      });
+    }).catch(function(){
+      mainView.querySelector('#atList').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
+    });
+  }
+
+  function renderAnketaForm(entry){
+    var f = state.anketaForm || {};
+    mainView.innerHTML =
+      '<div class="view"><div class="list-title">📝 ' + t().anketaFormTitle + '</div>' +
+      '<div class="form-card">' +
+      '<div class="field"><label>👤 ' + t().fIsm + '</label><input id="afIsm" value="' + esc(f.ism||'') + '" placeholder="' + t().fIsmPh + '"></div>' +
+      '<div class="field"><label>🎂 ' + t().fYil + '</label><input id="afYil" type="tel" inputmode="numeric" value="' + esc(f.yil||'') + '" placeholder="' + t().fYilPh + '"></div>' +
+      '<div class="field"><label>📱 ' + t().fTel + '</label><input id="afTel" type="tel" value="' + esc(f.telefon||'') + '" placeholder="' + t().fTelPh + '"></div>' +
+      '<div class="field"><label>🪪 ' + t().fPasport + '</label><input id="afPasport" value="' + esc(f.pasport||'') + '" placeholder="' + t().fPasportPh + '" style="text-transform:uppercase">' +
+      '<div class="note" style="margin-top:6px">' + t().fPasportHint + '</div></div>' +
+      '<div class="field"><label>🔧 ' + t().anketaChooseServices + '</label><div class="chip-toggle-list" id="afXizmatlar"></div></div>' +
+      '<div class="field"><label>📷 ' + t().anketaPhotoLabel + '</label>' +
+      '<label class="photo-upload' + (f.photo_b64 ? ' got' : '') + '" id="afPhotoBox">' +
+      '<span class="pu-thumb" id="afPhotoThumb">' + (f.photo_b64 ? '' : '📷') + '</span>' +
+      '<span class="pu-label" id="afPhotoLabel">' + (f.photo_b64 ? t().anketaPhotoGot : t().anketaPhotoHint) + '</span>' +
+      '<input type="file" accept="image/*" id="afPhotoInput"></label></div>' +
+      '</div>' +
+      '<button class="loc-btn" id="afLocBtn">' + (f.lat ? t().topishLocGot : t().anketaLocHint) + '</button>' +
+      '</div>';
+
+    if (f.photo_b64) {
+      mainView.querySelector('#afPhotoThumb').style.backgroundImage = 'url(' + f.photo_b64 + ')';
+    }
+    if (f.lat) mainView.querySelector('#afLocBtn').classList.add('got');
+
+    mainView.querySelector('#afLocBtn').addEventListener('click', function(){
+      requestLocation().then(function(loc){
+        if (loc) {
+          state.anketaForm.lat = loc.lat; state.anketaForm.lon = loc.lon;
+          var btn = mainView.querySelector('#afLocBtn');
+          btn.classList.add('got'); btn.textContent = t().topishLocGot;
+        }
+      });
+    });
+
+    apiGet('/api/public/profile/meta').then(function(meta){
+      var selectedX = {};
+      (f.xizmatlar || []).forEach(function(x){ selectedX[x] = true; });
+      var xBox = mainView.querySelector('#afXizmatlar');
+      if (!xBox) return;
+      xBox.innerHTML = (meta.xizmatlar || []).map(function(x){
+        return '<button type="button" class="chip-toggle' + (selectedX[x] ? ' active' : '') + '" data-x="' + esc(x) + '">' + esc(x) + '</button>';
+      }).join('');
+      xBox.querySelectorAll('.chip-toggle').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          haptic('select');
+          btn.classList.toggle('active');
+        });
+      });
+    });
+
+    mainView.querySelector('#afPhotoInput').addEventListener('change', function(e){
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      var label = mainView.querySelector('#afPhotoLabel');
+      label.textContent = t().profileSending;
+      resizeImageToDataUrl(file).then(function(dataUrl){
+        state.anketaForm.photo_b64 = dataUrl;
+        var box = mainView.querySelector('#afPhotoBox');
+        box.classList.add('got');
+        var thumb = mainView.querySelector('#afPhotoThumb');
+        thumb.style.backgroundImage = 'url(' + dataUrl + ')';
+        thumb.textContent = '';
+        label.textContent = t().anketaPhotoGot;
+      }).catch(function(){
+        label.textContent = t().anketaPhotoHint;
+        alert(t().orderErrGeneric);
+      });
+    });
+
+    var bar = document.createElement('div');
+    bar.className = 'action-bar'; bar.style.position = 'static'; bar.style.background = 'none'; bar.style.backdropFilter = 'none';
+    bar.innerHTML = '<button class="btn-primary" id="afNext" style="width:100%">' + t().continueBtn + '</button>';
+    mainView.querySelector('.view').appendChild(bar);
+
+    mainView.querySelector('#afNext').addEventListener('click', function(){
+      var ism = mainView.querySelector('#afIsm').value.trim();
+      var yil = mainView.querySelector('#afYil').value.trim();
+      var telefon = mainView.querySelector('#afTel').value.trim();
+      var pasport = mainView.querySelector('#afPasport').value.trim().toUpperCase();
+      var xizmatlar = Array.prototype.slice.call(mainView.querySelectorAll('#afXizmatlar .chip-toggle.active')).map(function(b){ return b.getAttribute('data-x'); });
+      var photo_b64 = state.anketaForm.photo_b64;
+
+      if (!ism || ism.length < 3 || !telefon || xizmatlar.length === 0 || !pasport) {
+        alert(t().anketaErrRequired);
+        return;
+      }
+      var raqam = telefon.replace(/\D/g, '');
+      if (raqam.length < 9) {
+        alert(t().orderErrPhone);
+        return;
+      }
+      var yilNum = parseInt(yil, 10);
+      if (!/^\d+$/.test(yil) || yilNum < 1950 || yilNum > 2005) {
+        alert(t().anketaErrYil);
+        return;
+      }
+      var harflar = (pasport.match(/[A-Z]/g) || []).length;
+      var raqamlar = (pasport.match(/[0-9]/g) || []).length;
+      if (pasport.replace(/\s/g,'').length < 7 || harflar < 2 || raqamlar < 6) {
+        alert(t().anketaErrPasport);
+        return;
+      }
+      if (!photo_b64) {
+        alert(t().anketaErrPhoto);
+        return;
+      }
+
+      state.anketaForm = {
+        ism: ism, yil: yil, telefon: telefon, pasport: pasport, xizmatlar: xizmatlar,
+        photo_b64: photo_b64, lat: state.anketaForm.lat, lon: state.anketaForm.lon,
+        tuman_list: state.anketaForm.tuman_list
+      };
+      haptic('select');
+      push({ view:'anketaContract', viloyat: entry.viloyat });
+    });
+  }
+
+  function renderAnketaContract(entry){
+    mainView.innerHTML =
+      '<div class="view"><div class="hero" style="padding-bottom:14px"><h1>' + t().anketaContractTitle + '</h1>' +
+      '<p style="color:var(--text-2);font-size:12.5px;margin-top:6px">' + t().anketaContractHint + '</p></div>' +
+      '<div id="shartnomaBox"><div class="empty">' + t().anketaChecking + '</div></div>' +
+      '<div id="anketaSubmitErr"></div>' +
+      '</div>';
+
+    apiGet('/api/public/anketa/shartnoma?lang=' + state.lang).then(function(res){
+      var parts = (res && res.parts) || [];
+      var box = mainView.querySelector('#shartnomaBox');
+      box.innerHTML = parts.map(function(p){ return '<div class="shartnoma-box">' + inline(p) + '</div>'; }).join('');
+    }).catch(function(){
+      mainView.querySelector('#shartnomaBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
+    });
+
+    var bar = document.createElement('div');
+    bar.className = 'action-bar';
+    bar.style.position = 'static'; bar.style.background = 'none'; bar.style.backdropFilter = 'none';
+    bar.innerHTML =
+      '<button class="btn-ghost" id="scDecline">' + t().anketaContractDecline + '</button>' +
+      '<button class="btn-primary" id="scAgree">' + t().anketaContractAgree + '</button>';
+    mainView.querySelector('.view').appendChild(bar);
+
+    mainView.querySelector('#scDecline').addEventListener('click', function(){
+      haptic('tap');
+      alert(t().anketaContractDeclinedMsg);
+    });
+
+    mainView.querySelector('#scAgree').addEventListener('click', function(){
+      var btn = mainView.querySelector('#scAgree');
+      btn.disabled = true;
+      btn.textContent = t().anketaSubmitting;
+      var f = state.anketaForm;
+      apiPost('/api/public/anketa/submit', {
+        init_data: getInitData(), lang: state.lang,
+        viloyat: entry.viloyat, tuman_list: f.tuman_list,
+        ism: f.ism, yil: f.yil, telefon: f.telefon, pasport: f.pasport,
+        xizmatlar: f.xizmatlar, photo_b64: f.photo_b64,
+        lat: f.lat, lon: f.lon, shartnoma_imzo: true
+      }).then(function(res){
+        if (res.data && res.data.ok) {
+          haptic('ok');
+          state.anketaForm = {};
+          push({ view:'anketaSuccess' });
+        } else {
+          btn.disabled = false; btn.textContent = t().anketaContractAgree;
+          var err = (res.data && res.data.error) || t().orderErrGeneric;
+          mainView.querySelector('#anketaSubmitErr').innerHTML =
+            '<p class="note" style="color:var(--red)">⚠️ ' + esc(err) + '</p>';
+        }
+      }).catch(function(){
+        btn.disabled = false; btn.textContent = t().anketaContractAgree;
+        mainView.querySelector('#anketaSubmitErr').innerHTML =
+          '<p class="note" style="color:var(--red)">⚠️ ' + t().orderErrGeneric + '</p>';
+      });
+    });
+  }
+
+  function renderAnketaSuccess(){
+    mainView.innerHTML =
+      '<div class="view"><div class="detail-head">' +
+      '<div class="eyebrow"><span class="ping" style="background:var(--green)"></span>OK</div>' +
+      '<h2>' + t().anketaSuccessTitle + '</h2></div>' +
+      '<p class="note">' + t().anketaSuccessHint + '</p>' +
+      '<button class="btn-primary" id="anketaSuccessBack" style="width:100%;padding:13px;border-radius:11px;margin-top:14px">' +
+      t().backToMenu + '</button></div>';
+    mainView.querySelector('#anketaSuccessBack').addEventListener('click', function(){ resetHome(); });
   }
 
   function renderHome(){
@@ -1661,6 +2068,12 @@
     else if (entry.view === 'profileEditMaster') renderProfileEditMaster(entry);
     else if (entry.view === 'profileUser') renderProfileUser(entry);
     else if (entry.view === 'profileUserOrders') renderProfileUserOrders(entry);
+    else if (entry.view === 'anketaGate') renderAnketaGate();
+    else if (entry.view === 'anketaViloyat') renderAnketaViloyat();
+    else if (entry.view === 'anketaTuman') renderAnketaTuman(entry);
+    else if (entry.view === 'anketaForm') renderAnketaForm(entry);
+    else if (entry.view === 'anketaContract') renderAnketaContract(entry);
+    else if (entry.view === 'anketaSuccess') renderAnketaSuccess();
   }
 
   // init lang buttons to reflect stored pref
