@@ -120,6 +120,57 @@
       menuAboutSub: "Xizmatlar va afzalliklar",
       menuContact: "📞 Bog'lanish",
       menuContactSub: "To'g'ridan murojaat",
+      menuProfile: "👤 Mening profilim",
+      menuProfileSub: "Buyurtmalar, tahrirlash, to'lov",
+
+      // ── Mening profilim ──
+      profileLoading: "Yuklanmoqda...",
+      profileMasterTitle: "👤 Mening profilim",
+      profileEditBtn: "✏️ Ma'lumotlarni tahrirlash",
+      profileJobsBtn: "📋 Bajarilgan ishlarim",
+      profileRegion: "Hudud",
+      profileServices: "Xizmatlar",
+      profileRegisteredAt: "Ro'yxatdan o'tgan",
+      profileRating: "Reyting",
+      profileNoRating: "Hali baho yo'q",
+      profileSubTitle: "📅 Oylik obuna",
+      profilePremiumTitle: "🌟 TOP/Reklama",
+      profileNotPaid: "⛔ hali to'lanmagan",
+      profileNotEnabled: "⛔ yoqilmagan",
+      profileActiveUntil: function(d){ return "✅ " + d + " gacha faol"; },
+
+      profileJobsTitle: "📋 Bajarilgan ishlarim",
+      profileJobsEmpty: "Sizda hali bajarilgan ish yo'q.",
+      profileJobFinishBtn: "✅ Yakunlash",
+      prevPage: "⬅️ Oldingi",
+      nextPage: "Keyingi ➡️",
+
+      profileEditTitle: "✏️ Ma'lumotlarni tahrirlash",
+      profileEditSaveBtn: "💾 Saqlash",
+      profileEditSaving: "Saqlanmoqda...",
+      profileEditSuccess: "✅ Ma'lumotlar yangilandi",
+      profileEditChooseServices: "Xizmatlaringizni tanlang",
+      fViloyat: "Hudud", fTuman: "Tuman",
+
+      profileUserTitle: "👤 Mening profilim",
+      profileUserOrdersBtn: "📋 Mening buyurtmalarim",
+      profileUserName: "Ism",
+      profileUserJoined: "Ro'yxatdan o'tgan",
+      profileUserRegion: "Hudud",
+      profileUserNoRegion: "Hali belgilanmagan",
+
+      profileOrdersTitle: "📋 Mening buyurtmalarim",
+      profileOrdersEmpty: "Sizda hali buyurtmalar yo'q.",
+      profileOrderMaster: "🧑‍🔧 Usta",
+      profileOrderNoMaster: "Hali usta tayinlanmagan",
+      profileOrderConfirmAsk: "Hammasi joyidami?",
+      profileOrderConfirmYes: "✅ Ha, hammasi joyida",
+      profileOrderConfirmNo: "❌ Yo'q, muammo bor",
+      profileOrderRateAsk: "Ustani qanday baholaysiz?",
+      profileOrderRateSubmit: "Yuborish",
+      profileOrderRated: function(n){ return "Siz baho berdingiz: " + '⭐'.repeat(n); },
+      profileOrderCommentPh: "Izoh (ixtiyoriy)",
+      profileSending: "Yuborilmoqda...",
 
       // ── Ustaxona topish ──
       topishChooseViloyat: "Hududni tanlang",
@@ -231,6 +282,57 @@
       menuAboutSub: "Услуги и преимущества",
       menuContact: "📞 Связаться",
       menuContactSub: "Прямой контакт",
+      menuProfile: "👤 Мой профиль",
+      menuProfileSub: "Заявки, редактирование, оплата",
+
+      // ── Мой профиль ──
+      profileLoading: "Загрузка...",
+      profileMasterTitle: "👤 Мой профиль",
+      profileEditBtn: "✏️ Изменить данные",
+      profileJobsBtn: "📋 Мои выполненные заказы",
+      profileRegion: "Регион",
+      profileServices: "Услуги",
+      profileRegisteredAt: "Дата регистрации",
+      profileRating: "Рейтинг",
+      profileNoRating: "Пока нет оценок",
+      profileSubTitle: "📅 Ежемесячная подписка",
+      profilePremiumTitle: "🌟 TOP/Реклама",
+      profileNotPaid: "⛔ не оплачена",
+      profileNotEnabled: "⛔ не включена",
+      profileActiveUntil: function(d){ return "✅ активна до " + d; },
+
+      profileJobsTitle: "📋 Мои выполненные заказы",
+      profileJobsEmpty: "У вас пока нет выполненных заказов.",
+      profileJobFinishBtn: "✅ Завершить",
+      prevPage: "⬅️ Назад",
+      nextPage: "Далее ➡️",
+
+      profileEditTitle: "✏️ Изменить данные",
+      profileEditSaveBtn: "💾 Сохранить",
+      profileEditSaving: "Сохранение...",
+      profileEditSuccess: "✅ Данные обновлены",
+      profileEditChooseServices: "Выберите ваши услуги",
+      fViloyat: "Регион", fTuman: "Район",
+
+      profileUserTitle: "👤 Мой профиль",
+      profileUserOrdersBtn: "📋 Мои заявки",
+      profileUserName: "Имя",
+      profileUserJoined: "Дата регистрации",
+      profileUserRegion: "Регион",
+      profileUserNoRegion: "Пока не указан",
+
+      profileOrdersTitle: "📋 Мои заявки",
+      profileOrdersEmpty: "У вас пока нет заявок.",
+      profileOrderMaster: "🧑‍🔧 Мастер",
+      profileOrderNoMaster: "Мастер ещё не назначен",
+      profileOrderConfirmAsk: "Всё в порядке?",
+      profileOrderConfirmYes: "✅ Да, всё сделано",
+      profileOrderConfirmNo: "❌ Нет, проблема осталась",
+      profileOrderRateAsk: "Как вы оцените мастера?",
+      profileOrderRateSubmit: "Отправить",
+      profileOrderRated: function(n){ return "Вы поставили оценку: " + '⭐'.repeat(n); },
+      profileOrderCommentPh: "Комментарий (необязательно)",
+      profileSending: "Отправка...",
 
       // ── Найти мастерскую ──
       topishChooseViloyat: "Выберите регион",
@@ -478,6 +580,10 @@
     if (entry.view === 'orderGate' || entry.view === 'orderSuccess') return t().menuOrder;
     if (entry.view === 'about') return t().menuAbout;
     if (entry.view === 'contact') return t().menuContact;
+    if (entry.view === 'profileGate' || entry.view === 'profileMaster' || entry.view === 'profileUser') return t().menuProfile;
+    if (entry.view === 'profileMasterJobs') return t().profileJobsTitle;
+    if (entry.view === 'profileEditMaster') return t().profileEditTitle;
+    if (entry.view === 'profileUserOrders') return t().profileOrdersTitle;
     return null;
   }
 
@@ -518,6 +624,7 @@
       { icon:'🔧', title:t().menuTechs, sub:t().menuTechsSub, action:function(){ push({ view:'home' }); } },
       { icon:'🔍', title:t().menuTopish, sub:t().menuTopishSub, accent:true, action:function(){ push({ view:'topishViloyat' }); } },
       { icon:'📋', title:t().menuOrder, sub:t().menuOrderSub, accent:true, action:function(){ push({ view:'orderGate' }); } },
+      { icon:'👤', title:t().menuProfile, sub:t().menuProfileSub, accent:true, action:function(){ push({ view:'profileGate' }); } },
       { icon:'ℹ️', title:t().menuAbout, sub:t().menuAboutSub, action:function(){ push({ view:'about' }); } },
       { icon:'📞', title:t().menuContact, sub:t().menuContactSub, action:function(){ push({ view:'contact' }); } },
     ];
@@ -649,20 +756,33 @@
           return;
         }
         var header = '<div class="status-badge" style="margin-bottom:12px">' + t().topishFound(items.length) + '</div>';
-        var cards = items.map(function(m){
+        var cards = items.map(function(m, i){
           var link = m.username ? ('https://t.me/' + m.username) : ('tg://user?id=' + m.tg_id);
-          var ratingHtml = m.rating ? ('⭐ ' + m.rating + ' (' + m.rating_count + ')') : '⭐ —';
-          var distHtml = (m.masofa_km != null) ? ('📏 ' + m.masofa_km + ' km') : '';
-          return '<div class="master-card' + (m.is_premium ? ' premium' : '') + '">' +
+          var ratingHtml = m.rating ? (m.rating + ' <span class="mc-rc">(' + m.rating_count + ')</span>') : '—';
+          var initials = esc((m.ism || '?').trim().split(/\s+/).slice(0,2).map(function(w){ return w[0]||''; }).join('').toUpperCase());
+          var avatarHtml = m.has_photo && API_BASE
+            ? '<img class="mc-avatar-img" src="' + API_BASE + '/api/public/master/photo?tg_id=' + encodeURIComponent(m.tg_id) +
+              '" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'mc-avatar-fallback\',textContent:\'' + initials + '\'}))">'
+            : '<div class="mc-avatar-fallback">' + initials + '</div>';
+          var chipsHtml = esc(m.xizmatlar).split(',').map(function(s){ return s.trim(); }).filter(Boolean)
+            .map(function(s){ return '<span class="mc-chip">' + s + '</span>'; }).join('');
+          return '<div class="master-card' + (m.is_premium ? ' premium' : '') + '" style="animation:view-in .22s ' + (Math.min(i,8)*0.04) + 's both">' +
+            (m.is_premium ? '<div class="mc-premium-tag">⭐ PREMIUM</div>' : '') +
+            '<div class="mc-top">' +
+            '<div class="mc-avatar">' + avatarHtml + '</div>' +
+            '<div class="mc-id">' +
             '<div class="mc-name">' + esc(m.ism) + '</div>' +
-            '<div class="mc-meta"><span>' + esc(m.xizmatlar) + '</span><span>' + ratingHtml + '</span>' +
-            (distHtml ? '<span>' + distHtml + '</span>' : '') + '</div>' +
+            '<div class="mc-stats">' +
+            '<span class="mc-stat mc-rating">⭐ ' + ratingHtml + '</span>' +
+            (m.masofa_km != null ? '<span class="mc-stat">📏 ' + m.masofa_km + ' km</span>' : '') +
+            '</div></div></div>' +
+            (chipsHtml ? '<div class="mc-chips">' + chipsHtml + '</div>' : '') +
             '<div class="mc-actions">' +
             '<a class="tel" href="tel:' + esc(m.telefon) + '">📞 ' + esc(m.telefon) + '</a>' +
-            '<a href="' + link + '" target="_blank">✈️ ' + t().topishWrite + '</a>' +
+            '<a class="tg" href="' + link + '" target="_blank">✈️ ' + t().topishWrite + '</a>' +
             '</div></div>';
         }).join('');
-        box.innerHTML = header + cards;
+        box.innerHTML = header + '<div class="master-list">' + cards + '</div>';
       }).catch(function(){
         mainView.querySelector('#resultsBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
       });
@@ -763,11 +883,13 @@
     var f = state.orderForm || {};
     mainView.innerHTML =
       '<div class="view"><div class="list-title">📝 ' + t().orderFormTitle + '</div>' +
-      '<div class="field"><label>' + t().fIsm + '</label><input id="fIsm" value="' + esc(f.ism||'') + '" placeholder="' + t().fIsmPh + '"></div>' +
-      '<div class="field"><label>' + t().fFamilya + '</label><input id="fFamilya" value="' + esc(f.familya||'') + '" placeholder="' + t().fFamilyaPh + '"></div>' +
-      '<div class="field"><label>' + t().fTel + '</label><input id="fTel" type="tel" value="' + esc(f.telefon||'') + '" placeholder="' + t().fTelPh + '"></div>' +
-      '<div class="field"><label>' + t().fMuammo + '</label><textarea id="fMuammo" placeholder="' + t().fMuammoPh + '">' + esc(f.muammo||'') + '</textarea></div>' +
-      '<div class="field"><label>' + t().fManzil + '</label><input id="fManzil" value="' + esc(f.manzil||'') + '" placeholder="' + t().fManzilPh + '"></div>' +
+      '<div class="form-card">' +
+      '<div class="field"><label>👤 ' + t().fIsm + '</label><input id="fIsm" value="' + esc(f.ism||'') + '" placeholder="' + t().fIsmPh + '"></div>' +
+      '<div class="field"><label>👤 ' + t().fFamilya + '</label><input id="fFamilya" value="' + esc(f.familya||'') + '" placeholder="' + t().fFamilyaPh + '"></div>' +
+      '<div class="field"><label>📱 ' + t().fTel + '</label><input id="fTel" type="tel" value="' + esc(f.telefon||'') + '" placeholder="' + t().fTelPh + '"></div>' +
+      '<div class="field"><label>🛠️ ' + t().fMuammo + '</label><textarea id="fMuammo" placeholder="' + t().fMuammoPh + '">' + esc(f.muammo||'') + '</textarea></div>' +
+      '<div class="field"><label>📍 ' + t().fManzil + '</label><input id="fManzil" value="' + esc(f.manzil||'') + '" placeholder="' + t().fManzilPh + '"></div>' +
+      '</div>' +
       '<button class="loc-btn" id="locBtn2">' + (f.lat ? t().topishLocGot : t().topishLocBtn) + '</button>' +
       '</div>';
 
@@ -893,6 +1015,392 @@
       '</div>' +
       '<div class="panel dashed"><p class="ptext" style="white-space:pre-line">' + esc(t().contactHours) + '</p></div>' +
       '</div>';
+  }
+
+  // ================= MENING PROFILIM =================
+
+  function jobStatusLabel(status){
+    var uz = {
+      'yangi': "🆕 Yangi", 'olindi': "🧑‍🔧 Jarayonda",
+      'bajarildi': "✅ Yakunlandi (mijoz tasdig'i kutilmoqda)",
+      'tasdiqlandi': "✅ Yakunlandi va tasdiqlandi",
+      'muammo': "⚠️ Muammo bo'lgan", 'bekor qilindi': "❌ Bekor qilingan",
+    };
+    var ru = {
+      'yangi': "🆕 Новый", 'olindi': "🧑‍🔧 В процессе",
+      'bajarildi': "✅ Завершено (ожидает подтверждения)",
+      'tasdiqlandi': "✅ Завершено и подтверждено",
+      'muammo': "⚠️ Была проблема", 'bekor qilindi': "❌ Отменено",
+    };
+    var m = (state.lang === 'uz') ? uz : ru;
+    return m[status] || status || '—';
+  }
+
+  function renderProfileGate(){
+    mainView.innerHTML = '<div class="view"><div class="empty">' + t().profileLoading + '</div></div>';
+    if (!getInitData()) {
+      mainView.innerHTML = '<div class="view"><div class="empty">' + t().topishNoInitData + '</div></div>';
+      return;
+    }
+    if (!API_BASE) {
+      mainView.innerHTML = '<div class="view"><div class="empty">' + t().topishApiMissing + '</div></div>';
+      return;
+    }
+    apiGet('/api/public/profile/me?init_data=' + encodeURIComponent(getInitData())).then(function(res){
+      if (!res || !res.ok) {
+        mainView.innerHTML = '<div class="view"><div class="empty">' + t().orderErrGeneric + '</div></div>';
+        return;
+      }
+      var nextEntry = (res.role === 'master')
+        ? { view:'profileMaster', master: res.master }
+        : { view:'profileUser', user: res.user };
+      state.stack[state.stack.length - 1] = nextEntry;
+      render();
+    }).catch(function(){
+      mainView.innerHTML = '<div class="view"><div class="empty">' + t().orderErrGeneric + '</div></div>';
+    });
+  }
+
+  function renderProfileMaster(entry){
+    var m = entry.master;
+    var reyting = m.rating ? ('⭐ ' + m.rating + ' (' + m.rating_count + ')') : ('⭐ ' + t().profileNoRating);
+    var subHolat = m.sub_ok ? t().profileActiveUntil(m.sub_until) : t().profileNotPaid;
+    var premHolat = m.premium_ok ? t().profileActiveUntil(m.premium_until) : t().profileNotEnabled;
+    var manzil = m.viloyat ? (m.viloyat + (m.tuman ? ' — ' + m.tuman : '')) : '—';
+
+    mainView.innerHTML =
+      '<div class="view"><div class="detail-head">' +
+      '<div class="eyebrow"><span class="ping"></span>' + t().menuProfile + '</div>' +
+      '<h2>' + esc(m.ism || '—') + '</h2></div>' +
+      '<div class="panel dashed">' +
+      '<div class="summary-row"><span class="k">📱</span><span class="v">' + esc(m.telefon || '—') + '</span></div>' +
+      '<div class="summary-row"><span class="k">🌍 ' + t().profileRegion + '</span><span class="v">' + esc(manzil) + '</span></div>' +
+      '<div class="summary-row"><span class="k">🔧 ' + t().profileServices + '</span><span class="v">' + esc(m.xizmatlar || '—') + '</span></div>' +
+      '<div class="summary-row"><span class="k">🕐 ' + t().profileRegisteredAt + '</span><span class="v">' + esc(m.created_at || '—') + '</span></div>' +
+      '<div class="summary-row"><span class="k">' + t().profileRating + '</span><span class="v">' + reyting + '</span></div>' +
+      '</div>' +
+      '<div class="panel">' +
+      '<div class="summary-row"><span class="k">' + t().profileSubTitle + '</span><span class="v">' + subHolat + '</span></div>' +
+      '<div class="summary-row"><span class="k">' + t().profilePremiumTitle + '</span><span class="v">' + premHolat + '</span></div>' +
+      '</div>' +
+      '<div class="profile-actions">' +
+      '<button class="row" id="btnEditMaster"><span class="idx">✏️</span><span class="lbl">' + t().profileEditBtn + '</span><span class="chev">→</span></button>' +
+      '<button class="row" id="btnMasterJobs"><span class="idx">📋</span><span class="lbl">' + t().profileJobsBtn + '</span><span class="chev">→</span></button>' +
+      '</div>' +
+      '</div>';
+
+    mainView.querySelector('#btnEditMaster').addEventListener('click', function(){
+      haptic('select');
+      push({ view:'profileEditMaster', master: m });
+    });
+    mainView.querySelector('#btnMasterJobs').addEventListener('click', function(){
+      haptic('select');
+      push({ view:'profileMasterJobs', offset: 0 });
+    });
+  }
+
+  function renderProfileMasterJobs(entry){
+    var offset = entry.offset || 0;
+    mainView.innerHTML =
+      '<div class="view"><div class="list-title">📋 ' + t().profileJobsTitle + '</div>' +
+      '<div id="jobsBox"><div class="empty">' + t().profileLoading + '</div></div></div>';
+
+    apiGet('/api/public/profile/master/jobs?init_data=' + encodeURIComponent(getInitData()) + '&offset=' + offset)
+      .then(function(res){
+        var box = mainView.querySelector('#jobsBox');
+        if (!res || !res.ok) { box.innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>'; return; }
+        var items = res.items || [];
+        if (items.length === 0 && offset === 0) {
+          box.innerHTML = '<div class="empty">📋 ' + t().profileJobsEmpty + '</div>';
+          return;
+        }
+        var cards = items.map(function(j, i){
+          var hudud = [j.viloyat, j.tuman].filter(Boolean).join(' / ') || '—';
+          var bahoTxt = j.baho ? (' · ⭐ ' + j.baho) : '';
+          var finishBtn = (j.status === 'olindi')
+            ? '<button class="loc-btn job-finish-btn" data-jid="' + j.id + '" style="margin:10px 0 0">' + t().profileJobFinishBtn + '</button>'
+            : '';
+          return '<div class="job-card" style="animation:view-in .2s ' + (Math.min(i,8)*0.03) + 's both">' +
+            '<div class="job-top"><span class="job-hash">#' + j.id + '</span><span class="job-name">' + esc(j.ism || '') + '</span></div>' +
+            '<div class="job-meta"><span>🔧 ' + esc(j.xizmat || '—') + '</span><span>📍 ' + esc(hudud) + '</span></div>' +
+            '<div class="job-status">' + jobStatusLabel(j.status) + bahoTxt + '</div>' +
+            '<div class="job-time">🕐 ' + esc(j.claimed_at || '—') + '</div>' +
+            finishBtn +
+            '</div>';
+        }).join('');
+        var nav = '';
+        var hasPrev = offset > 0;
+        var hasNext = (offset + (res.limit || 8)) < (res.total || 0);
+        if (hasPrev || hasNext) {
+          nav = '<div class="page-nav">' +
+            (hasPrev ? '<button class="btn-ghost" id="jobsPrev">' + t().prevPage + '</button>' : '<span></span>') +
+            (hasNext ? '<button class="btn-ghost" id="jobsNext">' + t().nextPage + '</button>' : '<span></span>') +
+            '</div>';
+        }
+        box.innerHTML = '<div class="job-list">' + cards + '</div>' + nav;
+
+        box.querySelectorAll('.job-finish-btn').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var jid = btn.getAttribute('data-jid');
+            btn.disabled = true; btn.textContent = t().profileSending;
+            apiPost('/api/public/profile/master/job/finish', { init_data: getInitData(), order_id: parseInt(jid,10) })
+              .then(function(r2){
+                if (r2.data && r2.data.ok) {
+                  haptic('ok');
+                  state.stack[state.stack.length - 1] = { view:'profileMasterJobs', offset: offset };
+                  render();
+                } else {
+                  alert((r2.data && r2.data.error) || t().orderErrGeneric);
+                  btn.disabled = false; btn.textContent = t().profileJobFinishBtn;
+                }
+              }).catch(function(){
+                alert(t().orderErrGeneric);
+                btn.disabled = false; btn.textContent = t().profileJobFinishBtn;
+              });
+          });
+        });
+        var prevBtn = box.querySelector('#jobsPrev');
+        if (prevBtn) prevBtn.addEventListener('click', function(){
+          haptic('select');
+          state.stack[state.stack.length - 1] = { view:'profileMasterJobs', offset: Math.max(0, offset - (res.limit||8)) };
+          render();
+        });
+        var nextBtn = box.querySelector('#jobsNext');
+        if (nextBtn) nextBtn.addEventListener('click', function(){
+          haptic('select');
+          state.stack[state.stack.length - 1] = { view:'profileMasterJobs', offset: offset + (res.limit||8) };
+          render();
+        });
+      }).catch(function(){
+        mainView.querySelector('#jobsBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
+      });
+  }
+
+  function renderProfileEditMaster(entry){
+    var m = entry.master;
+    mainView.innerHTML =
+      '<div class="view"><div class="list-title">✏️ ' + t().profileEditTitle + '</div>' +
+      '<div class="form-card">' +
+      '<div class="field"><label>👤 ' + t().fIsm + '</label><input id="peIsm" value="' + esc(m.ism||'') + '"></div>' +
+      '<div class="field"><label>📱 ' + t().fTel + '</label><input id="peTel" type="tel" value="' + esc(m.telefon||'') + '"></div>' +
+      '<div class="field"><label>🌍 ' + t().fViloyat + '</label><select id="peViloyat" class="select-field"></select></div>' +
+      '<div class="field"><label>📍 ' + t().fTuman + '</label><select id="peTuman" class="select-field"></select></div>' +
+      '<div class="field"><label>🔧 ' + t().profileEditChooseServices + '</label><div class="chip-toggle-list" id="peXizmatlar"></div></div>' +
+      '</div>' +
+      '<div id="peMsg"></div>' +
+      '</div>';
+
+    var bar = document.createElement('div');
+    bar.className = 'action-bar'; bar.style.position = 'static'; bar.style.background = 'none'; bar.style.backdropFilter = 'none';
+    bar.innerHTML = '<button class="btn-primary" id="peSave" style="width:100%">' + t().profileEditSaveBtn + '</button>';
+    mainView.querySelector('.view').appendChild(bar);
+
+    var currentXizmatlar = (m.xizmatlar || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    var selectedX = {};
+    currentXizmatlar.forEach(function(x){ selectedX[x] = true; });
+
+    apiGet('/api/public/profile/meta').then(function(meta){
+      var viloyatSel = mainView.querySelector('#peViloyat');
+      viloyatSel.innerHTML = (meta.viloyatlar || []).map(function(v){
+        return '<option value="' + esc(v) + '"' + (v === m.viloyat ? ' selected' : '') + '>' + esc(v) + '</option>';
+      }).join('');
+
+      function fillTuman(viloyat, selected){
+        var tumanSel = mainView.querySelector('#peTuman');
+        var list = (meta.tumanlar && meta.tumanlar[viloyat]) || [];
+        tumanSel.innerHTML = '<option value="">—</option>' + list.map(function(tm){
+          return '<option value="' + esc(tm) + '"' + (tm === selected ? ' selected' : '') + '>' + esc(tm) + '</option>';
+        }).join('');
+      }
+      fillTuman(m.viloyat, m.tuman);
+      viloyatSel.addEventListener('change', function(){ fillTuman(viloyatSel.value, null); });
+
+      var xBox = mainView.querySelector('#peXizmatlar');
+      xBox.innerHTML = (meta.xizmatlar || []).map(function(x){
+        return '<button type="button" class="chip-toggle' + (selectedX[x] ? ' active' : '') + '" data-x="' + esc(x) + '">' + esc(x) + '</button>';
+      }).join('');
+      xBox.querySelectorAll('.chip-toggle').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          haptic('select');
+          btn.classList.toggle('active');
+        });
+      });
+    });
+
+    mainView.querySelector('#peSave').addEventListener('click', function(){
+      var ism = mainView.querySelector('#peIsm').value.trim();
+      var telefon = mainView.querySelector('#peTel').value.trim();
+      var viloyat = mainView.querySelector('#peViloyat').value;
+      var tuman = mainView.querySelector('#peTuman').value;
+      var xizmatlar = Array.prototype.slice.call(mainView.querySelectorAll('.chip-toggle.active')).map(function(b){ return b.getAttribute('data-x'); });
+
+      if (!ism || !telefon || xizmatlar.length === 0) {
+        alert(t().orderErrRequired);
+        return;
+      }
+      var saveBtn = mainView.querySelector('#peSave');
+      saveBtn.disabled = true; saveBtn.textContent = t().profileEditSaving;
+
+      apiPost('/api/public/profile/master/edit', {
+        init_data: getInitData(), ism: ism, telefon: telefon, viloyat: viloyat, tuman: tuman, xizmatlar: xizmatlar
+      }).then(function(r){
+        if (r.data && r.data.ok) {
+          haptic('ok');
+          mainView.querySelector('#peMsg').innerHTML = '<p class="note" style="color:var(--green)">' + t().profileEditSuccess + '</p>';
+          m.ism = ism; m.telefon = telefon; m.viloyat = viloyat; m.tuman = tuman; m.xizmatlar = xizmatlar.join(', ');
+          setTimeout(function(){ pop(); }, 700);
+        } else {
+          alert((r.data && r.data.error) || t().orderErrGeneric);
+          saveBtn.disabled = false; saveBtn.textContent = t().profileEditSaveBtn;
+        }
+      }).catch(function(){
+        alert(t().orderErrGeneric);
+        saveBtn.disabled = false; saveBtn.textContent = t().profileEditSaveBtn;
+      });
+    });
+  }
+
+  function renderProfileUser(entry){
+    var u = entry.user;
+    var name = u.first_name || (u.username ? ('@' + u.username) : '—');
+    var region = u.viloyat ? (u.viloyat + (u.tuman ? ' — ' + u.tuman : '')) : t().profileUserNoRegion;
+
+    mainView.innerHTML =
+      '<div class="view"><div class="detail-head">' +
+      '<div class="eyebrow"><span class="ping"></span>' + t().menuProfile + '</div>' +
+      '<h2>' + esc(name) + '</h2></div>' +
+      '<div class="panel dashed">' +
+      (u.username ? '<div class="summary-row"><span class="k">Telegram</span><span class="v">@' + esc(u.username) + '</span></div>' : '') +
+      '<div class="summary-row"><span class="k">🌍 ' + t().profileUserRegion + '</span><span class="v">' + esc(region) + '</span></div>' +
+      (u.joined_at ? '<div class="summary-row"><span class="k">🕐 ' + t().profileUserJoined + '</span><span class="v">' + esc(u.joined_at) + '</span></div>' : '') +
+      '</div>' +
+      '<div class="profile-actions">' +
+      '<button class="row" id="btnUserOrders"><span class="idx">📋</span><span class="lbl">' + t().profileUserOrdersBtn + '</span><span class="chev">→</span></button>' +
+      '</div>' +
+      '</div>';
+
+    mainView.querySelector('#btnUserOrders').addEventListener('click', function(){
+      haptic('select');
+      push({ view:'profileUserOrders', offset: 0 });
+    });
+  }
+
+  function renderProfileUserOrders(entry){
+    var offset = entry.offset || 0;
+    mainView.innerHTML =
+      '<div class="view"><div class="list-title">📋 ' + t().profileOrdersTitle + '</div>' +
+      '<div id="ordersBox"><div class="empty">' + t().profileLoading + '</div></div></div>';
+
+    apiGet('/api/public/profile/user/orders?init_data=' + encodeURIComponent(getInitData()) + '&offset=' + offset)
+      .then(function(res){
+        var box = mainView.querySelector('#ordersBox');
+        if (!res || !res.ok) { box.innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>'; return; }
+        var items = res.items || [];
+        if (items.length === 0 && offset === 0) {
+          box.innerHTML = '<div class="empty">📋 ' + t().profileOrdersEmpty + '</div>';
+          return;
+        }
+        var cards = items.map(function(o, i){
+          var hudud = [o.viloyat, o.tuman].filter(Boolean).join(' / ') || '—';
+          var masterHtml = o.master
+            ? '<div class="job-meta"><span>' + t().profileOrderMaster + ': ' + esc(o.master.ism || '—') + '</span>' +
+              (o.master.telefon ? '<span>📞 ' + esc(o.master.telefon) + '</span>' : '') + '</div>'
+            : '<div class="job-meta"><span class="dim">' + t().profileOrderNoMaster + '</span></div>';
+
+          var actionHtml = '';
+          if (o.status === 'bajarildi') {
+            actionHtml =
+              '<div class="order-confirm">' +
+              '<p class="note" style="margin-bottom:8px">' + t().profileOrderConfirmAsk + '</p>' +
+              '<div class="confirm-row">' +
+              '<button class="btn-ghost confirm-btn" data-oid="' + o.id + '" data-yes="0">' + t().profileOrderConfirmNo + '</button>' +
+              '<button class="btn-primary confirm-btn" data-oid="' + o.id + '" data-yes="1">' + t().profileOrderConfirmYes + '</button>' +
+              '</div></div>';
+          } else if (o.status === 'tasdiqlandi' && !o.baho) {
+            actionHtml =
+              '<div class="order-rate">' +
+              '<p class="note" style="margin-bottom:8px">' + t().profileOrderRateAsk + '</p>' +
+              '<div class="stars-row" data-oid="' + o.id + '">' +
+              [1,2,3,4,5].map(function(s){ return '<button class="star-btn" data-star="' + s + '">⭐</button>'; }).join('') +
+              '</div></div>';
+          } else if (o.baho) {
+            actionHtml = '<div class="job-status">' + t().profileOrderRated(o.baho) + '</div>';
+          }
+
+          return '<div class="job-card" style="animation:view-in .2s ' + (Math.min(i,8)*0.03) + 's both">' +
+            '<div class="job-top"><span class="job-hash">#' + o.id + '</span></div>' +
+            '<div class="job-meta"><span>🔧 ' + esc(o.xizmat || '—') + '</span><span>📍 ' + esc(hudud) + '</span></div>' +
+            masterHtml +
+            '<div class="job-status">' + jobStatusLabel(o.status) + '</div>' +
+            '<div class="job-time">🕐 ' + esc(o.created_at || '—') + '</div>' +
+            actionHtml +
+            '</div>';
+        }).join('');
+        var nav = '';
+        var hasPrev = offset > 0;
+        var hasNext = (offset + (res.limit || 8)) < (res.total || 0);
+        if (hasPrev || hasNext) {
+          nav = '<div class="page-nav">' +
+            (hasPrev ? '<button class="btn-ghost" id="ordersPrev">' + t().prevPage + '</button>' : '<span></span>') +
+            (hasNext ? '<button class="btn-ghost" id="ordersNext">' + t().nextPage + '</button>' : '<span></span>') +
+            '</div>';
+        }
+        box.innerHTML = '<div class="job-list">' + cards + '</div>' + nav;
+
+        box.querySelectorAll('.confirm-btn').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var oid = parseInt(btn.getAttribute('data-oid'),10);
+            var yes = btn.getAttribute('data-yes') === '1';
+            var wrap = btn.closest('.order-confirm');
+            wrap.innerHTML = '<p class="note">' + t().profileSending + '</p>';
+            apiPost('/api/public/profile/user/order/confirm', { init_data: getInitData(), order_id: oid, yes: yes })
+              .then(function(r){
+                if (r.data && r.data.ok) {
+                  haptic('ok');
+                  state.stack[state.stack.length - 1] = { view:'profileUserOrders', offset: offset };
+                  render();
+                } else {
+                  alert((r.data && r.data.error) || t().orderErrGeneric);
+                }
+              }).catch(function(){ alert(t().orderErrGeneric); });
+          });
+        });
+
+        box.querySelectorAll('.stars-row').forEach(function(row){
+          row.querySelectorAll('.star-btn').forEach(function(sbtn){
+            sbtn.addEventListener('click', function(){
+              var oid = parseInt(row.getAttribute('data-oid'),10);
+              var star = parseInt(sbtn.getAttribute('data-star'),10);
+              row.parentElement.innerHTML = '<p class="note">' + t().profileSending + '</p>';
+              apiPost('/api/public/profile/user/order/rate', { init_data: getInitData(), order_id: oid, baho: star, izoh: '' })
+                .then(function(r){
+                  if (r.data && r.data.ok) {
+                    haptic('ok');
+                    state.stack[state.stack.length - 1] = { view:'profileUserOrders', offset: offset };
+                    render();
+                  } else {
+                    alert((r.data && r.data.error) || t().orderErrGeneric);
+                  }
+                }).catch(function(){ alert(t().orderErrGeneric); });
+            });
+          });
+        });
+
+        var prevBtn = box.querySelector('#ordersPrev');
+        if (prevBtn) prevBtn.addEventListener('click', function(){
+          haptic('select');
+          state.stack[state.stack.length - 1] = { view:'profileUserOrders', offset: Math.max(0, offset - (res.limit||8)) };
+          render();
+        });
+        var nextBtn = box.querySelector('#ordersNext');
+        if (nextBtn) nextBtn.addEventListener('click', function(){
+          haptic('select');
+          state.stack[state.stack.length - 1] = { view:'profileUserOrders', offset: offset + (res.limit||8) };
+          render();
+        });
+      }).catch(function(){
+        mainView.querySelector('#ordersBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
+      });
   }
 
   function renderHome(){
@@ -1146,6 +1654,12 @@
     else if (entry.view === 'orderSuccess') renderOrderSuccess(entry);
     else if (entry.view === 'about') renderAbout();
     else if (entry.view === 'contact') renderContact();
+    else if (entry.view === 'profileGate') renderProfileGate();
+    else if (entry.view === 'profileMaster') renderProfileMaster(entry);
+    else if (entry.view === 'profileMasterJobs') renderProfileMasterJobs(entry);
+    else if (entry.view === 'profileEditMaster') renderProfileEditMaster(entry);
+    else if (entry.view === 'profileUser') renderProfileUser(entry);
+    else if (entry.view === 'profileUserOrders') renderProfileUserOrders(entry);
   }
 
   // init lang buttons to reflect stored pref
