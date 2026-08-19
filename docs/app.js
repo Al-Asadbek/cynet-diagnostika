@@ -81,6 +81,8 @@
       description: "Tavsif",
       solution: "Yechim",
       codesTitle: "Xatolik kodlari",
+      illusTitle: "Ko'rgazmali animatsiya",
+      videoTitle: "Video ko'rsatma",
       home: "Cynet Diagnostika",
       contactMaster: "Ustaga yozish",
       note: "Aniq diagnostika uchun qurilmani ko'zdan kechirish tavsiya etiladi. Murakkab holatlarda Cynet Service Center ustaxonasiga murojaat qiling.",
@@ -279,6 +281,8 @@
       description: "Описание",
       solution: "Решение",
       codesTitle: "Коды ошибок",
+      illusTitle: "Наглядная анимация",
+      videoTitle: "Видео инструкция",
       home: "Cynet Диагностика",
       contactMaster: "Написать мастеру",
       note: "Для точной диагностики рекомендуется осмотр устройства. В сложных случаях обратитесь в сервис-центр Cynet.",
@@ -472,6 +476,7 @@
     orderForm: {},
     anketaForm: {}
   };
+  var illusTimer = null;
 
   function t(){ return STR[state.lang]; }
   function L(uzKey, ruKey){ return state.lang === 'uz' ? uzKey : ruKey; }
@@ -2004,34 +2009,110 @@
     return '<div class="panel"><div class="ph">🔢 ' + t().codesTitle + '</div><div class="code-list">' + codesHtml + '</div></div>';
   }
 
+  // ---------- Ko'rgazmali animatsiyalar (illustratsiyalar) ----------
+  // Har bir bandga (diagnostika kaliti bo'yicha) 2-4 bosqichli animatsion
+  // "tekshirish" sxemasi biriktirilishi mumkin. Yangi bandlar uchun shu
+  // formatda qo'shib borish mumkin — key = last.py'dagi D lug'ati kaliti.
+  var ILLUSTRATIONS = {
+    'tv_0': {
+      device: '📺',
+      steps: [
+        { icon:'🔌', caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:'💡', caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:'🔋', caption_uz:"Pult batareyasini tekshiring", caption_ru:"Проверьте батарейки пульта" },
+      ],
+    },
+  };
+
+  function youtubeEmbedUrl(url){
+    if (!url) return null;
+    var m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,15})/);
+    return m ? ('https://www.youtube.com/embed/' + m[1]) : null;
+  }
+
+  function renderIllustrationBlock(diagKey){
+    var conf = ILLUSTRATIONS[diagKey];
+    if (!conf) return '';
+    var stepsHtml = conf.steps.map(function(s, i){
+      return '<div class="illus-step' + (i === 0 ? ' active' : '') + '" data-i="' + i + '">' +
+        '<div class="illus-step-icn">' + s.icon + '</div>' +
+        '<div class="illus-step-cap">' + esc(pick(s, 'caption')) + '</div>' +
+        '</div>';
+    }).join('');
+    return '<div class="panel illus-panel">' +
+      '<div class="ph">🎬 ' + t().illusTitle + '</div>' +
+      '<div class="illus-stage"><div class="illus-pulse-ring" id="illusRing"></div>' +
+      '<div class="illus-device">' + conf.device + '</div></div>' +
+      '<div class="illus-steps-row" id="illusStepsRow">' + stepsHtml + '</div>' +
+      '</div>';
+  }
+
+  function wireIllustrationCycle(){
+    var row = mainView.querySelector('#illusStepsRow');
+    if (!row) return;
+    var ring = mainView.querySelector('#illusRing');
+    var steps = Array.prototype.slice.call(row.querySelectorAll('.illus-step'));
+    if (steps.length < 2) return;
+    var idx = 0;
+    if (illusTimer) clearInterval(illusTimer);
+    illusTimer = setInterval(function(){
+      idx = (idx + 1) % steps.length;
+      steps.forEach(function(s, i){ s.classList.toggle('active', i === idx); });
+      if (ring) {
+        ring.classList.remove('pulse');
+        void ring.offsetWidth; // reflow — animatsiyani qayta ishga tushirish uchun
+        ring.classList.add('pulse');
+      }
+    }, 2200);
+  }
+
+  function renderVideoBlock(url){
+    var embed = youtubeEmbedUrl(url);
+    if (!embed) return '';
+    return '<div class="panel">' +
+      '<div class="ph">▶️ ' + t().videoTitle + '</div>' +
+      '<div class="video-embed"><iframe src="' + embed + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>' +
+      '</div>';
+  }
+
   function renderIssue(entry){
     var c = catById(entry.catId);
-    var item, raw, label;
+    var item, raw, label, diagKey, videoUrl;
 
     if (entry.mode === 'single') {
       label = pick(c, 'name');
       raw = pick(c, 'text');
+      diagKey = c.key;
+      videoUrl = pick(c, 'video');
     } else if (entry.mode === 'flat') {
       item = c.items[entry.idx];
       label = pick(item, 'label');
       raw = pick(item, 'text');
+      diagKey = item.key;
+      videoUrl = pick(item, 'video');
     } else if (entry.mode === 'printer') {
       var st = c.subtypes.find(function(s){ return s.id === entry.subId; });
       var brand = st.brands[entry.brandIdx];
       item = brand.items[entry.idx];
       label = pick(item, 'label');
       raw = pick(item, 'text');
+      diagKey = item.key;
+      videoUrl = pick(item, 'video');
     }
 
     var blocks = parseDiagText(raw);
     var html = blocksToHTML(blocks);
+    var illusHtml = renderIllustrationBlock(diagKey);
+    var videoHtml = renderVideoBlock(videoUrl);
 
     mainView.innerHTML =
       '<div class="view"><div class="detail-head">' +
       '<div class="eyebrow"><span class="ping"></span>' + t().diagnosing + '</div>' +
       '<h2>' + esc(label.replace(/^\S+\s/, function(m){ return ''; }) || label) + '</h2>' +
-      '</div>' + html +
+      '</div>' + illusHtml + videoHtml + html +
       '<p class="note">ℹ️ ' + t().note + '</p></div>';
+
+    wireIllustrationCycle();
   }
 
   // ---------- Master render dispatcher ----------
