@@ -651,6 +651,8 @@
     }
     if (entry.view === 'brand') return entry.brandName;
     if (entry.view === 'codesBrand') return entry.brandName;
+    if (entry.view === 'printerCodesList') return t().errorCodes;
+    if (entry.view === 'printerCodesBrand') return entry.brandName;
     if (entry.view === 'issue') return null; // shown as page title, keep crumb short
     if (entry.view === 'topishViloyat' || entry.view === 'orderViloyat') return t().menuTopish;
     if (entry.view === 'topishTuman' || entry.view === 'topishXizmat' || entry.view === 'topishResults') return entry.viloyat;
@@ -1940,13 +1942,68 @@
         '<span class="lbl">' + esc(b.name) + '</span>' +
         '<span class="chev">' + b.items.length + ' →</span></button>';
     }).join('');
-    mainView.innerHTML = '<div class="view"><div class="list-title">🖨️ ' + pick(st,'name') + '<span class="tag">' + t().chooseBrand + '</span></div><div class="list">' + rows + '</div></div>';
+    var codesRow = '';
+    if (st.codes) {
+      codesRow = '<button class="row" data-pcodes="1" style="border-color:var(--amber-dim)">' +
+        '<span class="idx">💡</span><span class="lbl"><strong>' + t().errorCodes + '</strong></span><span class="chev">→</span></button>';
+    }
+    mainView.innerHTML = '<div class="view"><div class="list-title">🖨️ ' + pick(st,'name') + '<span class="tag">' + t().chooseBrand + '</span></div><div class="list">' + rows + codesRow + '</div></div>';
     mainView.querySelectorAll('[data-bi]').forEach(function(btn){
       btn.addEventListener('click', function(){
         haptic('select');
         push({ view:'brand', catId:c.id, subId: st.id, brandIdx: parseInt(btn.getAttribute('data-bi'),10), brandName: st.brands[parseInt(btn.getAttribute('data-bi'),10)].name });
       });
     });
+    var pcodesBtn = mainView.querySelector('[data-pcodes]');
+    if (pcodesBtn) {
+      pcodesBtn.addEventListener('click', function(){
+        haptic('select');
+        push({ view:'printerCodesList', catId:c.id, subId: st.id });
+      });
+    }
+  }
+
+  function renderPrinterCodesList(entry){
+    var c = catById(entry.catId);
+    var st = c.subtypes.find(function(s){ return s.id === entry.subId; });
+    var rows = st.codes.brands.map(function(b, i){
+      return '<button class="row brand-row" data-bi="' + i + '" style="animation:view-in .2s ' + (i*0.03) + 's both">' +
+        '<span class="idx">💡</span><span class="lbl">' + esc(b.name) + '</span><span class="chev">→</span></button>';
+    }).join('');
+    mainView.innerHTML = '<div class="view"><div class="list-title">💡 ' + t().errorCodes + '<span class="tag">' + t().chooseBrand + '</span></div><div class="list">' + rows + '</div></div>';
+    mainView.querySelectorAll('[data-bi]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        haptic('select');
+        var i = parseInt(btn.getAttribute('data-bi'),10);
+        push({ view:'printerCodesBrand', catId:c.id, subId: st.id, brandIdx:i, brandName: st.codes.brands[i].name });
+      });
+    });
+  }
+
+  function renderPrinterCodesBrand(entry){
+    var c = catById(entry.catId);
+    var st = c.subtypes.find(function(s){ return s.id === entry.subId; });
+    var brand = st.codes.brands[entry.brandIdx];
+    var raw = pick(brand, 'text');
+    var blocksHtml = codesTextToHTML(raw);
+    var illusKey = 'rangli_err_' + brandSlug(brand.name);
+    var illusHtml = renderIllustrationBlock(illusKey);
+    mainView.innerHTML =
+      '<div class="view"><div class="detail-head">' +
+      '<div class="eyebrow"><span class="ping"></span>' + t().diagnosing + '</div>' +
+      '<h2>' + esc(brand.name) + '</h2>' +
+      '</div>' + illusHtml + blocksHtml +
+      '<p class="note">ℹ️ ' + t().note + '</p></div>';
+    wireIllustrationCycle();
+  }
+
+  function brandSlug(name){
+    var n = name.toLowerCase();
+    if (n.indexOf('canon') !== -1) return 'canon';
+    if (n.indexOf('hp') !== -1) return 'hp';
+    if (n.indexOf('epson') !== -1) return 'epson';
+    if (n.indexOf('brother') !== -1) return 'brother';
+    return 'generic';
   }
 
   function renderBrand(entry){
@@ -2814,6 +2871,42 @@
         { icon:"🔄", caption_uz:"Drayverni qayta o'rnating", caption_ru:"Переустановите драйвер" },
       ],
     },
+    "rangli_err_canon": {
+      device: "🖨️",
+      steps: [
+        { icon:"⚠️", caption_uz:"Alarm chirog'ining necha marta milt-milt qilishini sanang", caption_ru:"Посчитайте, сколько раз мигает индикатор Alarm" },
+        { icon:"🔢", caption_uz:"Sanoqni pastdagi kod jadvali bilan solishtiring", caption_ru:"Сравните счёт с таблицей кодов ниже" },
+        { icon:"🛠️", caption_uz:"Mos yechim bo'yicha qadamlarni bajaring", caption_ru:"Выполните шаги для найденного кода" },
+        { icon:"🔄", caption_uz:"Printerni qayta ishga tushirib tekshiring", caption_ru:"Перезапустите принтер и проверьте" },
+      ],
+    },
+    "rangli_err_hp": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔎", caption_uz:"Qaysi chiroq yonayotgani/milt-milt qilayotganini aniqlang", caption_ru:"Определите, какой индикатор горит/мигает" },
+        { icon:"🔢", caption_uz:"Chiroq holatini pastdagi jadval bilan solishtiring", caption_ru:"Сравните состояние индикатора с таблицей ниже" },
+        { icon:"🛠️", caption_uz:"Mos yechim bo'yicha qadamlarni bajaring", caption_ru:"Выполните шаги для найденной причины" },
+        { icon:"🔄", caption_uz:"Printerni qayta ishga tushirib tekshiring", caption_ru:"Перезапустите принтер и проверьте" },
+      ],
+    },
+    "rangli_err_epson": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔎", caption_uz:"Power va siyoh chirog'i qanday yonayotganiga qarang", caption_ru:"Посмотрите, как горят индикаторы питания и чернил" },
+        { icon:"🔢", caption_uz:"Holatni pastdagi kod jadvali bilan solishtiring", caption_ru:"Сравните состояние с таблицей кодов ниже" },
+        { icon:"🛠️", caption_uz:"Mos yechim bo'yicha qadamlarni bajaring", caption_ru:"Выполните шаги для найденной причины" },
+        { icon:"🔄", caption_uz:"Printerni qayta ishga tushirib tekshiring", caption_ru:"Перезапустите принтер и проверьте" },
+      ],
+    },
+    "rangli_err_brother": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔎", caption_uz:"Ekrandagi xabar yoki chiroqni o'qing", caption_ru:"Прочитайте сообщение на экране или индикатор" },
+        { icon:"🔢", caption_uz:"Xabarni pastdagi jadval bilan solishtiring", caption_ru:"Сравните сообщение с таблицей ниже" },
+        { icon:"🛠️", caption_uz:"Mos yechim bo'yicha qadamlarni bajaring", caption_ru:"Выполните шаги для найденной причины" },
+        { icon:"🔄", caption_uz:"Printerni qayta ishga tushirib tekshiring", caption_ru:"Перезапустите принтер и проверьте" },
+      ],
+    },
     "printer_hp_laser_0": {
       device: "🖨️",
       steps: [
@@ -3242,6 +3335,8 @@
     else if (entry.view === 'brand') renderBrand(entry);
     else if (entry.view === 'brandCodesList') renderBrandCodesList(entry);
     else if (entry.view === 'codesBrand') renderCodesBrand(entry);
+    else if (entry.view === 'printerCodesList') renderPrinterCodesList(entry);
+    else if (entry.view === 'printerCodesBrand') renderPrinterCodesBrand(entry);
     else if (entry.view === 'issue') renderIssue(entry);
     else if (entry.view === 'topishViloyat') renderTopishViloyat(entry);
     else if (entry.view === 'topishTuman') renderTopishTuman(entry);
