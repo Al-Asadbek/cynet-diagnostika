@@ -2014,12 +2014,1124 @@
   // "tekshirish" sxemasi biriktirilishi mumkin. Yangi bandlar uchun shu
   // formatda qo'shib borish mumkin — key = last.py'dagi D lug'ati kaliti.
   var ILLUSTRATIONS = {
-    'tv_0': {
-      device: '📺',
+    "tv_0": {
+      device: "📺",
       steps: [
-        { icon:'🔌', caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
-        { icon:'💡', caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
-        { icon:'🔋', caption_uz:"Pult batareyasini tekshiring", caption_ru:"Проверьте батарейки пульта" },
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🔋", caption_uz:"Pult batareyasini tekshiring", caption_ru:"Проверьте батарейки пульта" },
+      ],
+    },
+    "tv_1": {
+      device: "📺",
+      steps: [
+        { icon:"🖥️", caption_uz:"Kabelni tekshiring", caption_ru:"Проверьте кабель" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni tekshiring", caption_ru:"Проверьте настройки" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "tv_2": {
+      device: "📺",
+      steps: [
+        { icon:"🔊", caption_uz:"Ovoz balandligini tekshiring", caption_ru:"Проверьте громкость" },
+        { icon:"🔌", caption_uz:"Audio ulanishni tekshiring", caption_ru:"Проверьте аудио-подключение" },
+        { icon:"⚙️", caption_uz:"Ovoz manbasini tekshiring", caption_ru:"Проверьте источник звука" },
+      ],
+    },
+    "tv_3": {
+      device: "📺",
+      steps: [
+        { icon:"🖥️", caption_uz:"Kabelni tekshiring", caption_ru:"Проверьте кабель" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni tekshiring", caption_ru:"Проверьте настройки" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "tv_4": {
+      device: "📺",
+      steps: [
+        { icon:"📶", caption_uz:"Signalni tekshiring", caption_ru:"Проверьте сигнал" },
+        { icon:"🔄", caption_uz:"Qurilmani qayta ishga tushiring", caption_ru:"Перезагрузите устройство" },
+        { icon:"⚙️", caption_uz:"Tarmoq sozlamalarini qayta kiriting", caption_ru:"Заново введите настройки сети" },
+      ],
+    },
+    "tv_5": {
+      device: "📺",
+      steps: [
+        { icon:"📶", caption_uz:"Signalni tekshiring", caption_ru:"Проверьте сигнал" },
+        { icon:"🔄", caption_uz:"Qurilmani qayta ishga tushiring", caption_ru:"Перезагрузите устройство" },
+        { icon:"⚙️", caption_uz:"Tarmoq sozlamalarini qayta kiriting", caption_ru:"Заново введите настройки сети" },
+      ],
+    },
+    "tv_6": {
+      device: "📺",
+      steps: [
+        { icon:"📡", caption_uz:"Antenna signalini tekshiring", caption_ru:"Проверьте сигнал антенны" },
+        { icon:"🔍", caption_uz:"Avtomatik qidiruvni ishga tushiring", caption_ru:"Запустите автопоиск" },
+        { icon:"⚙️", caption_uz:"Mintaqa sozlamasini tekshiring", caption_ru:"Проверьте настройку региона" },
+      ],
+    },
+    "tv_7": {
+      device: "📺",
+      steps: [
+        { icon:"🔋", caption_uz:"Batareyasini almashtiring", caption_ru:"Замените батарейки" },
+        { icon:"🧹", caption_uz:"Linzasini tozalang", caption_ru:"Протрите линзу" },
+        { icon:"🔄", caption_uz:"Qurilma bilan qayta ulang", caption_ru:"Заново привяжите к устройству" },
+      ],
+    },
+    "tv_8": {
+      device: "📺",
+      steps: [
+        { icon:"🔌", caption_uz:"Rozetka kuchlanishini tekshiring", caption_ru:"Проверьте напряжение в розетке" },
+        { icon:"🌡️", caption_uz:"Qizib ketmaganini tekshiring", caption_ru:"Проверьте перегрев" },
+        { icon:"🔄", caption_uz:"Dasturiy nosozlikni tekshirish uchun reset qiling", caption_ru:"Сделайте сброс настроек" },
+      ],
+    },
+    "tv_9": {
+      device: "📺",
+      steps: [
+        { icon:"🖥️", caption_uz:"Kabelni tekshiring", caption_ru:"Проверьте кабель" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni tekshiring", caption_ru:"Проверьте настройки" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "tv_10": {
+      device: "📺",
+      steps: [
+        { icon:"🧹", caption_uz:"Vaqtinchalik fayllarni tozalang", caption_ru:"Очистите временные файлы" },
+        { icon:"🌡️", caption_uz:"Ichidagi changni tekshiring", caption_ru:"Проверьте пыль внутри" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "tv_11": {
+      device: "📺",
+      steps: [
+        { icon:"🖥️", caption_uz:"Kabelni tekshiring", caption_ru:"Проверьте кабель" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni tekshiring", caption_ru:"Проверьте настройки" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "tv_12": {
+      device: "📺",
+      steps: [
+        { icon:"🖥️", caption_uz:"Kabelni tekshiring", caption_ru:"Проверьте кабель" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni tekshiring", caption_ru:"Проверьте настройки" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "tv_13": {
+      device: "📺",
+      steps: [
+        { icon:"🖥️", caption_uz:"Kabelni tekshiring", caption_ru:"Проверьте кабель" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni tekshiring", caption_ru:"Проверьте настройки" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "kond_0": {
+      device: "❄️",
+      steps: [
+        { icon:"💧", caption_uz:"Shlanga ulanishini tekshiring", caption_ru:"Проверьте соединение шланга" },
+        { icon:"🔧", caption_uz:"Filtr / klapanni ko'zdan kechiring", caption_ru:"Осмотрите фильтр / клапан" },
+        { icon:"🪣", caption_uz:"Drenaj tizimini tozalang", caption_ru:"Прочистите дренажную систему" },
+      ],
+    },
+    "kond_1": {
+      device: "❄️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🧊", caption_uz:"Freon darajasini tekshiring", caption_ru:"Проверьте уровень фреона" },
+        { icon:"🌀", caption_uz:"Kompressor ovoziga quloq soling", caption_ru:"Прислушайтесь к компрессору" },
+      ],
+    },
+    "kond_2": {
+      device: "❄️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kontaktor / kabelni tekshiring", caption_ru:"Проверьте контактор / кабель" },
+        { icon:"🌀", caption_uz:"Ventilyator aylanishini tekshiring", caption_ru:"Проверьте вращение вентилятора" },
+        { icon:"⚡", caption_uz:"Kondensatorni tekshiring", caption_ru:"Проверьте конденсатор" },
+      ],
+    },
+    "kond_3": {
+      device: "❄️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🧯", caption_uz:"Saqlagich / tugmani tekshiring", caption_ru:"Проверьте предохранитель/кнопку" },
+      ],
+    },
+    "kond_4": {
+      device: "❄️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🔥", caption_uz:"Isitish elementini ko'zdan kechiring", caption_ru:"Осмотрите нагревательный элемент" },
+        { icon:"⏱️", caption_uz:"Rejim / vaqt sozlamasini tekshiring", caption_ru:"Проверьте режим / таймер" },
+      ],
+    },
+    "kond_6": {
+      device: "❄️",
+      steps: [
+        { icon:"🧹", caption_uz:"Filtrni tozalang", caption_ru:"Прочистите фильтр" },
+        { icon:"💧", caption_uz:"Drenaj tizimini tekshiring", caption_ru:"Проверьте дренажную систему" },
+        { icon:"🦠", caption_uz:"Ichki blokni dezinfeksiya qiling", caption_ru:"Продезинфицируйте внутренний блок" },
+      ],
+    },
+    "kond_7": {
+      device: "❄️",
+      steps: [
+        { icon:"👂", caption_uz:"Ovoz manbaini aniqlang", caption_ru:"Определите источник звука" },
+        { icon:"🔩", caption_uz:"Mahkamlovchi qismlarni tekshiring", caption_ru:"Проверьте крепёжные детали" },
+        { icon:"⚙️", caption_uz:"Podshipnik / motorni ko'zdan kechiring", caption_ru:"Осмотрите подшипник / мотор" },
+      ],
+    },
+    "kond_8": {
+      device: "❄️",
+      steps: [
+        { icon:"🔌", caption_uz:"Rozetka kuchlanishini tekshiring", caption_ru:"Проверьте напряжение в розетке" },
+        { icon:"🌡️", caption_uz:"Qizib ketmaganini tekshiring", caption_ru:"Проверьте перегрев" },
+        { icon:"🔄", caption_uz:"Dasturiy nosozlikni tekshirish uchun reset qiling", caption_ru:"Сделайте сброс настроек" },
+      ],
+    },
+    "kond_9": {
+      device: "❄️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🧊", caption_uz:"Freon darajasini tekshiring", caption_ru:"Проверьте уровень фреона" },
+        { icon:"🌀", caption_uz:"Kompressor ovoziga quloq soling", caption_ru:"Прислушайтесь к компрессору" },
+      ],
+    },
+    "kond_10": {
+      device: "❄️",
+      steps: [
+        { icon:"🔋", caption_uz:"Batareyasini almashtiring", caption_ru:"Замените батарейки" },
+        { icon:"🧹", caption_uz:"Linzasini tozalang", caption_ru:"Протрите линзу" },
+        { icon:"🔄", caption_uz:"Qurilma bilan qayta ulang", caption_ru:"Заново привяжите к устройству" },
+      ],
+    },
+    "kond_11": {
+      device: "❄️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🧯", caption_uz:"Saqlagich / tugmani tekshiring", caption_ru:"Проверьте предохранитель/кнопку" },
+      ],
+    },
+    "kond_5": {
+      device: "❄️",
+      steps: [
+        { icon:"⚙️", caption_uz:"Rejimni tanlang", caption_ru:"Выберите режим" },
+        { icon:"🌡️", caption_uz:"Haroratni sozlang", caption_ru:"Настройте температуру" },
+        { icon:"💨", caption_uz:"Ventilyator tezligini tanlang", caption_ru:"Выберите скорость вентилятора" },
+      ],
+    },
+    "xolod_0": {
+      device: "🧊",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🧊", caption_uz:"Freon darajasini tekshiring", caption_ru:"Проверьте уровень фреона" },
+        { icon:"🌀", caption_uz:"Kompressor ovoziga quloq soling", caption_ru:"Прислушайтесь к компрессору" },
+      ],
+    },
+    "xolod_1": {
+      device: "🧊",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🧊", caption_uz:"Freon darajasini tekshiring", caption_ru:"Проверьте уровень фреона" },
+        { icon:"🌀", caption_uz:"Kompressor ovoziga quloq soling", caption_ru:"Прислушайтесь к компрессору" },
+      ],
+    },
+    "xolod_2": {
+      device: "🧊",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🧊", caption_uz:"Freon darajasini tekshiring", caption_ru:"Проверьте уровень фреона" },
+        { icon:"🌀", caption_uz:"Kompressor ovoziga quloq soling", caption_ru:"Прислушайтесь к компрессору" },
+      ],
+    },
+    "xolod_3": {
+      device: "🧊",
+      steps: [
+        { icon:"💧", caption_uz:"Shlanga ulanishini tekshiring", caption_ru:"Проверьте соединение шланга" },
+        { icon:"🔧", caption_uz:"Filtr / klapanni ko'zdan kechiring", caption_ru:"Осмотрите фильтр / клапан" },
+        { icon:"🪣", caption_uz:"Drenaj tizimini tozalang", caption_ru:"Прочистите дренажную систему" },
+      ],
+    },
+    "xolod_4": {
+      device: "🧊",
+      steps: [
+        { icon:"🔌", caption_uz:"Elektr ta'minotini tekshiring", caption_ru:"Проверьте электропитание" },
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🌀", caption_uz:"Kompressor relesini tekshiring", caption_ru:"Проверьте реле компрессора" },
+      ],
+    },
+    "xolod_5": {
+      device: "🧊",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🧊", caption_uz:"Freon darajasini tekshiring", caption_ru:"Проверьте уровень фреона" },
+        { icon:"🌀", caption_uz:"Kompressor ovoziga quloq soling", caption_ru:"Прислушайтесь к компрессору" },
+      ],
+    },
+    "xolod_6": {
+      device: "🧊",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🧊", caption_uz:"Freon darajasini tekshiring", caption_ru:"Проверьте уровень фреона" },
+        { icon:"🌀", caption_uz:"Kompressor ovoziga quloq soling", caption_ru:"Прислушайтесь к компрессору" },
+      ],
+    },
+    "kir_0": {
+      device: "🫧",
+      steps: [
+        { icon:"🚰", caption_uz:"Suv kranini tekshiring", caption_ru:"Проверьте кран подачи воды" },
+        { icon:"🧵", caption_uz:"Filtr to'rini tozalang", caption_ru:"Прочистите сетку фильтра" },
+        { icon:"🔌", caption_uz:"Klapan elektromagnitini tekshiring", caption_ru:"Проверьте электромагнитный клапан" },
+      ],
+    },
+    "kir_1": {
+      device: "🫧",
+      steps: [
+        { icon:"🚰", caption_uz:"Suv kranini tekshiring", caption_ru:"Проверьте кран подачи воды" },
+        { icon:"🧵", caption_uz:"Filtr to'rini tozalang", caption_ru:"Прочистите сетку фильтра" },
+        { icon:"🔌", caption_uz:"Klapan elektromagnitini tekshiring", caption_ru:"Проверьте электромагнитный клапан" },
+      ],
+    },
+    "kir_2": {
+      device: "🫧",
+      steps: [
+        { icon:"🔒", caption_uz:"Qulfni tekshiring", caption_ru:"Проверьте замок" },
+        { icon:"🔌", caption_uz:"Elektr ta'minotini tekshiring", caption_ru:"Проверьте электропитание" },
+        { icon:"⏳", caption_uz:"Dastur tugashini kuting", caption_ru:"Дождитесь окончания программы" },
+      ],
+    },
+    "kir_3": {
+      device: "🫧",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🔥", caption_uz:"Isitish elementini ko'zdan kechiring", caption_ru:"Осмотрите нагревательный элемент" },
+        { icon:"⏱️", caption_uz:"Rejim / vaqt sozlamasini tekshiring", caption_ru:"Проверьте режим / таймер" },
+      ],
+    },
+    "kir_4": {
+      device: "🫧",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🧯", caption_uz:"Saqlagich / tugmani tekshiring", caption_ru:"Проверьте предохранитель/кнопку" },
+      ],
+    },
+    "suv_0": {
+      device: "💧",
+      steps: [
+        { icon:"💧", caption_uz:"Shlanga ulanishini tekshiring", caption_ru:"Проверьте соединение шланга" },
+        { icon:"🔧", caption_uz:"Filtr / klapanni ko'zdan kechiring", caption_ru:"Осмотрите фильтр / клапан" },
+        { icon:"🪣", caption_uz:"Drenaj tizimini tozalang", caption_ru:"Прочистите дренажную систему" },
+      ],
+    },
+    "suv_1": {
+      device: "💧",
+      steps: [
+        { icon:"🚰", caption_uz:"Suv kranini tekshiring", caption_ru:"Проверьте кран подачи воды" },
+        { icon:"🧵", caption_uz:"Filtr to'rini tozalang", caption_ru:"Прочистите сетку фильтра" },
+        { icon:"🔌", caption_uz:"Klapan elektromagnitini tekshiring", caption_ru:"Проверьте электромагнитный клапан" },
+      ],
+    },
+    "komp_0": {
+      device: "🖥️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🧯", caption_uz:"Saqlagich / tugmani tekshiring", caption_ru:"Проверьте предохранитель/кнопку" },
+      ],
+    },
+    "komp_1": {
+      device: "🖥️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🔥", caption_uz:"Isitish elementini ko'zdan kechiring", caption_ru:"Осмотрите нагревательный элемент" },
+        { icon:"⏱️", caption_uz:"Rejim / vaqt sozlamasini tekshiring", caption_ru:"Проверьте режим / таймер" },
+      ],
+    },
+    "komp_2": {
+      device: "🖥️",
+      steps: [
+        { icon:"🧹", caption_uz:"Vaqtinchalik fayllarni tozalang", caption_ru:"Очистите временные файлы" },
+        { icon:"🌡️", caption_uz:"Ichidagi changni tekshiring", caption_ru:"Проверьте пыль внутри" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "dux_0": {
+      device: "♨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🧯", caption_uz:"Saqlagich / tugmani tekshiring", caption_ru:"Проверьте предохранитель/кнопку" },
+      ],
+    },
+    "dux_1": {
+      device: "♨️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🔥", caption_uz:"Isitish elementini ko'zdan kechiring", caption_ru:"Осмотрите нагревательный элемент" },
+        { icon:"⏱️", caption_uz:"Rejim / vaqt sozlamasini tekshiring", caption_ru:"Проверьте режим / таймер" },
+      ],
+    },
+    "dux_2": {
+      device: "♨️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🔥", caption_uz:"Isitish elementini ko'zdan kechiring", caption_ru:"Осмотрите нагревательный элемент" },
+        { icon:"⏱️", caption_uz:"Rejim / vaqt sozlamasini tekshiring", caption_ru:"Проверьте режим / таймер" },
+      ],
+    },
+    "dux_3": {
+      device: "♨️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🔥", caption_uz:"Isitish elementini ko'zdan kechiring", caption_ru:"Осмотрите нагревательный элемент" },
+        { icon:"⏱️", caption_uz:"Rejim / vaqt sozlamasini tekshiring", caption_ru:"Проверьте режим / таймер" },
+      ],
+    },
+    "mikro_0": {
+      device: "📡",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🔥", caption_uz:"Isitish elementini ko'zdan kechiring", caption_ru:"Осмотрите нагревательный элемент" },
+        { icon:"⏱️", caption_uz:"Rejim / vaqt sozlamasini tekshiring", caption_ru:"Проверьте режим / таймер" },
+      ],
+    },
+    "mikro_1": {
+      device: "📡",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🧯", caption_uz:"Saqlagich / tugmani tekshiring", caption_ru:"Проверьте предохранитель/кнопку" },
+      ],
+    },
+    "mikro_2": {
+      device: "📡",
+      steps: [
+        { icon:"👂", caption_uz:"Ovoz manbaini aniqlang", caption_ru:"Определите источник звука" },
+        { icon:"🔩", caption_uz:"Mahkamlovchi qismlarni tekshiring", caption_ru:"Проверьте крепёжные детали" },
+        { icon:"⚙️", caption_uz:"Podshipnik / motorni ko'zdan kechiring", caption_ru:"Осмотрите подшипник / мотор" },
+      ],
+    },
+    "mikro_3": {
+      device: "📡",
+      steps: [
+        { icon:"⚙️", caption_uz:"Aylantirgich moslamasini tekshiring", caption_ru:"Проверьте вращающий механизм" },
+        { icon:"🔧", caption_uz:"Tishli g'ildirakchani tekshiring", caption_ru:"Проверьте шестерёнку" },
+        { icon:"🍽️", caption_uz:"Tarelka joylashuvini tekshiring", caption_ru:"Проверьте установку тарелки" },
+      ],
+    },
+    "piles_0": {
+      device: "🌀",
+      steps: [
+        { icon:"🧹", caption_uz:"Filtr / g'altaklarni tozalang", caption_ru:"Прочистите фильтр / ролики" },
+        { icon:"🔧", caption_uz:"Mahkamlanishini tekshiring", caption_ru:"Проверьте крепление" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезапустите" },
+      ],
+    },
+    "piles_1": {
+      device: "🌀",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🧯", caption_uz:"Saqlagich / tugmani tekshiring", caption_ru:"Проверьте предохранитель/кнопку" },
+      ],
+    },
+    "dazmol_0": {
+      device: "👕",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🧯", caption_uz:"Saqlagich / tugmani tekshiring", caption_ru:"Проверьте предохранитель/кнопку" },
+      ],
+    },
+    "dazmol_1": {
+      device: "👕",
+      steps: [
+        { icon:"🌡️", caption_uz:"Termostatni tekshiring", caption_ru:"Проверьте термостат" },
+        { icon:"🔥", caption_uz:"Isitish elementini ko'zdan kechiring", caption_ru:"Осмотрите нагревательный элемент" },
+        { icon:"⏱️", caption_uz:"Rejim / vaqt sozlamasini tekshiring", caption_ru:"Проверьте режим / таймер" },
+      ],
+    },
+    "dazmol_2": {
+      device: "👕",
+      steps: [
+        { icon:"🧹", caption_uz:"Filtr / g'altaklarni tozalang", caption_ru:"Прочистите фильтр / ролики" },
+        { icon:"🔧", caption_uz:"Mahkamlanishini tekshiring", caption_ru:"Проверьте крепление" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезапустите" },
+      ],
+    },
+    "dazmol_3": {
+      device: "👕",
+      steps: [
+        { icon:"🧹", caption_uz:"Filtr / g'altaklarni tozalang", caption_ru:"Прочистите фильтр / ролики" },
+        { icon:"🔧", caption_uz:"Mahkamlanishini tekshiring", caption_ru:"Проверьте крепление" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезапустите" },
+      ],
+    },
+    "vent": {
+      device: "💨",
+      steps: [
+        { icon:"🔍", caption_uz:"Tashqi ko'rinishni tekshiring", caption_ru:"Осмотрите внешний вид" },
+        { icon:"🔌", caption_uz:"Ulanishlarni tekshiring", caption_ru:"Проверьте соединения" },
+        { icon:"🛠️", caption_uz:"Ustaga murojaat qiling", caption_ru:"Обратитесь к мастеру" },
+      ],
+    },
+    "stab": {
+      device: "⚡",
+      steps: [
+        { icon:"🔍", caption_uz:"Tashqi ko'rinishni tekshiring", caption_ru:"Осмотрите внешний вид" },
+        { icon:"🔌", caption_uz:"Ulanishlarni tekshiring", caption_ru:"Проверьте соединения" },
+        { icon:"🛠️", caption_uz:"Ustaga murojaat qiling", caption_ru:"Обратитесь к мастеру" },
+      ],
+    },
+    "ups": {
+      device: "🔌",
+      steps: [
+        { icon:"🔍", caption_uz:"Tashqi ko'rinishni tekshiring", caption_ru:"Осмотрите внешний вид" },
+        { icon:"🔌", caption_uz:"Ulanishlarni tekshiring", caption_ru:"Проверьте соединения" },
+        { icon:"🛠️", caption_uz:"Ustaga murojaat qiling", caption_ru:"Обратитесь к мастеру" },
+      ],
+    },
+    "printer_canon_0": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_canon_1": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_canon_2": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_canon_3": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Qisilgan qog'ozni oling", caption_ru:"Удалите застрявшую бумагу" },
+        { icon:"🧹", caption_uz:"G'altaklarni tozalang", caption_ru:"Прочистите ролики" },
+        { icon:"📥", caption_uz:"Qog'ozni to'g'ri joylang", caption_ru:"Правильно уложите бумагу" },
+      ],
+    },
+    "printer_canon_4": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabelni / ulanishni tekshiring", caption_ru:"Проверьте кабель / подключение" },
+        { icon:"⚙️", caption_uz:"Drayver / sozlamani tekshiring", caption_ru:"Проверьте драйвер / настройку" },
+        { icon:"🔄", caption_uz:"Qayta ulang", caption_ru:"Переподключите" },
+      ],
+    },
+    "printer_canon_5": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_canon_6": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🧯", caption_uz:"Saqlagich / tugmani tekshiring", caption_ru:"Проверьте предохранитель/кнопку" },
+      ],
+    },
+    "printer_canon_7": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔧", caption_uz:"Karetka yo'lini tozalang", caption_ru:"Прочистите направляющую каретки" },
+        { icon:"🛢️", caption_uz:"Moylash kerakligini tekshiring", caption_ru:"Проверьте необходимость смазки" },
+        { icon:"🔌", caption_uz:"Motor ulanishini tekshiring", caption_ru:"Проверьте подключение мотора" },
+      ],
+    },
+    "printer_canon_8": {
+      device: "🖨️",
+      steps: [
+        { icon:"🧹", caption_uz:"Vaqtinchalik fayllarni tozalang", caption_ru:"Очистите временные файлы" },
+        { icon:"🌡️", caption_uz:"Ichidagi changni tekshiring", caption_ru:"Проверьте пыль внутри" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "printer_canon_9": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"USB / tarmoq ulanishini tekshiring", caption_ru:"Проверьте USB / сеть" },
+        { icon:"🧼", caption_uz:"Skaner oynasini tozalang", caption_ru:"Протрите стекло сканера" },
+        { icon:"🔄", caption_uz:"Drayverni qayta o'rnating", caption_ru:"Переустановите драйвер" },
+      ],
+    },
+    "printer_hp_0": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_hp_1": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_hp_2": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_hp_3": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Qisilgan qog'ozni oling", caption_ru:"Удалите застрявшую бумагу" },
+        { icon:"🧹", caption_uz:"G'altaklarni tozalang", caption_ru:"Прочистите ролики" },
+        { icon:"📥", caption_uz:"Qog'ozni to'g'ri joylang", caption_ru:"Правильно уложите бумагу" },
+      ],
+    },
+    "printer_hp_4": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabelni / ulanishni tekshiring", caption_ru:"Проверьте кабель / подключение" },
+        { icon:"⚙️", caption_uz:"Drayver / sozlamani tekshiring", caption_ru:"Проверьте драйвер / настройку" },
+        { icon:"🔄", caption_uz:"Qayta ulang", caption_ru:"Переподключите" },
+      ],
+    },
+    "printer_hp_5": {
+      device: "🖨️",
+      steps: [
+        { icon:"💡", caption_uz:"Xatolik kodiga qarang", caption_ru:"Посмотрите код ошибки" },
+        { icon:"📖", caption_uz:"Qo'llanmadan kodni toping", caption_ru:"Найдите код в инструкции" },
+        { icon:"🔧", caption_uz:"Ko'rsatilgan qismni tekshiring", caption_ru:"Проверьте указанный узел" },
+      ],
+    },
+    "printer_hp_6": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_hp_7": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖥️", caption_uz:"Print navbatini tozalang", caption_ru:"Очистите очередь печати" },
+        { icon:"🔄", caption_uz:"Spooler xizmatini qayta ishga tushiring", caption_ru:"Перезапустите службу печати" },
+        { icon:"🔌", caption_uz:"Kabel / tarmoqni tekshiring", caption_ru:"Проверьте кабель / сеть" },
+      ],
+    },
+    "printer_hp_8": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Duplex modulini tekshiring", caption_ru:"Проверьте модуль дуплекса" },
+        { icon:"🔧", caption_uz:"To'g'ri o'rnatilganini tekshiring", caption_ru:"Проверьте правильность установки" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni qayta tekshiring", caption_ru:"Перепроверьте настройки" },
+      ],
+    },
+    "printer_hp_9": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"USB / tarmoq ulanishini tekshiring", caption_ru:"Проверьте USB / сеть" },
+        { icon:"🧼", caption_uz:"Skaner oynasini tozalang", caption_ru:"Протрите стекло сканера" },
+        { icon:"🔄", caption_uz:"Drayverni qayta o'rnating", caption_ru:"Переустановите драйвер" },
+      ],
+    },
+    "printer_epson_0": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_epson_1": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_epson_2": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_epson_3": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Qisilgan qog'ozni oling", caption_ru:"Удалите застрявшую бумагу" },
+        { icon:"🧹", caption_uz:"G'altaklarni tozalang", caption_ru:"Прочистите ролики" },
+        { icon:"📥", caption_uz:"Qog'ozni to'g'ri joylang", caption_ru:"Правильно уложите бумагу" },
+      ],
+    },
+    "printer_epson_4": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔧", caption_uz:"Karetka yo'lini tozalang", caption_ru:"Прочистите направляющую каретки" },
+        { icon:"🛢️", caption_uz:"Moylash kerakligini tekshiring", caption_ru:"Проверьте необходимость смазки" },
+        { icon:"🔌", caption_uz:"Motor ulanishini tekshiring", caption_ru:"Проверьте подключение мотора" },
+      ],
+    },
+    "printer_epson_5": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabelni / ulanishni tekshiring", caption_ru:"Проверьте кабель / подключение" },
+        { icon:"⚙️", caption_uz:"Drayver / sozlamani tekshiring", caption_ru:"Проверьте драйвер / настройку" },
+        { icon:"🔄", caption_uz:"Qayta ulang", caption_ru:"Переподключите" },
+      ],
+    },
+    "printer_epson_6": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_epson_7": {
+      device: "🖨️",
+      steps: [
+        { icon:"🧹", caption_uz:"Vaqtinchalik fayllarni tozalang", caption_ru:"Очистите временные файлы" },
+        { icon:"🌡️", caption_uz:"Ichidagi changni tekshiring", caption_ru:"Проверьте пыль внутри" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "printer_epson_8": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabel / rozetkani tekshiring", caption_ru:"Проверьте кабель / розетку" },
+        { icon:"💡", caption_uz:"Indikator chirog'iga qarang", caption_ru:"Посмотрите на индикатор" },
+        { icon:"🧯", caption_uz:"Saqlagich / tugmani tekshiring", caption_ru:"Проверьте предохранитель/кнопку" },
+      ],
+    },
+    "printer_epson_9": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_brother_0": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_brother_1": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_brother_2": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_brother_3": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Qisilgan qog'ozni oling", caption_ru:"Удалите застрявшую бумагу" },
+        { icon:"🧹", caption_uz:"G'altaklarni tozalang", caption_ru:"Прочистите ролики" },
+        { icon:"📥", caption_uz:"Qog'ozni to'g'ri joylang", caption_ru:"Правильно уложите бумагу" },
+      ],
+    },
+    "printer_brother_4": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabelni / ulanishni tekshiring", caption_ru:"Проверьте кабель / подключение" },
+        { icon:"⚙️", caption_uz:"Drayver / sozlamani tekshiring", caption_ru:"Проверьте драйвер / настройку" },
+        { icon:"🔄", caption_uz:"Qayta ulang", caption_ru:"Переподключите" },
+      ],
+    },
+    "printer_brother_5": {
+      device: "🖨️",
+      steps: [
+        { icon:"🧹", caption_uz:"Vaqtinchalik fayllarni tozalang", caption_ru:"Очистите временные файлы" },
+        { icon:"🌡️", caption_uz:"Ichidagi changni tekshiring", caption_ru:"Проверьте пыль внутри" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "printer_brother_6": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_brother_7": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_brother_8": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Qurilmani reset qiling", caption_ru:"Сделайте сброс устройства" },
+        { icon:"🔋", caption_uz:"Quvvatni tekshiring", caption_ru:"Проверьте питание" },
+        { icon:"🛠️", caption_uz:"Platani tekshirish uchun ustaga murojaat qiling", caption_ru:"Обратитесь к мастеру для проверки платы" },
+      ],
+    },
+    "printer_brother_9": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"USB / tarmoq ulanishini tekshiring", caption_ru:"Проверьте USB / сеть" },
+        { icon:"🧼", caption_uz:"Skaner oynasini tozalang", caption_ru:"Протрите стекло сканера" },
+        { icon:"🔄", caption_uz:"Drayverni qayta o'rnating", caption_ru:"Переустановите драйвер" },
+      ],
+    },
+    "printer_hp_laser_0": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_hp_laser_1": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_hp_laser_2": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_hp_laser_3": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Qisilgan qog'ozni oling", caption_ru:"Удалите застрявшую бумагу" },
+        { icon:"🧹", caption_uz:"G'altaklarni tozalang", caption_ru:"Прочистите ролики" },
+        { icon:"📥", caption_uz:"Qog'ozni to'g'ri joylang", caption_ru:"Правильно уложите бумагу" },
+      ],
+    },
+    "printer_hp_laser_4": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Qisilgan qog'ozni oling", caption_ru:"Удалите застрявшую бумагу" },
+        { icon:"🧹", caption_uz:"G'altaklarni tozalang", caption_ru:"Прочистите ролики" },
+        { icon:"📥", caption_uz:"Qog'ozni to'g'ri joylang", caption_ru:"Правильно уложите бумагу" },
+      ],
+    },
+    "printer_hp_laser_5": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabelni / ulanishni tekshiring", caption_ru:"Проверьте кабель / подключение" },
+        { icon:"⚙️", caption_uz:"Drayver / sozlamani tekshiring", caption_ru:"Проверьте драйвер / настройку" },
+        { icon:"🔄", caption_uz:"Qayta ulang", caption_ru:"Переподключите" },
+      ],
+    },
+    "printer_hp_laser_6": {
+      device: "🖨️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Fuser haroratini tekshiring", caption_ru:"Проверьте температуру печки" },
+        { icon:"🔌", caption_uz:"Ulanishni tekshiring", caption_ru:"Проверьте соединение" },
+        { icon:"⏳", caption_uz:"Sovishini kuting", caption_ru:"Дайте остыть" },
+      ],
+    },
+    "printer_hp_laser_7": {
+      device: "🖨️",
+      steps: [
+        { icon:"🥁", caption_uz:"Drum (baraban) holatini tekshiring", caption_ru:"Проверьте состояние барабана" },
+        { icon:"🧼", caption_uz:"Ichini tozalang", caption_ru:"Прочистите внутри" },
+        { icon:"🔄", caption_uz:"Drum kartrijini almashtiring", caption_ru:"Замените драм-картридж" },
+      ],
+    },
+    "printer_hp_laser_8": {
+      device: "🖨️",
+      steps: [
+        { icon:"🧹", caption_uz:"Vaqtinchalik fayllarni tozalang", caption_ru:"Очистите временные файлы" },
+        { icon:"🌡️", caption_uz:"Ichidagi changni tekshiring", caption_ru:"Проверьте пыль внутри" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "printer_hp_laser_9": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Duplex modulini tekshiring", caption_ru:"Проверьте модуль дуплекса" },
+        { icon:"🔧", caption_uz:"To'g'ri o'rnatilganini tekshiring", caption_ru:"Проверьте правильность установки" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni qayta tekshiring", caption_ru:"Перепроверьте настройки" },
+      ],
+    },
+    "printer_canon_laser_0": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_canon_laser_1": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_canon_laser_2": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_canon_laser_3": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Qisilgan qog'ozni oling", caption_ru:"Удалите застрявшую бумагу" },
+        { icon:"🧹", caption_uz:"G'altaklarni tozalang", caption_ru:"Прочистите ролики" },
+        { icon:"📥", caption_uz:"Qog'ozni to'g'ri joylang", caption_ru:"Правильно уложите бумагу" },
+      ],
+    },
+    "printer_canon_laser_4": {
+      device: "🖨️",
+      steps: [
+        { icon:"💡", caption_uz:"Xatolik kodiga qarang", caption_ru:"Посмотрите код ошибки" },
+        { icon:"📖", caption_uz:"Qo'llanmadan kodni toping", caption_ru:"Найдите код в инструкции" },
+        { icon:"🔧", caption_uz:"Ko'rsatilgan qismni tekshiring", caption_ru:"Проверьте указанный узел" },
+      ],
+    },
+    "printer_canon_laser_5": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabelni / ulanishni tekshiring", caption_ru:"Проверьте кабель / подключение" },
+        { icon:"⚙️", caption_uz:"Drayver / sozlamani tekshiring", caption_ru:"Проверьте драйвер / настройку" },
+        { icon:"🔄", caption_uz:"Qayta ulang", caption_ru:"Переподключите" },
+      ],
+    },
+    "printer_canon_laser_6": {
+      device: "🖨️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Fuser haroratini tekshiring", caption_ru:"Проверьте температуру печки" },
+        { icon:"🔌", caption_uz:"Ulanishni tekshiring", caption_ru:"Проверьте соединение" },
+        { icon:"⏳", caption_uz:"Sovishini kuting", caption_ru:"Дайте остыть" },
+      ],
+    },
+    "printer_canon_laser_7": {
+      device: "🖨️",
+      steps: [
+        { icon:"🥁", caption_uz:"Drum (baraban) holatini tekshiring", caption_ru:"Проверьте состояние барабана" },
+        { icon:"🧼", caption_uz:"Ichini tozalang", caption_ru:"Прочистите внутри" },
+        { icon:"🔄", caption_uz:"Drum kartrijini almashtiring", caption_ru:"Замените драм-картридж" },
+      ],
+    },
+    "printer_canon_laser_8": {
+      device: "🖨️",
+      steps: [
+        { icon:"🧹", caption_uz:"Vaqtinchalik fayllarni tozalang", caption_ru:"Очистите временные файлы" },
+        { icon:"🌡️", caption_uz:"Ichidagi changni tekshiring", caption_ru:"Проверьте пыль внутри" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "printer_canon_laser_9": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Duplex modulini tekshiring", caption_ru:"Проверьте модуль дуплекса" },
+        { icon:"🔧", caption_uz:"To'g'ri o'rnatilganini tekshiring", caption_ru:"Проверьте правильность установки" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni qayta tekshiring", caption_ru:"Перепроверьте настройки" },
+      ],
+    },
+    "printer_samsung_laser_0": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_samsung_laser_1": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_samsung_laser_2": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_samsung_laser_3": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Qisilgan qog'ozni oling", caption_ru:"Удалите застрявшую бумагу" },
+        { icon:"🧹", caption_uz:"G'altaklarni tozalang", caption_ru:"Прочистите ролики" },
+        { icon:"📥", caption_uz:"Qog'ozni to'g'ri joylang", caption_ru:"Правильно уложите бумагу" },
+      ],
+    },
+    "printer_samsung_laser_4": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_samsung_laser_5": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabelni / ulanishni tekshiring", caption_ru:"Проверьте кабель / подключение" },
+        { icon:"⚙️", caption_uz:"Drayver / sozlamani tekshiring", caption_ru:"Проверьте драйвер / настройку" },
+        { icon:"🔄", caption_uz:"Qayta ulang", caption_ru:"Переподключите" },
+      ],
+    },
+    "printer_samsung_laser_6": {
+      device: "🖨️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Fuser haroratini tekshiring", caption_ru:"Проверьте температуру печки" },
+        { icon:"🔌", caption_uz:"Ulanishni tekshiring", caption_ru:"Проверьте соединение" },
+        { icon:"⏳", caption_uz:"Sovishini kuting", caption_ru:"Дайте остыть" },
+      ],
+    },
+    "printer_samsung_laser_7": {
+      device: "🖨️",
+      steps: [
+        { icon:"🥁", caption_uz:"Drum (baraban) holatini tekshiring", caption_ru:"Проверьте состояние барабана" },
+        { icon:"🧼", caption_uz:"Ichini tozalang", caption_ru:"Прочистите внутри" },
+        { icon:"🔄", caption_uz:"Drum kartrijini almashtiring", caption_ru:"Замените драм-картридж" },
+      ],
+    },
+    "printer_samsung_laser_8": {
+      device: "🖨️",
+      steps: [
+        { icon:"🧹", caption_uz:"Vaqtinchalik fayllarni tozalang", caption_ru:"Очистите временные файлы" },
+        { icon:"🌡️", caption_uz:"Ichidagi changni tekshiring", caption_ru:"Проверьте пыль внутри" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "printer_samsung_laser_9": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Duplex modulini tekshiring", caption_ru:"Проверьте модуль дуплекса" },
+        { icon:"🔧", caption_uz:"To'g'ri o'rnatilganini tekshiring", caption_ru:"Проверьте правильность установки" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni qayta tekshiring", caption_ru:"Перепроверьте настройки" },
+      ],
+    },
+    "printer_xerox_laser_0": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_xerox_laser_1": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrij / toner darajasini tekshiring", caption_ru:"Проверьте уровень картриджа / тонера" },
+        { icon:"🧼", caption_uz:"Bosh / valikni tozalang", caption_ru:"Прочистите головку / вал" },
+        { icon:"📄", caption_uz:"Sinov sahifasini chop eting", caption_ru:"Распечатайте тестовую страницу" },
+      ],
+    },
+    "printer_xerox_laser_2": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_xerox_laser_3": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Qisilgan qog'ozni oling", caption_ru:"Удалите застрявшую бумагу" },
+        { icon:"🧹", caption_uz:"G'altaklarni tozalang", caption_ru:"Прочистите ролики" },
+        { icon:"📥", caption_uz:"Qog'ozni to'g'ri joylang", caption_ru:"Правильно уложите бумагу" },
+      ],
+    },
+    "printer_xerox_laser_4": {
+      device: "🖨️",
+      steps: [
+        { icon:"🖨️", caption_uz:"Kartrijni chiqarib qayta o'rnating", caption_ru:"Извлеките и переустановите картридж" },
+        { icon:"🧼", caption_uz:"Kontaktlarini tozalang", caption_ru:"Прочистите контакты" },
+        { icon:"🔄", caption_uz:"Drayverni yangilang", caption_ru:"Обновите драйвер" },
+      ],
+    },
+    "printer_xerox_laser_5": {
+      device: "🖨️",
+      steps: [
+        { icon:"🔌", caption_uz:"Kabelni / ulanishni tekshiring", caption_ru:"Проверьте кабель / подключение" },
+        { icon:"⚙️", caption_uz:"Drayver / sozlamani tekshiring", caption_ru:"Проверьте драйвер / настройку" },
+        { icon:"🔄", caption_uz:"Qayta ulang", caption_ru:"Переподключите" },
+      ],
+    },
+    "printer_xerox_laser_6": {
+      device: "🖨️",
+      steps: [
+        { icon:"🌡️", caption_uz:"Fuser haroratini tekshiring", caption_ru:"Проверьте температуру печки" },
+        { icon:"🔌", caption_uz:"Ulanishni tekshiring", caption_ru:"Проверьте соединение" },
+        { icon:"⏳", caption_uz:"Sovishini kuting", caption_ru:"Дайте остыть" },
+      ],
+    },
+    "printer_xerox_laser_7": {
+      device: "🖨️",
+      steps: [
+        { icon:"🥁", caption_uz:"Drum (baraban) holatini tekshiring", caption_ru:"Проверьте состояние барабана" },
+        { icon:"🧼", caption_uz:"Ichini tozalang", caption_ru:"Прочистите внутри" },
+        { icon:"🔄", caption_uz:"Drum kartrijini almashtiring", caption_ru:"Замените драм-картридж" },
+      ],
+    },
+    "printer_xerox_laser_8": {
+      device: "🖨️",
+      steps: [
+        { icon:"🧹", caption_uz:"Vaqtinchalik fayllarni tozalang", caption_ru:"Очистите временные файлы" },
+        { icon:"🌡️", caption_uz:"Ichidagi changni tekshiring", caption_ru:"Проверьте пыль внутри" },
+        { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
+      ],
+    },
+    "printer_xerox_laser_9": {
+      device: "🖨️",
+      steps: [
+        { icon:"📄", caption_uz:"Duplex modulini tekshiring", caption_ru:"Проверьте модуль дуплекса" },
+        { icon:"🔧", caption_uz:"To'g'ri o'rnatilganini tekshiring", caption_ru:"Проверьте правильность установки" },
+        { icon:"⚙️", caption_uz:"Sozlamalarni qayta tekshiring", caption_ru:"Перепроверьте настройки" },
       ],
     },
   };
