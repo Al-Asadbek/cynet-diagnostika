@@ -185,6 +185,15 @@
       topishNoResults: "usta topilmadi. Boshqa hudud yoki xizmat tanlab ko'ring.",
       topishFound: function(n){ return n + " ta usta topildi"; },
       topishWrite: "Yozish",
+      complainBtn: "⚠️ Shikoyat",
+      complainTitle: "⚠️ Shikoyat qoldirish",
+      complainOn: function(name){ return "Usta: " + name; },
+      complainPh: "Shikoyatingizni batafsil yozing...",
+      complainSend: "Yuborish",
+      complainCancel: "Bekor qilish",
+      complainTooShort: "Shikoyat matni juda qisqa (kamida 5 belgi).",
+      complainSent: "✅ Shikoyatingiz qabul qilindi. Tez orada ko'rib chiqamiz.",
+      complainErr: "Yuborishda xatolik. Birozdan so'ng qayta urinib ko'ring.",
       topishNoInitData: "Bu bo'lim faqat Telegram ilovasi ichida ochilganda ishlaydi.",
       topishApiMissing: "Server ulanmagan. Admin bilan bog'laning.",
 
@@ -385,6 +394,15 @@
       topishNoResults: "мастер не найден. Попробуйте другой регион или услугу.",
       topishFound: function(n){ return "Найдено мастеров: " + n; },
       topishWrite: "Написать",
+      complainBtn: "⚠️ Жалоба",
+      complainTitle: "⚠️ Подать жалобу",
+      complainOn: function(name){ return "Мастер: " + name; },
+      complainPh: "Опишите вашу жалобу подробно...",
+      complainSend: "Отправить",
+      complainCancel: "Отмена",
+      complainTooShort: "Текст жалобы слишком короткий (минимум 5 символов).",
+      complainSent: "✅ Ваша жалоба принята. Мы скоро её рассмотрим.",
+      complainErr: "Ошибка отправки. Попробуйте немного позже.",
       topishNoInitData: "Этот раздел работает только внутри приложения Telegram.",
       topishApiMissing: "Сервер не подключён. Свяжитесь с администратором.",
 
@@ -868,9 +886,15 @@
             '<div class="mc-actions">' +
             '<a class="tel" href="tel:' + esc(m.telefon) + '">📞 ' + esc(m.telefon) + '</a>' +
             '<a class="tg" href="' + link + '" target="_blank">✈️ ' + t().topishWrite + '</a>' +
+            '<button class="mc-complain" data-tgid="' + esc(String(m.tg_id)) + '" data-ism="' + esc(m.ism || '') + '">' + t().complainBtn + '</button>' +
             '</div></div>';
         }).join('');
         box.innerHTML = header + '<div class="master-list">' + cards + '</div>';
+        Array.prototype.forEach.call(box.querySelectorAll('.mc-complain'), function(btn){
+          btn.addEventListener('click', function(){
+            openComplaintModal(btn.getAttribute('data-tgid'), btn.getAttribute('data-ism'));
+          });
+        });
       }).catch(function(){
         mainView.querySelector('#resultsBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
       });
@@ -889,6 +913,64 @@
     });
 
     doSearch();
+  }
+
+  // ---------- Shikoyat modali (usta kartochkasidan) ----------
+  function closeComplaintModal(){
+    var el = document.getElementById('complaintOverlay');
+    if (el) el.remove();
+  }
+
+  function openComplaintModal(ustaTgId, ustaIsm){
+    closeComplaintModal();
+    var overlay = document.createElement('div');
+    overlay.id = 'complaintOverlay';
+    overlay.className = 'complaint-overlay';
+    overlay.innerHTML =
+      '<div class="complaint-box">' +
+      '<div class="complaint-title">' + t().complainTitle + '</div>' +
+      (ustaIsm ? '<div class="complaint-on">' + esc(t().complainOn(ustaIsm)) + '</div>' : '') +
+      '<textarea id="complaintText" class="complaint-textarea" placeholder="' + esc(t().complainPh) + '"></textarea>' +
+      '<div id="complaintErr" class="complaint-err"></div>' +
+      '<div class="complaint-actions">' +
+      '<button class="btn-ghost" id="complaintCancelBtn">' + t().complainCancel + '</button>' +
+      '<button class="btn-primary" id="complaintSendBtn">' + t().complainSend + '</button>' +
+      '</div></div>';
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', function(e){ if (e.target === overlay) closeComplaintModal(); });
+    document.getElementById('complaintCancelBtn').addEventListener('click', closeComplaintModal);
+    document.getElementById('complaintSendBtn').addEventListener('click', function(){
+      var errBox = document.getElementById('complaintErr');
+      var matn = document.getElementById('complaintText').value.trim();
+      errBox.textContent = '';
+      if (matn.length < 5) {
+        errBox.textContent = t().complainTooShort;
+        return;
+      }
+      if (!getInitData() || !API_BASE) {
+        errBox.textContent = t().complainErr;
+        return;
+      }
+      var sendBtn = document.getElementById('complaintSendBtn');
+      sendBtn.disabled = true;
+      apiPost('/api/public/complaint/create', {
+        init_data: getInitData(), matn: matn, usta_tg_id: ustaTgId || null, usta_ism: ustaIsm || null
+      }).then(function(res){
+        if (res && res.data && res.data.ok) {
+          haptic('ok');
+          overlay.querySelector('.complaint-box').innerHTML =
+            '<div class="complaint-sent">' + t().complainSent + '</div>';
+          setTimeout(closeComplaintModal, 1600);
+        } else {
+          sendBtn.disabled = false;
+          errBox.textContent = t().complainErr;
+        }
+      }).catch(function(){
+        sendBtn.disabled = false;
+        errBox.textContent = t().complainErr;
+      });
+    });
   }
 
   // ================= BUYURTMA QOLDIRISH =================
@@ -3372,4 +3454,3 @@
 
   render();
 })();
-
