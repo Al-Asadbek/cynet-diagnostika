@@ -152,6 +152,15 @@
       profileStatsOverallRating: "Umumiy reyting",
       profileStatsNoData: "Hali yetarli ma'lumot yo'q — birinchi ishni yakunlaganingizdan so'ng bu yerda grafik paydo bo'ladi.",
       profileStatsNoRatingMonth: "baho yo'q",
+      profileStatsServiceHeader: "Xizmat turlari bo'yicha",
+      profileStatsRatingDistHeader: "Baholar taqsimoti",
+      profileStatsWeekdayHeader: "Hafta kunlari bo'yicha faollik",
+      profileStatsAvgResponse: "O'rtacha javob berish vaqti",
+      profileStatsComplaints: "Shikoyatlar soni",
+      profileStatsMinutesShort: "daqiqa",
+      profileStatsHoursShort: "soat",
+      profileStatsNoServiceData: "Hali xizmat turlari bo'yicha ma'lumot yo'q.",
+      profileStatsNoResponseData: "Hali hisoblash uchun yetarli ma'lumot yo'q.",
       prevPage: "⬅️ Oldingi",
       nextPage: "Keyingi ➡️",
 
@@ -369,6 +378,15 @@
       profileStatsOverallRating: "Общий рейтинг",
       profileStatsNoData: "Пока недостаточно данных — график появится после первого выполненного заказа.",
       profileStatsNoRatingMonth: "нет оценок",
+      profileStatsServiceHeader: "По видам услуг",
+      profileStatsRatingDistHeader: "Распределение оценок",
+      profileStatsWeekdayHeader: "Активность по дням недели",
+      profileStatsAvgResponse: "Среднее время отклика",
+      profileStatsComplaints: "Количество жалоб",
+      profileStatsMinutesShort: "мин.",
+      profileStatsHoursShort: "ч.",
+      profileStatsNoServiceData: "Пока нет данных по видам услуг.",
+      profileStatsNoResponseData: "Пока недостаточно данных для расчёта.",
       prevPage: "⬅️ Назад",
       nextPage: "Далее ➡️",
 
@@ -1304,12 +1322,21 @@
         var months = res.months || [];
         var hasAnyJobs = months.some(function(mo){ return mo.jobs > 0; });
 
+        var respTxt = t().profileStatsNoResponseData;
+        if (res.avg_response_minutes != null) {
+          respTxt = res.avg_response_minutes >= 60
+            ? (Math.round(res.avg_response_minutes / 6) / 10) + ' ' + t().profileStatsHoursShort
+            : res.avg_response_minutes + ' ' + t().profileStatsMinutesShort;
+        }
+
         var summary =
           '<div class="panel dashed">' +
           '<div class="summary-row"><span class="k">📋 ' + t().profileStatsTotalJobs + '</span><span class="v">' + (res.total_jobs || 0) + '</span></div>' +
           '<div class="summary-row"><span class="k">⭐ ' + t().profileStatsOverallRating + '</span><span class="v">' +
             (res.overall_avg_rating ? ('⭐ ' + res.overall_avg_rating + ' (' + res.overall_rating_count + ')') : t().profileNoRating) +
           '</span></div>' +
+          '<div class="summary-row"><span class="k">⏱ ' + t().profileStatsAvgResponse + '</span><span class="v">' + respTxt + '</span></div>' +
+          '<div class="summary-row"><span class="k">⚠️ ' + t().profileStatsComplaints + '</span><span class="v">' + (res.complaints_count || 0) + '</span></div>' +
           '</div>';
 
         if (!hasAnyJobs) {
@@ -1317,14 +1344,33 @@
           return;
         }
 
+        var serviceRows = res.service_breakdown || [];
+        var ratingDist = res.rating_distribution || [];
+        var weekday = res.weekday_activity || [];
+
         box.innerHTML = summary +
           '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsJobsHeader + '</div>' +
           '<div id="statsJobsChart"></div></div>' +
           '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsRatingHeader + '</div>' +
-          '<div id="statsRatingChart"></div></div>';
+          '<div id="statsRatingChart"></div></div>' +
+          '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsServiceHeader + '</div>' +
+          '<div id="statsServiceChart"></div></div>' +
+          '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsRatingDistHeader + '</div>' +
+          '<div id="statsRatingDistChart"></div></div>' +
+          '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsWeekdayHeader + '</div>' +
+          '<div id="statsWeekdayChart"></div></div>';
 
         box.querySelector('#statsJobsChart').innerHTML = buildStatsBarChart(months);
         box.querySelector('#statsRatingChart').innerHTML = buildStatsRatingChart(months);
+        box.querySelector('#statsServiceChart').innerHTML = serviceRows.length
+          ? buildStatsHBarChart(serviceRows.map(function(s){ return { label: s.xizmat, count: s.count }; }))
+          : '<div class="empty">' + t().profileStatsNoServiceData + '</div>';
+        box.querySelector('#statsRatingDistChart').innerHTML = buildStatsHBarChart(
+          ratingDist.map(function(r){ return { label: '⭐'.repeat(r.star), count: r.count }; })
+        );
+        box.querySelector('#statsWeekdayChart').innerHTML = buildStatsVBarChart(
+          weekday.map(function(w){ return { label: w.label, count: w.count }; })
+        );
       }).catch(function(){
         mainView.querySelector('#statsBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
       });
@@ -1375,6 +1421,42 @@
         (p.y == null ? '<text x="' + p.x.toFixed(1) + '" y="' + (h - padBottom - 4) + '" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">' + t().profileStatsNoRatingMonth + '</text>' : '');
     }).join('');
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block">' + line + dots + labels + '</svg>';
+  }
+
+  // Gorizontal ustunli ro'yxat — xizmat turlari yoki baholar taqsimoti
+  // kabi "nom + son" juftliklarini saralangan holda ko'rsatish uchun.
+  function buildStatsHBarChart(items){
+    if (!items.length) return '';
+    var max = Math.max.apply(null, items.map(function(it){ return it.count; }).concat([1]));
+    return '<div class="hbar-list">' + items.map(function(it){
+      var pct = max > 0 ? Math.round((it.count / max) * 100) : 0;
+      return '<div class="hbar-row" style="margin:6px 0">' +
+        '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">' +
+        '<span>' + esc(String(it.label)) + '</span><span>' + it.count + '</span></div>' +
+        '<div style="background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;height:8px">' +
+        '<div style="width:' + pct + '%;height:100%;background:var(--amber, #FF9142);border-radius:6px"></div>' +
+        '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  // Vertikal ustunli SVG grafik — hafta kunlari bo'yicha faollik uchun.
+  function buildStatsVBarChart(items){
+    var w = 320, h = 140, padBottom = 22, padTop = 10;
+    var maxCount = Math.max.apply(null, items.map(function(it){ return it.count; }).concat([1]));
+    var barW = (w / items.length) * 0.55;
+    var gap = w / items.length;
+    var bars = items.map(function(it, i){
+      var barH = maxCount > 0 ? Math.round((it.count / maxCount) * (h - padBottom - padTop)) : 0;
+      var x = i * gap + (gap - barW) / 2;
+      var y = h - padBottom - barH;
+      return (
+        '<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' + barW.toFixed(1) + '" height="' + barH +
+        '" rx="4" fill="var(--cyan, #4FD8C9)"></rect>' +
+        '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 5) + '" text-anchor="middle" font-size="11" fill="currentColor">' + it.count + '</text>' +
+        '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (h - 6) + '" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">' + esc(it.label) + '</text>'
+      );
+    }).join('');
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block">' + bars + '</svg>';
   }
 
   function renderProfileMasterJobs(entry){
