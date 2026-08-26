@@ -144,6 +144,14 @@
       profileJobsTitle: "📋 Bajarilgan ishlarim",
       profileJobsEmpty: "Sizda hali bajarilgan ish yo'q.",
       profileJobFinishBtn: "✅ Yakunlash",
+      profileStatsBtn: "📊 Statistika",
+      profileStatsTitle: "📊 Mening statistikam",
+      profileStatsJobsHeader: "Oylik yakunlangan ishlar",
+      profileStatsRatingHeader: "O'rtacha reyting (oylik)",
+      profileStatsTotalJobs: "Jami yakunlangan ish",
+      profileStatsOverallRating: "Umumiy reyting",
+      profileStatsNoData: "Hali yetarli ma'lumot yo'q — birinchi ishni yakunlaganingizdan so'ng bu yerda grafik paydo bo'ladi.",
+      profileStatsNoRatingMonth: "baho yo'q",
       prevPage: "⬅️ Oldingi",
       nextPage: "Keyingi ➡️",
 
@@ -353,6 +361,14 @@
       profileJobsTitle: "📋 Мои выполненные заказы",
       profileJobsEmpty: "У вас пока нет выполненных заказов.",
       profileJobFinishBtn: "✅ Завершить",
+      profileStatsBtn: "📊 Статистика",
+      profileStatsTitle: "📊 Моя статистика",
+      profileStatsJobsHeader: "Заказы по месяцам",
+      profileStatsRatingHeader: "Средний рейтинг (по месяцам)",
+      profileStatsTotalJobs: "Всего выполнено заказов",
+      profileStatsOverallRating: "Общий рейтинг",
+      profileStatsNoData: "Пока недостаточно данных — график появится после первого выполненного заказа.",
+      profileStatsNoRatingMonth: "нет оценок",
       prevPage: "⬅️ Назад",
       nextPage: "Далее ➡️",
 
@@ -680,6 +696,7 @@
     if (entry.view === 'contact') return t().menuContact;
     if (entry.view === 'profileGate' || entry.view === 'profileMaster' || entry.view === 'profileUser') return t().menuProfile;
     if (entry.view === 'profileMasterJobs') return t().profileJobsTitle;
+    if (entry.view === 'profileMasterStats') return t().profileStatsTitle;
     if (entry.view === 'profileEditMaster') return t().profileEditTitle;
     if (entry.view === 'profileUserOrders') return t().profileOrdersTitle;
     if (entry.view === 'anketaGate') return t().menuAnketa;
@@ -1256,6 +1273,7 @@
       '<div class="profile-actions">' +
       '<button class="row" id="btnEditMaster"><span class="idx">✏️</span><span class="lbl">' + t().profileEditBtn + '</span><span class="chev">→</span></button>' +
       '<button class="row" id="btnMasterJobs"><span class="idx">📋</span><span class="lbl">' + t().profileJobsBtn + '</span><span class="chev">→</span></button>' +
+      '<button class="row" id="btnMasterStats"><span class="idx">📊</span><span class="lbl">' + t().profileStatsBtn + '</span><span class="chev">→</span></button>' +
       '</div>' +
       '</div>';
 
@@ -1267,6 +1285,96 @@
       haptic('select');
       push({ view:'profileMasterJobs', offset: 0 });
     });
+    mainView.querySelector('#btnMasterStats').addEventListener('click', function(){
+      haptic('select');
+      push({ view:'profileMasterStats' });
+    });
+  }
+
+  function renderProfileMasterStats(){
+    mainView.innerHTML =
+      '<div class="view"><div class="list-title">' + t().profileStatsTitle + '</div>' +
+      '<div id="statsBox"><div class="empty">' + t().profileLoading + '</div></div></div>';
+
+    apiGet('/api/public/profile/master/stats?init_data=' + encodeURIComponent(getInitData()) + '&months=6')
+      .then(function(res){
+        var box = mainView.querySelector('#statsBox');
+        if (!res || !res.ok) { box.innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>'; return; }
+
+        var months = res.months || [];
+        var hasAnyJobs = months.some(function(mo){ return mo.jobs > 0; });
+
+        var summary =
+          '<div class="panel dashed">' +
+          '<div class="summary-row"><span class="k">📋 ' + t().profileStatsTotalJobs + '</span><span class="v">' + (res.total_jobs || 0) + '</span></div>' +
+          '<div class="summary-row"><span class="k">⭐ ' + t().profileStatsOverallRating + '</span><span class="v">' +
+            (res.overall_avg_rating ? ('⭐ ' + res.overall_avg_rating + ' (' + res.overall_rating_count + ')') : t().profileNoRating) +
+          '</span></div>' +
+          '</div>';
+
+        if (!hasAnyJobs) {
+          box.innerHTML = summary + '<div class="empty">' + t().profileStatsNoData + '</div>';
+          return;
+        }
+
+        box.innerHTML = summary +
+          '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsJobsHeader + '</div>' +
+          '<div id="statsJobsChart"></div></div>' +
+          '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsRatingHeader + '</div>' +
+          '<div id="statsRatingChart"></div></div>';
+
+        box.querySelector('#statsJobsChart').innerHTML = buildStatsBarChart(months);
+        box.querySelector('#statsRatingChart').innerHTML = buildStatsRatingChart(months);
+      }).catch(function(){
+        mainView.querySelector('#statsBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
+      });
+  }
+
+  // Ustunli SVG grafik — oylik yakunlangan ishlar soni.
+  function buildStatsBarChart(months){
+    var w = 320, h = 150, padBottom = 24, padTop = 10;
+    var maxJobs = Math.max.apply(null, months.map(function(mo){ return mo.jobs; }).concat([1]));
+    var barW = (w / months.length) * 0.55;
+    var gap = w / months.length;
+    var bars = months.map(function(mo, i){
+      var barH = maxJobs > 0 ? Math.round((mo.jobs / maxJobs) * (h - padBottom - padTop)) : 0;
+      var x = i * gap + (gap - barW) / 2;
+      var y = h - padBottom - barH;
+      return (
+        '<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' + barW.toFixed(1) + '" height="' + barH +
+        '" rx="4" fill="var(--amber, #FF9142)"></rect>' +
+        '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 5) + '" text-anchor="middle" font-size="11" fill="currentColor">' + mo.jobs + '</text>' +
+        '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (h - 6) + '" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">' + esc(mo.label) + '</text>'
+      );
+    }).join('');
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block">' + bars + '</svg>';
+  }
+
+  // Chiziqli SVG grafik — oylik o'rtacha reyting (1-5 shkalada).
+  function buildStatsRatingChart(months){
+    var w = 320, h = 150, padBottom = 24, padTop = 14, padX = 14;
+    var scaleMin = 1, scaleMax = 5;
+    var innerW = w - padX * 2;
+    var pts = months.map(function(mo, i){
+      var x = padX + (i / Math.max(1, months.length - 1)) * innerW;
+      var val = mo.avg_rating != null ? mo.avg_rating : null;
+      var y = val != null
+        ? padTop + (1 - (val - scaleMin) / (scaleMax - scaleMin)) * (h - padBottom - padTop)
+        : null;
+      return { x: x, y: y, mo: mo };
+    });
+    var withVal = pts.filter(function(p){ return p.y != null; });
+    var pathD = withVal.map(function(p, i){ return (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ' ' + p.y.toFixed(1); }).join(' ');
+    var line = pathD ? '<path d="' + pathD + '" fill="none" stroke="var(--amber, #FF9142)" stroke-width="2.5"></path>' : '';
+    var dots = withVal.map(function(p){
+      return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="4" fill="var(--amber, #FF9142)"></circle>' +
+        '<text x="' + p.x.toFixed(1) + '" y="' + (p.y - 9).toFixed(1) + '" text-anchor="middle" font-size="11" fill="currentColor">' + p.mo.avg_rating + '</text>';
+    }).join('');
+    var labels = pts.map(function(p){
+      return '<text x="' + p.x.toFixed(1) + '" y="' + (h - 6) + '" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">' + esc(p.mo.label) + '</text>' +
+        (p.y == null ? '<text x="' + p.x.toFixed(1) + '" y="' + (h - padBottom - 4) + '" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">' + t().profileStatsNoRatingMonth + '</text>' : '');
+    }).join('');
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block">' + line + dots + labels + '</svg>';
   }
 
   function renderProfileMasterJobs(entry){
@@ -3435,6 +3543,7 @@
     else if (entry.view === 'profileGate') renderProfileGate();
     else if (entry.view === 'profileMaster') renderProfileMaster(entry);
     else if (entry.view === 'profileMasterJobs') renderProfileMasterJobs(entry);
+    else if (entry.view === 'profileMasterStats') renderProfileMasterStats(entry);
     else if (entry.view === 'profileEditMaster') renderProfileEditMaster(entry);
     else if (entry.view === 'profileUser') renderProfileUser(entry);
     else if (entry.view === 'profileUserOrders') renderProfileUserOrders(entry);
