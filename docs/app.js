@@ -130,6 +130,12 @@
       profileMasterTitle: "👤 Mening profilim",
       profileEditBtn: "✏️ Ma'lumotlarni tahrirlash",
       profileJobsBtn: "📋 Bajarilgan ishlarim",
+      profileAvailTitle: "Bugungi holatingiz",
+      profileAvailFree: "🟢 Band emasman",
+      profileAvailBusy: "🔴 Bandman",
+      profileAvailHint: "Mijozlar \"Ustaxona topish\"da holatingizni ko'radi",
+      profileAvailFreeSub: "Mijozlar hoziroq murojaat qilishi mumkin",
+      profileAvailBusySub: "Qidiruv natijalarida pastroqda ko'rinasiz",
       profileRegion: "Hudud",
       profileServices: "Xizmatlar",
       profileRegisteredAt: "Ro'yxatdan o'tgan",
@@ -144,23 +150,6 @@
       profileJobsTitle: "📋 Bajarilgan ishlarim",
       profileJobsEmpty: "Sizda hali bajarilgan ish yo'q.",
       profileJobFinishBtn: "✅ Yakunlash",
-      profileStatsBtn: "📊 Statistika",
-      profileStatsTitle: "📊 Mening statistikam",
-      profileStatsJobsHeader: "Oylik yakunlangan ishlar",
-      profileStatsRatingHeader: "O'rtacha reyting (oylik)",
-      profileStatsTotalJobs: "Jami yakunlangan ish",
-      profileStatsOverallRating: "Umumiy reyting",
-      profileStatsNoData: "Hali yetarli ma'lumot yo'q — birinchi ishni yakunlaganingizdan so'ng bu yerda grafik paydo bo'ladi.",
-      profileStatsNoRatingMonth: "baho yo'q",
-      profileStatsServiceHeader: "Xizmat turlari bo'yicha",
-      profileStatsRatingDistHeader: "Baholar taqsimoti",
-      profileStatsWeekdayHeader: "Hafta kunlari bo'yicha faollik",
-      profileStatsAvgResponse: "O'rtacha javob berish vaqti",
-      profileStatsComplaints: "Shikoyatlar soni",
-      profileStatsMinutesShort: "daqiqa",
-      profileStatsHoursShort: "soat",
-      profileStatsNoServiceData: "Hali xizmat turlari bo'yicha ma'lumot yo'q.",
-      profileStatsNoResponseData: "Hali hisoblash uchun yetarli ma'lumot yo'q.",
       prevPage: "⬅️ Oldingi",
       nextPage: "Keyingi ➡️",
 
@@ -202,6 +191,8 @@
       topishNoResults: "usta topilmadi. Boshqa hudud yoki xizmat tanlab ko'ring.",
       topishFound: function(n){ return n + " ta usta topildi"; },
       topishWrite: "Yozish",
+      topishBusy: "🔴 Hozir band",
+      topishFree: "🟢 Band emas",
       complainBtn: "⚠️ Shikoyat",
       complainTitle: "⚠️ Shikoyat qoldirish",
       complainOn: function(name){ return "Usta: " + name; },
@@ -221,6 +212,13 @@
       orderStatusNew: "🆕 Ustalarga yuborilgan, javob kutilmoqda",
       orderStatusTaken: "🧑‍🔧 Usta qabul qildi, ish jarayonida",
       orderStatusDone: "✅ Usta yakunladi, tasdiqingiz kutilmoqda",
+      orderStatusConfirmed: "✅ Tasdiqlandi",
+      orderStepNew: "Qabul qilindi", orderStepTaken: "Ustaga biriktirildi",
+      orderStepDone: "Ish bajarildi", orderStepConfirmed: "Yakunlandi",
+      orderMasterTitle: "🧑‍🔧 Sizga biriktirilgan usta",
+      orderPhotoLabel: "📷 Nosozlik surati (ixtiyoriy)",
+      orderPhotoHint: "Ustaga oldindan tushunarli bo'lishi uchun surat qo'shing",
+      orderPhotoGot: "✅ Rasm biriktirildi",
       orderChooseViloyat: "Hududni tanlang",
       orderChooseXizmat: "Qanday texnika/soha bo'yicha usta kerak?",
       orderFormTitle: "Ma'lumotlaringizni kiriting",
@@ -356,6 +354,12 @@
       profileMasterTitle: "👤 Мой профиль",
       profileEditBtn: "✏️ Изменить данные",
       profileJobsBtn: "📋 Мои выполненные заказы",
+      profileAvailTitle: "Ваш статус сегодня",
+      profileAvailFree: "🟢 Я свободен",
+      profileAvailBusy: "🔴 Я занят",
+      profileAvailHint: "Клиенты видят ваш статус в разделе \"Найти мастерскую\"",
+      profileAvailFreeSub: "Клиенты могут обратиться прямо сейчас",
+      profileAvailBusySub: "В результатах поиска будете показаны ниже",
       profileRegion: "Регион",
       profileServices: "Услуги",
       profileRegisteredAt: "Дата регистрации",
@@ -370,23 +374,6 @@
       profileJobsTitle: "📋 Мои выполненные заказы",
       profileJobsEmpty: "У вас пока нет выполненных заказов.",
       profileJobFinishBtn: "✅ Завершить",
-      profileStatsBtn: "📊 Статистика",
-      profileStatsTitle: "📊 Моя статистика",
-      profileStatsJobsHeader: "Заказы по месяцам",
-      profileStatsRatingHeader: "Средний рейтинг (по месяцам)",
-      profileStatsTotalJobs: "Всего выполнено заказов",
-      profileStatsOverallRating: "Общий рейтинг",
-      profileStatsNoData: "Пока недостаточно данных — график появится после первого выполненного заказа.",
-      profileStatsNoRatingMonth: "нет оценок",
-      profileStatsServiceHeader: "По видам услуг",
-      profileStatsRatingDistHeader: "Распределение оценок",
-      profileStatsWeekdayHeader: "Активность по дням недели",
-      profileStatsAvgResponse: "Среднее время отклика",
-      profileStatsComplaints: "Количество жалоб",
-      profileStatsMinutesShort: "мин.",
-      profileStatsHoursShort: "ч.",
-      profileStatsNoServiceData: "Пока нет данных по видам услуг.",
-      profileStatsNoResponseData: "Пока недостаточно данных для расчёта.",
       prevPage: "⬅️ Назад",
       nextPage: "Далее ➡️",
 
@@ -428,6 +415,8 @@
       topishNoResults: "мастер не найден. Попробуйте другой регион или услугу.",
       topishFound: function(n){ return "Найдено мастеров: " + n; },
       topishWrite: "Написать",
+      topishBusy: "🔴 Сейчас занят",
+      topishFree: "🟢 Свободен",
       complainBtn: "⚠️ Жалоба",
       complainTitle: "⚠️ Подать жалобу",
       complainOn: function(name){ return "Мастер: " + name; },
@@ -447,6 +436,13 @@
       orderStatusNew: "🆕 Отправлена мастерам, ожидаем ответ",
       orderStatusTaken: "🧑‍🔧 Мастер принял, работа выполняется",
       orderStatusDone: "✅ Мастер завершил, ожидаем ваше подтверждение",
+      orderStatusConfirmed: "✅ Подтверждено",
+      orderStepNew: "Принята", orderStepTaken: "Назначен мастер",
+      orderStepDone: "Работа выполнена", orderStepConfirmed: "Завершено",
+      orderMasterTitle: "🧑‍🔧 Назначенный вам мастер",
+      orderPhotoLabel: "📷 Фото неисправности (необязательно)",
+      orderPhotoHint: "Добавьте фото, чтобы мастеру было сразу понятно",
+      orderPhotoGot: "✅ Фото прикреплено",
       orderChooseViloyat: "Выберите регион",
       orderChooseXizmat: "По какой технике/сфере нужен мастер?",
       orderFormTitle: "Введите ваши данные",
@@ -714,7 +710,6 @@
     if (entry.view === 'contact') return t().menuContact;
     if (entry.view === 'profileGate' || entry.view === 'profileMaster' || entry.view === 'profileUser') return t().menuProfile;
     if (entry.view === 'profileMasterJobs') return t().profileJobsTitle;
-    if (entry.view === 'profileMasterStats') return t().profileStatsTitle;
     if (entry.view === 'profileEditMaster') return t().profileEditTitle;
     if (entry.view === 'profileUserOrders') return t().profileOrdersTitle;
     if (entry.view === 'anketaGate') return t().menuAnketa;
@@ -907,7 +902,8 @@
             : '<div class="mc-avatar-fallback">' + initials + '</div>';
           var chipsHtml = esc(m.xizmatlar).split(',').map(function(s){ return s.trim(); }).filter(Boolean)
             .map(function(s){ return '<span class="mc-chip">' + s + '</span>'; }).join('');
-          return '<div class="master-card' + (m.is_premium ? ' premium' : '') + '" style="animation:view-in .22s ' + (Math.min(i,8)*0.04) + 's both">' +
+          var availHtml = '<span class="mc-avail ' + (m.band ? 'busy' : 'free') + '">' + (m.band ? t().topishBusy : t().topishFree) + '</span>';
+          return '<div class="master-card' + (m.is_premium ? ' premium' : '') + (m.band ? ' is-busy' : '') + '" style="animation:view-in .22s ' + (Math.min(i,8)*0.04) + 's both">' +
             (m.is_premium ? '<div class="mc-premium-tag">⭐ PREMIUM</div>' : '') +
             '<div class="mc-top">' +
             '<div class="mc-avatar">' + avatarHtml + '</div>' +
@@ -917,7 +913,7 @@
             '<span class="mc-stat mc-rating">⭐ ' + ratingHtml + '</span>' +
             (m.masofa_km != null ? '<span class="mc-stat">📏 ' + m.masofa_km + ' km</span>' : '') +
             '</div></div></div>' +
-            (chipsHtml ? '<div class="mc-chips">' + chipsHtml + '</div>' : '') +
+            (chipsHtml ? '<div class="mc-chips">' + chipsHtml + availHtml + '</div>' : '<div class="mc-chips">' + availHtml + '</div>') +
             '<div class="mc-actions">' +
             '<a class="tel" href="tel:' + esc(m.telefon) + '">📞 ' + esc(m.telefon) + '</a>' +
             '<a class="tg" href="' + link + '" target="_blank">✈️ ' + t().topishWrite + '</a>' +
@@ -1033,16 +1029,50 @@
   }
 
   function renderOrderActiveBlock(order){
-    var statusMap = { yangi: t().orderStatusNew, olindi: t().orderStatusTaken, bajarildi: t().orderStatusDone };
+    var steps = [
+      { key: 'yangi', label: t().orderStepNew, icon: '🆕' },
+      { key: 'olindi', label: t().orderStepTaken, icon: '🧑‍🔧' },
+      { key: 'bajarildi', label: t().orderStepDone, icon: '✅' },
+      { key: 'tasdiqlandi', label: t().orderStepConfirmed, icon: '🏁' },
+    ];
+    var statusMap = { yangi: t().orderStatusNew, olindi: t().orderStatusTaken, bajarildi: t().orderStatusDone, tasdiqlandi: t().orderStatusConfirmed };
+    var curIdx = steps.findIndex(function(s){ return s.key === order.status; });
+    if (curIdx < 0) curIdx = 0;
+
+    var stepperHtml = '<div class="order-stepper">' + steps.map(function(s, i){
+      var cls = i < curIdx ? 'done' : (i === curIdx ? 'active' : 'todo');
+      return '<div class="os-step ' + cls + '">' +
+        '<div class="os-dot">' + (i < curIdx ? '✓' : s.icon) + '</div>' +
+        '<div class="os-label">' + s.label + '</div>' +
+        (i < steps.length - 1 ? '<div class="os-line ' + (i < curIdx ? 'done' : '') + '"></div>' : '') +
+        '</div>';
+    }).join('') + '</div>';
+
+    var masterHtml = '';
+    if (order.master && order.master.ism) {
+      var mk = order.master;
+      var link = mk.username ? ('https://t.me/' + mk.username) : ('tg://user?id=' + mk.tg_id);
+      masterHtml =
+        '<div class="panel dashed" style="margin-top:12px">' +
+        '<div class="summary-row"><span class="k">' + t().orderMasterTitle + '</span><span class="v">' + esc(mk.ism || '—') + '</span></div>' +
+        '<div class="mc-actions" style="margin-top:8px">' +
+        '<a class="tel" href="tel:' + esc(mk.telefon || '') + '">📞 ' + esc(mk.telefon || '—') + '</a>' +
+        '<a class="tg" href="' + link + '" target="_blank">✈️ ' + t().topishWrite + '</a>' +
+        '</div></div>';
+    }
+
     mainView.innerHTML =
       '<div class="view"><div class="detail-head">' +
       '<div class="eyebrow"><span class="ping"></span>' + t().menuOrder + '</div>' +
       '<h2>' + t().orderActiveTitle + '</h2></div>' +
-      '<div class="panel dashed">' +
+      stepperHtml +
+      '<div class="panel dashed" style="margin-top:12px">' +
       '<div class="summary-row"><span class="k">' + t().viloyat + '</span><span class="v">' + esc(order.viloyat || '—') + '</span></div>' +
       '<div class="summary-row"><span class="k">' + t().xizmat + '</span><span class="v">' + esc(order.xizmat || '—') + '</span></div>' +
       '<div class="summary-row"><span class="k">Status</span><span class="v">' + (statusMap[order.status] || order.status) + '</span></div>' +
-      '</div><p class="note">' + t().orderActiveHint + '</p></div>';
+      '</div>' +
+      masterHtml +
+      '<p class="note">' + t().orderActiveHint + '</p></div>';
   }
 
   function renderOrderViloyat(){
@@ -1094,6 +1124,11 @@
       '<div class="field"><label>📱 ' + t().fTel + '</label><input id="fTel" type="tel" value="' + esc(f.telefon||'') + '" placeholder="' + t().fTelPh + '"></div>' +
       '<div class="field"><label>🛠️ ' + t().fMuammo + '</label><textarea id="fMuammo" placeholder="' + t().fMuammoPh + '">' + esc(f.muammo||'') + '</textarea></div>' +
       '<div class="field"><label>📍 ' + t().fManzil + '</label><input id="fManzil" value="' + esc(f.manzil||'') + '" placeholder="' + t().fManzilPh + '"></div>' +
+      '<div class="field"><label>' + t().orderPhotoLabel + '</label>' +
+      '<label class="photo-upload' + (f.photo_b64 ? ' got' : '') + '" id="ofPhotoBox">' +
+      '<span class="pu-thumb" id="ofPhotoThumb">' + (f.photo_b64 ? '' : '📷') + '</span>' +
+      '<span class="pu-label" id="ofPhotoLabel">' + (f.photo_b64 ? t().orderPhotoGot : t().orderPhotoHint) + '</span>' +
+      '<input type="file" accept="image/*" id="ofPhotoInput"></label></div>' +
       '</div>' +
       '<button class="loc-btn" id="locBtn2">' + (f.lat ? t().topishLocGot : t().topishLocBtn) + '</button>' +
       '</div>';
@@ -1106,6 +1141,28 @@
           var btn = mainView.querySelector('#locBtn2');
           btn.classList.add('got'); btn.textContent = t().topishLocGot;
         }
+      });
+    });
+
+    if (f.photo_b64) {
+      mainView.querySelector('#ofPhotoThumb').style.backgroundImage = 'url(' + f.photo_b64 + ')';
+    }
+    mainView.querySelector('#ofPhotoInput').addEventListener('change', function(e){
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      var label = mainView.querySelector('#ofPhotoLabel');
+      label.textContent = t().profileSending;
+      resizeImageToDataUrl(file).then(function(dataUrl){
+        state.orderForm.photo_b64 = dataUrl;
+        var box = mainView.querySelector('#ofPhotoBox');
+        box.classList.add('got');
+        var thumb = mainView.querySelector('#ofPhotoThumb');
+        thumb.style.backgroundImage = 'url(' + dataUrl + ')';
+        thumb.textContent = '';
+        label.textContent = t().orderPhotoGot;
+      }).catch(function(){
+        label.textContent = t().orderPhotoHint;
+        alert(t().orderErrGeneric);
       });
     });
 
@@ -1131,7 +1188,7 @@
         return;
       }
       state.orderForm = { ism:ism, familya:familya, telefon:telefon, muammo:muammo, manzil:manzil,
-        lat: state.orderForm.lat, lon: state.orderForm.lon };
+        lat: state.orderForm.lat, lon: state.orderForm.lon, photo_b64: state.orderForm.photo_b64 };
       haptic('select');
       push({ view:'orderConfirm', viloyat: entry.viloyat, xizmat: entry.xizmat });
     });
@@ -1151,6 +1208,7 @@
       '<div class="summary-row"><span class="k">' + t().fMuammo + '</span><span class="v">' + esc(f.muammo) + '</span></div>' +
       '<div class="summary-row"><span class="k">' + t().fManzil + '</span><span class="v">' + esc(f.manzil) + '</span></div>' +
       '<div class="summary-row"><span class="k">GPS</span><span class="v">' + (f.lat ? '✅' : '⛔') + '</span></div>' +
+      '<div class="summary-row"><span class="k">' + t().orderPhotoLabel + '</span><span class="v">' + (f.photo_b64 ? '✅' : '—') + '</span></div>' +
       '</div><p class="note">' + t().orderConfirmHint + '</p>' +
       '<div id="submitErr"></div>' +
       '</div>';
@@ -1168,7 +1226,7 @@
         init_data: getInitData(), lang: state.lang,
         viloyat: entry.viloyat, xizmat: entry.xizmat,
         ism: f.ism, familya: f.familya, telefon: f.telefon, muammo: f.muammo, manzil: f.manzil,
-        lat: f.lat, lon: f.lon
+        lat: f.lat, lon: f.lon, photo_b64: f.photo_b64
       }).then(function(res){
         if (res.data && res.data.ok) {
           haptic('ok');
@@ -1272,11 +1330,24 @@
     var subHolat = m.sub_ok ? t().profileActiveUntil(m.sub_until) : t().profileNotPaid;
     var premHolat = m.premium_ok ? t().profileActiveUntil(m.premium_until) : t().profileNotEnabled;
     var manzil = m.viloyat ? (m.viloyat + (m.tuman ? ' — ' + m.tuman : '')) : '—';
+    var isBusy = !!m.band;
 
     mainView.innerHTML =
       '<div class="view"><div class="detail-head">' +
       '<div class="eyebrow"><span class="ping"></span>' + t().menuProfile + '</div>' +
       '<h2>' + esc(m.ism || '—') + '</h2></div>' +
+      '<div class="panel dashed">' +
+      '<div class="summary-row"><span class="k">' + t().profileAvailTitle + '</span></div>' +
+      '<div class="avail-toggle" id="availToggle">' +
+      '<button type="button" class="avail-opt' + (!isBusy ? ' active' : '') + '" data-band="0">' +
+      '<span class="avail-opt-label">' + t().profileAvailFree + '</span>' +
+      '<span class="avail-opt-sub">' + t().profileAvailFreeSub + '</span></button>' +
+      '<button type="button" class="avail-opt busy' + (isBusy ? ' active' : '') + '" data-band="1">' +
+      '<span class="avail-opt-label">' + t().profileAvailBusy + '</span>' +
+      '<span class="avail-opt-sub">' + t().profileAvailBusySub + '</span></button>' +
+      '</div>' +
+      '<div class="note" style="margin-top:6px">' + t().profileAvailHint + '</div>' +
+      '</div>' +
       '<div class="panel dashed">' +
       '<div class="summary-row"><span class="k">📱</span><span class="v">' + esc(m.telefon || '—') + '</span></div>' +
       '<div class="summary-row"><span class="k">🌍 ' + t().profileRegion + '</span><span class="v">' + esc(manzil) + '</span></div>' +
@@ -1291,9 +1362,21 @@
       '<div class="profile-actions">' +
       '<button class="row" id="btnEditMaster"><span class="idx">✏️</span><span class="lbl">' + t().profileEditBtn + '</span><span class="chev">→</span></button>' +
       '<button class="row" id="btnMasterJobs"><span class="idx">📋</span><span class="lbl">' + t().profileJobsBtn + '</span><span class="chev">→</span></button>' +
-      '<button class="row" id="btnMasterStats"><span class="idx">📊</span><span class="lbl">' + t().profileStatsBtn + '</span><span class="chev">→</span></button>' +
       '</div>' +
       '</div>';
+
+    mainView.querySelector('#availToggle').querySelectorAll('.avail-opt').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var band = btn.getAttribute('data-band') === '1';
+        if (band === isBusy) return;
+        haptic('select');
+        mainView.querySelector('#availToggle').querySelectorAll('.avail-opt').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        isBusy = band;
+        m.band = band;
+        apiPost('/api/public/profile/master/availability', { init_data: getInitData(), band: band }).catch(function(){});
+      });
+    });
 
     mainView.querySelector('#btnEditMaster').addEventListener('click', function(){
       haptic('select');
@@ -1303,160 +1386,6 @@
       haptic('select');
       push({ view:'profileMasterJobs', offset: 0 });
     });
-    mainView.querySelector('#btnMasterStats').addEventListener('click', function(){
-      haptic('select');
-      push({ view:'profileMasterStats' });
-    });
-  }
-
-  function renderProfileMasterStats(){
-    mainView.innerHTML =
-      '<div class="view"><div class="list-title">' + t().profileStatsTitle + '</div>' +
-      '<div id="statsBox"><div class="empty">' + t().profileLoading + '</div></div></div>';
-
-    apiGet('/api/public/profile/master/stats?init_data=' + encodeURIComponent(getInitData()) + '&months=6')
-      .then(function(res){
-        var box = mainView.querySelector('#statsBox');
-        if (!res || !res.ok) { box.innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>'; return; }
-
-        var months = res.months || [];
-        var hasAnyJobs = months.some(function(mo){ return mo.jobs > 0; });
-
-        var respTxt = t().profileStatsNoResponseData;
-        if (res.avg_response_minutes != null) {
-          respTxt = res.avg_response_minutes >= 60
-            ? (Math.round(res.avg_response_minutes / 6) / 10) + ' ' + t().profileStatsHoursShort
-            : res.avg_response_minutes + ' ' + t().profileStatsMinutesShort;
-        }
-
-        var summary =
-          '<div class="panel dashed">' +
-          '<div class="summary-row"><span class="k">📋 ' + t().profileStatsTotalJobs + '</span><span class="v">' + (res.total_jobs || 0) + '</span></div>' +
-          '<div class="summary-row"><span class="k">⭐ ' + t().profileStatsOverallRating + '</span><span class="v">' +
-            (res.overall_avg_rating ? ('⭐ ' + res.overall_avg_rating + ' (' + res.overall_rating_count + ')') : t().profileNoRating) +
-          '</span></div>' +
-          '<div class="summary-row"><span class="k">⏱ ' + t().profileStatsAvgResponse + '</span><span class="v">' + respTxt + '</span></div>' +
-          '<div class="summary-row"><span class="k">⚠️ ' + t().profileStatsComplaints + '</span><span class="v">' + (res.complaints_count || 0) + '</span></div>' +
-          '</div>';
-
-        if (!hasAnyJobs) {
-          box.innerHTML = summary + '<div class="empty">' + t().profileStatsNoData + '</div>';
-          return;
-        }
-
-        var serviceRows = res.service_breakdown || [];
-        var ratingDist = res.rating_distribution || [];
-        var weekday = res.weekday_activity || [];
-
-        box.innerHTML = summary +
-          '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsJobsHeader + '</div>' +
-          '<div id="statsJobsChart"></div></div>' +
-          '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsRatingHeader + '</div>' +
-          '<div id="statsRatingChart"></div></div>' +
-          '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsServiceHeader + '</div>' +
-          '<div id="statsServiceChart"></div></div>' +
-          '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsRatingDistHeader + '</div>' +
-          '<div id="statsRatingDistChart"></div></div>' +
-          '<div class="panel"><div class="list-title" style="margin:0 0 10px">' + t().profileStatsWeekdayHeader + '</div>' +
-          '<div id="statsWeekdayChart"></div></div>';
-
-        box.querySelector('#statsJobsChart').innerHTML = buildStatsBarChart(months);
-        box.querySelector('#statsRatingChart').innerHTML = buildStatsRatingChart(months);
-        box.querySelector('#statsServiceChart').innerHTML = serviceRows.length
-          ? buildStatsHBarChart(serviceRows.map(function(s){ return { label: s.xizmat, count: s.count }; }))
-          : '<div class="empty">' + t().profileStatsNoServiceData + '</div>';
-        box.querySelector('#statsRatingDistChart').innerHTML = buildStatsHBarChart(
-          ratingDist.map(function(r){ return { label: '⭐'.repeat(r.star), count: r.count }; })
-        );
-        box.querySelector('#statsWeekdayChart').innerHTML = buildStatsVBarChart(
-          weekday.map(function(w){ return { label: w.label, count: w.count }; })
-        );
-      }).catch(function(){
-        mainView.querySelector('#statsBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
-      });
-  }
-
-  // Ustunli SVG grafik — oylik yakunlangan ishlar soni.
-  function buildStatsBarChart(months){
-    var w = 320, h = 150, padBottom = 24, padTop = 10;
-    var maxJobs = Math.max.apply(null, months.map(function(mo){ return mo.jobs; }).concat([1]));
-    var barW = (w / months.length) * 0.55;
-    var gap = w / months.length;
-    var bars = months.map(function(mo, i){
-      var barH = maxJobs > 0 ? Math.round((mo.jobs / maxJobs) * (h - padBottom - padTop)) : 0;
-      var x = i * gap + (gap - barW) / 2;
-      var y = h - padBottom - barH;
-      return (
-        '<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' + barW.toFixed(1) + '" height="' + barH +
-        '" rx="4" fill="var(--amber, #FF9142)"></rect>' +
-        '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 5) + '" text-anchor="middle" font-size="11" fill="currentColor">' + mo.jobs + '</text>' +
-        '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (h - 6) + '" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">' + esc(mo.label) + '</text>'
-      );
-    }).join('');
-    return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block">' + bars + '</svg>';
-  }
-
-  // Chiziqli SVG grafik — oylik o'rtacha reyting (1-5 shkalada).
-  function buildStatsRatingChart(months){
-    var w = 320, h = 150, padBottom = 24, padTop = 14, padX = 14;
-    var scaleMin = 1, scaleMax = 5;
-    var innerW = w - padX * 2;
-    var pts = months.map(function(mo, i){
-      var x = padX + (i / Math.max(1, months.length - 1)) * innerW;
-      var val = mo.avg_rating != null ? mo.avg_rating : null;
-      var y = val != null
-        ? padTop + (1 - (val - scaleMin) / (scaleMax - scaleMin)) * (h - padBottom - padTop)
-        : null;
-      return { x: x, y: y, mo: mo };
-    });
-    var withVal = pts.filter(function(p){ return p.y != null; });
-    var pathD = withVal.map(function(p, i){ return (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ' ' + p.y.toFixed(1); }).join(' ');
-    var line = pathD ? '<path d="' + pathD + '" fill="none" stroke="var(--amber, #FF9142)" stroke-width="2.5"></path>' : '';
-    var dots = withVal.map(function(p){
-      return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="4" fill="var(--amber, #FF9142)"></circle>' +
-        '<text x="' + p.x.toFixed(1) + '" y="' + (p.y - 9).toFixed(1) + '" text-anchor="middle" font-size="11" fill="currentColor">' + p.mo.avg_rating + '</text>';
-    }).join('');
-    var labels = pts.map(function(p){
-      return '<text x="' + p.x.toFixed(1) + '" y="' + (h - 6) + '" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">' + esc(p.mo.label) + '</text>' +
-        (p.y == null ? '<text x="' + p.x.toFixed(1) + '" y="' + (h - padBottom - 4) + '" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">' + t().profileStatsNoRatingMonth + '</text>' : '');
-    }).join('');
-    return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block">' + line + dots + labels + '</svg>';
-  }
-
-  // Gorizontal ustunli ro'yxat — xizmat turlari yoki baholar taqsimoti
-  // kabi "nom + son" juftliklarini saralangan holda ko'rsatish uchun.
-  function buildStatsHBarChart(items){
-    if (!items.length) return '';
-    var max = Math.max.apply(null, items.map(function(it){ return it.count; }).concat([1]));
-    return '<div class="hbar-list">' + items.map(function(it){
-      var pct = max > 0 ? Math.round((it.count / max) * 100) : 0;
-      return '<div class="hbar-row" style="margin:6px 0">' +
-        '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">' +
-        '<span>' + esc(String(it.label)) + '</span><span>' + it.count + '</span></div>' +
-        '<div style="background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;height:8px">' +
-        '<div style="width:' + pct + '%;height:100%;background:var(--amber, #FF9142);border-radius:6px"></div>' +
-        '</div></div>';
-    }).join('') + '</div>';
-  }
-
-  // Vertikal ustunli SVG grafik — hafta kunlari bo'yicha faollik uchun.
-  function buildStatsVBarChart(items){
-    var w = 320, h = 140, padBottom = 22, padTop = 10;
-    var maxCount = Math.max.apply(null, items.map(function(it){ return it.count; }).concat([1]));
-    var barW = (w / items.length) * 0.55;
-    var gap = w / items.length;
-    var bars = items.map(function(it, i){
-      var barH = maxCount > 0 ? Math.round((it.count / maxCount) * (h - padBottom - padTop)) : 0;
-      var x = i * gap + (gap - barW) / 2;
-      var y = h - padBottom - barH;
-      return (
-        '<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' + barW.toFixed(1) + '" height="' + barH +
-        '" rx="4" fill="var(--cyan, #4FD8C9)"></rect>' +
-        '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 5) + '" text-anchor="middle" font-size="11" fill="currentColor">' + it.count + '</text>' +
-        '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (h - 6) + '" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6">' + esc(it.label) + '</text>'
-      );
-    }).join('');
-    return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block">' + bars + '</svg>';
   }
 
   function renderProfileMasterJobs(entry){
@@ -1669,7 +1598,10 @@
           var hudud = [o.viloyat, o.tuman].filter(Boolean).join(' / ') || '—';
           var masterHtml = o.master
             ? '<div class="job-meta"><span>' + t().profileOrderMaster + ': ' + esc(o.master.ism || '—') + '</span>' +
-              (o.master.telefon ? '<span>📞 ' + esc(o.master.telefon) + '</span>' : '') + '</div>'
+              (o.master.telefon ? '<span>📞 ' + esc(o.master.telefon) + '</span>' : '') +
+              (o.master.username || o.master.tg_id
+                ? '<span><a class="tg-inline" href="' + (o.master.username ? ('https://t.me/' + o.master.username) : ('tg://user?id=' + o.master.tg_id)) + '" target="_blank">✈️ ' + t().topishWrite + '</a></span>'
+                : '') + '</div>'
             : '<div class="job-meta"><span class="dim">' + t().profileOrderNoMaster + '</span></div>';
 
           var actionHtml = '';
@@ -3625,7 +3557,6 @@
     else if (entry.view === 'profileGate') renderProfileGate();
     else if (entry.view === 'profileMaster') renderProfileMaster(entry);
     else if (entry.view === 'profileMasterJobs') renderProfileMasterJobs(entry);
-    else if (entry.view === 'profileMasterStats') renderProfileMasterStats(entry);
     else if (entry.view === 'profileEditMaster') renderProfileEditMaster(entry);
     else if (entry.view === 'profileUser') renderProfileUser(entry);
     else if (entry.view === 'profileUserOrders') renderProfileUserOrders(entry);
