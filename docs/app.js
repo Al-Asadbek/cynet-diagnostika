@@ -130,6 +130,20 @@
       profileMasterTitle: "👤 Mening profilim",
       profileEditBtn: "✏️ Ma'lumotlarni tahrirlash",
       profileJobsBtn: "📋 Bajarilgan ishlarim",
+      profileStatsBtn: "📊 Statistika",
+      statsTitle: "📊 Statistika",
+      statsLoading: "Yuklanmoqda...",
+      statsErr: "Statistikani yuklab bo'lmadi",
+      statsTabDaily: "Kunlik", statsTabWeekly: "Haftalik", statsTabMonthly: "Oylik",
+      statsTotalJobs: "Jami bajarilgan ish", statsAvgRating: "O'rtacha reyting",
+      statsComplaints: "Shikoyatlar", statsAvgResponse: "O'rtacha javob vaqti",
+      statsMinutes: "daq", statsHours: "soat",
+      statsNoData: "Hali ma'lumot yo'q",
+      statsServiceTitle: "🧰 Texnika turi bo'yicha",
+      statsRatingDistTitle: "⭐ Baholar taqsimoti",
+      statsWeekdayTitle: "📅 Hafta kunlari bo'yicha faollik",
+      statsJobsUnit: "ta ish",
+      statsWeekdayShort: ["Du","Se","Cho","Pay","Ju","Sha","Ya"],
       profileAvailTitle: "Bugungi holatingiz",
       profileAvailFree: "🟢 Band emasman",
       profileAvailBusy: "🔴 Bandman",
@@ -354,6 +368,20 @@
       profileMasterTitle: "👤 Мой профиль",
       profileEditBtn: "✏️ Изменить данные",
       profileJobsBtn: "📋 Мои выполненные заказы",
+      profileStatsBtn: "📊 Статистика",
+      statsTitle: "📊 Статистика",
+      statsLoading: "Загрузка...",
+      statsErr: "Не удалось загрузить статистику",
+      statsTabDaily: "По дням", statsTabWeekly: "По неделям", statsTabMonthly: "По месяцам",
+      statsTotalJobs: "Всего выполнено", statsAvgRating: "Средний рейтинг",
+      statsComplaints: "Жалобы", statsAvgResponse: "Среднее время ответа",
+      statsMinutes: "мин", statsHours: "ч",
+      statsNoData: "Пока нет данных",
+      statsServiceTitle: "🧰 По типу техники",
+      statsRatingDistTitle: "⭐ Распределение оценок",
+      statsWeekdayTitle: "📅 Активность по дням недели",
+      statsJobsUnit: "зак.",
+      statsWeekdayShort: ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"],
       profileAvailTitle: "Ваш статус сегодня",
       profileAvailFree: "🟢 Я свободен",
       profileAvailBusy: "🔴 Я занят",
@@ -1360,6 +1388,7 @@
       '<div class="summary-row"><span class="k">' + t().profilePremiumTitle + '</span><span class="v">' + premHolat + '</span></div>' +
       '</div>' +
       '<div class="profile-actions">' +
+      '<button class="row" id="btnMasterStats"><span class="idx">📊</span><span class="lbl">' + t().profileStatsBtn + '</span><span class="chev">→</span></button>' +
       '<button class="row" id="btnEditMaster"><span class="idx">✏️</span><span class="lbl">' + t().profileEditBtn + '</span><span class="chev">→</span></button>' +
       '<button class="row" id="btnMasterJobs"><span class="idx">📋</span><span class="lbl">' + t().profileJobsBtn + '</span><span class="chev">→</span></button>' +
       '</div>' +
@@ -1378,6 +1407,10 @@
       });
     });
 
+    mainView.querySelector('#btnMasterStats').addEventListener('click', function(){
+      haptic('select');
+      push({ view:'profileMasterStats', period:'weekly' });
+    });
     mainView.querySelector('#btnEditMaster').addEventListener('click', function(){
       haptic('select');
       push({ view:'profileEditMaster', master: m });
@@ -1386,6 +1419,122 @@
       haptic('select');
       push({ view:'profileMasterJobs', offset: 0 });
     });
+  }
+
+  function renderProfileMasterStats(entry){
+    var period = entry.period || 'weekly';
+    mainView.innerHTML =
+      '<div class="view"><div class="detail-head">' +
+      '<div class="eyebrow"><span class="ping"></span>' + t().menuProfile + '</div>' +
+      '<h2>' + t().statsTitle + '</h2></div>' +
+      '<div id="statsBody" class="stats-loading">' + t().statsLoading + '</div>' +
+      '</div>';
+
+    apiGet('/api/public/profile/master/stats?init_data=' + encodeURIComponent(getInitData()) + '&months=6')
+      .then(function(res){
+        if (!res || !res.ok) { renderStatsError(); return; }
+        renderStatsBody(res, period);
+      })
+      .catch(function(){ renderStatsError(); });
+
+    function renderStatsError(){
+      var body = mainView.querySelector('#statsBody');
+      if (body) body.innerHTML = '<p class="note">' + t().statsErr + '</p>';
+    }
+
+    function fmtResponseTime(mins){
+      if (mins == null) return '—';
+      if (mins < 60) return Math.round(mins) + ' ' + t().statsMinutes;
+      return (Math.round(mins / 6) / 10) + ' ' + t().statsHours;
+    }
+
+    function barRows(items, labelKey, valueKey, unitLabel){
+      var max = items.reduce(function(m, it){ return Math.max(m, it[valueKey] || 0); }, 0) || 1;
+      return items.map(function(it){
+        var pct = Math.round(((it[valueKey] || 0) / max) * 100);
+        return '<div class="stat-bar-row">' +
+          '<div class="stat-bar-label">' + esc(String(it[labelKey])) + '</div>' +
+          '<div class="stat-bar-track"><div class="stat-bar-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="stat-bar-val">' + (it[valueKey] || 0) + (unitLabel ? ' ' + unitLabel : '') + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function periodChart(res, per){
+      var items, labelFn;
+      if (per === 'daily') {
+        items = res.days || [];
+        labelFn = function(it){ return it.weekday_label + '\n' + it.label; };
+      } else if (per === 'monthly') {
+        items = res.months || [];
+        labelFn = function(it){ return it.label; };
+      } else {
+        items = res.weeks || [];
+        labelFn = function(it){ return it.label; };
+      }
+      var max = items.reduce(function(m, it){ return Math.max(m, it.jobs || 0); }, 0) || 1;
+      var hasAny = items.some(function(it){ return (it.jobs || 0) > 0; });
+      if (!hasAny) return '<p class="note">' + t().statsNoData + '</p>';
+      return '<div class="stats-chart">' + items.map(function(it){
+        var h = Math.max(4, Math.round(((it.jobs || 0) / max) * 78));
+        return '<div class="sc-col" title="' + (it.jobs||0) + ' ' + t().statsJobsUnit + '">' +
+          '<div class="sc-val">' + (it.jobs > 0 ? it.jobs : '') + '</div>' +
+          '<div class="sc-bar" style="height:' + h + 'px"></div>' +
+          '<div class="sc-label">' + esc(labelFn(it)) + '</div>' +
+          '</div>';
+      }).join('') + '</div>';
+    }
+
+    function renderStatsBody(res, per){
+      var body = mainView.querySelector('#statsBody');
+      var maxWd = Math.max.apply(null, (res.weekday_activity||[]).map(function(w){ return w.count||0; }).concat([1]));
+
+      body.innerHTML =
+        '<div class="stats-summary">' +
+        '<div class="stat-card"><div class="stat-num">' + (res.total_jobs||0) + '</div><div class="stat-lbl">' + t().statsTotalJobs + '</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + (res.overall_avg_rating ? ('⭐'+res.overall_avg_rating) : '—') + '</div><div class="stat-lbl">' + t().statsAvgRating + '</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + fmtResponseTime(res.avg_response_minutes) + '</div><div class="stat-lbl">' + t().statsAvgResponse + '</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + (res.complaints_count||0) + '</div><div class="stat-lbl">' + t().statsComplaints + '</div></div>' +
+        '</div>' +
+
+        '<div class="panel dashed">' +
+        '<div class="stats-tabs" id="statsTabs">' +
+        '<button type="button" class="st-tab' + (per==='daily'?' active':'') + '" data-p="daily">' + t().statsTabDaily + '</button>' +
+        '<button type="button" class="st-tab' + (per==='weekly'?' active':'') + '" data-p="weekly">' + t().statsTabWeekly + '</button>' +
+        '<button type="button" class="st-tab' + (per==='monthly'?' active':'') + '" data-p="monthly">' + t().statsTabMonthly + '</button>' +
+        '</div>' +
+        '<div id="statsChartHost">' + periodChart(res, per) + '</div>' +
+        '</div>' +
+
+        (res.service_breakdown && res.service_breakdown.length ?
+          '<div class="panel dashed"><div class="stat-block-title">' + t().statsServiceTitle + '</div>' +
+          barRows(res.service_breakdown, 'xizmat', 'count', t().statsJobsUnit) + '</div>' : '') +
+
+        (res.rating_distribution && res.rating_distribution.some(function(r){ return r.count>0; }) ?
+          '<div class="panel dashed"><div class="stat-block-title">' + t().statsRatingDistTitle + '</div>' +
+          barRows(res.rating_distribution.map(function(r){ return { lbl: '⭐'.repeat(r.star), count: r.count }; }), 'lbl', 'count', '') + '</div>' : '') +
+
+        (res.weekday_activity ?
+          '<div class="panel dashed"><div class="stat-block-title">' + t().statsWeekdayTitle + '</div>' +
+          '<div class="stats-chart small">' + res.weekday_activity.map(function(w){
+            var h = Math.max(4, Math.round(((w.count||0)/maxWd)*54));
+            return '<div class="sc-col"><div class="sc-val">' + (w.count>0?w.count:'') + '</div>' +
+              '<div class="sc-bar" style="height:' + h + 'px"></div>' +
+              '<div class="sc-label">' + t().statsWeekdayShort[w.weekday] + '</div></div>';
+          }).join('') + '</div></div>' : '');
+
+      mainView.querySelectorAll('#statsTabs .st-tab').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var p = btn.getAttribute('data-p');
+          if (p === per) return;
+          haptic('select');
+          mainView.querySelectorAll('#statsTabs .st-tab').forEach(function(b){ b.classList.remove('active'); });
+          btn.classList.add('active');
+          mainView.querySelector('#statsChartHost').innerHTML = periodChart(res, p);
+          per = p;
+        });
+      });
+    }
   }
 
   function renderProfileMasterJobs(entry){
@@ -3557,6 +3706,7 @@
     else if (entry.view === 'profileGate') renderProfileGate();
     else if (entry.view === 'profileMaster') renderProfileMaster(entry);
     else if (entry.view === 'profileMasterJobs') renderProfileMasterJobs(entry);
+    else if (entry.view === 'profileMasterStats') renderProfileMasterStats(entry);
     else if (entry.view === 'profileEditMaster') renderProfileEditMaster(entry);
     else if (entry.view === 'profileUser') renderProfileUser(entry);
     else if (entry.view === 'profileUserOrders') renderProfileUserOrders(entry);
