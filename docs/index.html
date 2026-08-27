@@ -484,6 +484,7 @@ main{ flex:1; padding: 4px 16px calc(28px + var(--safe-bottom)); }
 .shartnoma-box + .shartnoma-box{ margin-top:-4px; }
 
 .photo-upload{
+
   display:flex; align-items:center; gap:12px; background:var(--bg-panel); border:1.5px dashed var(--border);
   border-radius:13px; padding:10px; cursor:pointer; transition:.15s;
 }
@@ -615,6 +616,46 @@ main{ flex:1; padding: 4px 16px calc(28px + var(--safe-bottom)); }
 /* utility */
 
 .hidden{ display:none !important; }
+/* ---------------- ORDER STATUS STEPPER ---------------- */
+.order-stepper{ display:flex; align-items:flex-start; padding:16px 4px 6px; }
+.os-step{ flex:1; display:flex; flex-direction:column; align-items:center; position:relative; text-align:center; }
+.os-dot{
+  width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:14px; background:var(--bg-panel-2); border:1.5px solid var(--border); color:var(--text-3);
+  z-index:1; transition:.2s;
+}
+.os-step.done .os-dot{ background:var(--cyan-dim); border-color:var(--cyan); color:var(--cyan); }
+.os-step.active .os-dot{ background:var(--cyan); border-color:var(--cyan); color:#06201C; box-shadow:0 0 0 4px var(--cyan-glow); }
+.os-label{ font-size:9.5px; color:var(--text-3); margin-top:6px; line-height:1.25; padding:0 2px; }
+.os-step.done .os-label, .os-step.active .os-label{ color:var(--text-2); }
+.os-line{ position:absolute; top:15px; left:50%; width:100%; height:2px; background:var(--border); z-index:0; }
+.os-line.done{ background:var(--cyan-dim); }
+.os-step:last-child .os-line{ display:none; }
+
+/* ---------------- AVAILABILITY TOGGLE (usta band/bo'sh) ---------------- */
+.avail-toggle{ display:flex; gap:8px; margin-top:8px; }
+.avail-opt{
+  flex:1; text-align:left; padding:11px 12px; border-radius:11px; cursor:pointer;
+  background:var(--bg-panel-2); border:1.5px solid var(--border); transition:.15s;
+  display:flex; flex-direction:column; gap:2px;
+}
+.avail-opt-label{ font-family:var(--font-display); font-weight:600; font-size:12.5px; color:var(--text-2); }
+.avail-opt-sub{ font-size:10px; color:var(--text-3); }
+.avail-opt.active{ border-color:var(--green); background:rgba(111,207,151,.08); }
+.avail-opt.active .avail-opt-label{ color:var(--green); }
+.avail-opt.busy.active{ border-color:var(--red); background:rgba(255,98,89,.08); }
+.avail-opt.busy.active .avail-opt-label{ color:var(--red); }
+
+/* ---------------- BUSY BADGE (Ustaxona topish natijalari) ---------------- */
+.mc-avail{
+  font-family:var(--font-mono); font-size:10px; font-weight:600;
+  padding:4px 9px; border-radius:999px; letter-spacing:.02em;
+}
+.mc-avail.free{ color:var(--green); background:rgba(111,207,151,.1); border:1px solid rgba(111,207,151,.25); }
+.mc-avail.busy{ color:var(--red); background:rgba(255,98,89,.1); border:1px solid rgba(255,98,89,.25); }
+.master-card.is-busy{ opacity:.82; }
+
+.tg-inline{ color:var(--cyan); text-decoration:none; font-weight:600; }
 </style>
 </head>
 <body>
