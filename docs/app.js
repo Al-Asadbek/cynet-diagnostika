@@ -129,6 +129,7 @@
       profileLoading: "Yuklanmoqda...",
       profileMasterTitle: "👤 Mening profilim",
       profileEditBtn: "✏️ Ma'lumotlarni tahrirlash",
+      profileNewOrdersBtn: "🆕 Kelgan buyurtmalar",
       profileJobsBtn: "📋 Bajarilgan ishlarim",
       profileStatsBtn: "📊 Statistika",
       statsTitle: "📊 Statistika",
@@ -166,6 +167,17 @@
       profileJobFinishBtn: "✅ Yakunlash",
       prevPage: "⬅️ Oldingi",
       nextPage: "Keyingi ➡️",
+
+      profileNewOrdersTitle: "🆕 Kelgan buyurtmalar",
+      profileNewOrdersEmpty: "Hozircha yangi buyurtma yo'q.",
+      profileNewOrdersHint: "Mijozning ismi va telefoni faqat buyurtmani qabul qilgach ko'rinadi.",
+      profileNewOrderAcceptBtn: "✅ Qabul qilish",
+      profileNewOrderAccepting: "Qabul qilinmoqda...",
+      profileNewOrderTakenErr: "😔 Kechirasiz, bu buyurtmani boshqa usta allaqachon oldi.",
+      profileNewOrderAcceptedTitle: "🎉 Buyurtma qabul qilindi!",
+      profileNewOrderAcceptedOk: "Tushunarli",
+      photoAttached: "📸 Surat biriktirilgan",
+      viewOnMap: "Xaritada ko'rish",
 
       profileEditTitle: "✏️ Ma'lumotlarni tahrirlash",
       profileEditSaveBtn: "💾 Saqlash",
@@ -367,6 +379,7 @@
       profileLoading: "Загрузка...",
       profileMasterTitle: "👤 Мой профиль",
       profileEditBtn: "✏️ Изменить данные",
+      profileNewOrdersBtn: "🆕 Новые заказы",
       profileJobsBtn: "📋 Мои выполненные заказы",
       profileStatsBtn: "📊 Статистика",
       statsTitle: "📊 Статистика",
@@ -404,6 +417,17 @@
       profileJobFinishBtn: "✅ Завершить",
       prevPage: "⬅️ Назад",
       nextPage: "Далее ➡️",
+
+      profileNewOrdersTitle: "🆕 Новые заказы",
+      profileNewOrdersEmpty: "Пока нет новых заказов.",
+      profileNewOrdersHint: "Имя и телефон клиента видны только после принятия заказа.",
+      profileNewOrderAcceptBtn: "✅ Принять",
+      profileNewOrderAccepting: "Принимается...",
+      profileNewOrderTakenErr: "😔 Извините, этот заказ уже принял другой мастер.",
+      profileNewOrderAcceptedTitle: "🎉 Заказ принят!",
+      profileNewOrderAcceptedOk: "Понятно",
+      photoAttached: "📸 Фото прикреплено",
+      viewOnMap: "Посмотреть на карте",
 
       profileEditTitle: "✏️ Изменить данные",
       profileEditSaveBtn: "💾 Сохранить",
@@ -738,6 +762,8 @@
     if (entry.view === 'contact') return t().menuContact;
     if (entry.view === 'profileGate' || entry.view === 'profileMaster' || entry.view === 'profileUser') return t().menuProfile;
     if (entry.view === 'profileMasterJobs') return t().profileJobsTitle;
+    if (entry.view === 'profileMasterNewOrders') return t().profileNewOrdersTitle;
+    if (entry.view === 'profileMasterOrderAccepted') return t().profileNewOrderAcceptedTitle;
     if (entry.view === 'profileEditMaster') return t().profileEditTitle;
     if (entry.view === 'profileUserOrders') return t().profileOrdersTitle;
     if (entry.view === 'anketaGate') return t().menuAnketa;
@@ -1388,6 +1414,9 @@
       '<div class="summary-row"><span class="k">' + t().profilePremiumTitle + '</span><span class="v">' + premHolat + '</span></div>' +
       '</div>' +
       '<div class="profile-actions">' +
+      '<button class="row" id="btnMasterNewOrders"><span class="idx">🆕</span><span class="lbl">' + t().profileNewOrdersBtn + '</span>' +
+      (m.new_orders_count ? '<span class="row-badge">' + m.new_orders_count + '</span>' : '') +
+      '<span class="chev">→</span></button>' +
       '<button class="row" id="btnMasterStats"><span class="idx">📊</span><span class="lbl">' + t().profileStatsBtn + '</span><span class="chev">→</span></button>' +
       '<button class="row" id="btnEditMaster"><span class="idx">✏️</span><span class="lbl">' + t().profileEditBtn + '</span><span class="chev">→</span></button>' +
       '<button class="row" id="btnMasterJobs"><span class="idx">📋</span><span class="lbl">' + t().profileJobsBtn + '</span><span class="chev">→</span></button>' +
@@ -1407,6 +1436,10 @@
       });
     });
 
+    mainView.querySelector('#btnMasterNewOrders').addEventListener('click', function(){
+      haptic('select');
+      push({ view:'profileMasterNewOrders', offset: 0 });
+    });
     mainView.querySelector('#btnMasterStats').addEventListener('click', function(){
       haptic('select');
       push({ view:'profileMasterStats', period:'weekly' });
@@ -1612,6 +1645,116 @@
       }).catch(function(){
         mainView.querySelector('#jobsBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
       });
+  }
+
+  function renderProfileMasterNewOrders(entry){
+    var offset = entry.offset || 0;
+    mainView.innerHTML =
+      '<div class="view"><div class="list-title">🆕 ' + t().profileNewOrdersTitle + '</div>' +
+      '<div class="note" style="margin:-6px 0 12px">' + t().profileNewOrdersHint + '</div>' +
+      '<div id="newOrdersBox"><div class="empty">' + t().profileLoading + '</div></div></div>';
+
+    apiGet('/api/public/profile/master/orders/new?init_data=' + encodeURIComponent(getInitData()) + '&offset=' + offset)
+      .then(function(res){
+        var box = mainView.querySelector('#newOrdersBox');
+        if (!res || !res.ok) { box.innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>'; return; }
+        var items = res.items || [];
+        if (items.length === 0 && offset === 0) {
+          box.innerHTML = '<div class="empty">🆕 ' + t().profileNewOrdersEmpty + '</div>';
+          return;
+        }
+        var cards = items.map(function(o, i){
+          var hudud = [o.viloyat, o.tuman].filter(Boolean).join(' / ') || '—';
+          return '<div class="job-card" id="newOrderCard' + o.id + '" style="animation:view-in .2s ' + (Math.min(i,8)*0.03) + 's both">' +
+            '<div class="job-top"><span class="job-hash">#' + o.id + '</span><span class="job-name">' + esc(o.xizmat || '—') + '</span></div>' +
+            '<div class="job-meta"><span>📍 ' + esc(hudud) + '</span>' + (o.has_photo ? '<span>' + t().photoAttached + '</span>' : '') + '</div>' +
+            '<div class="job-status">💬 ' + esc(o.muammo || '—') + '</div>' +
+            '<div class="job-status">🏠 ' + esc(o.manzil || '—') + '</div>' +
+            '<div class="job-time">🕐 ' + esc(o.created_at || '—') + '</div>' +
+            '<button class="btn-accept-order" data-oid="' + o.id + '">' + t().profileNewOrderAcceptBtn + '</button>' +
+            '</div>';
+        }).join('');
+        var nav = '';
+        var hasPrev = offset > 0;
+        var hasNext = (offset + (res.limit || 8)) < (res.total || 0);
+        if (hasPrev || hasNext) {
+          nav = '<div class="page-nav">' +
+            (hasPrev ? '<button class="btn-ghost" id="newOrdersPrev">' + t().prevPage + '</button>' : '<span></span>') +
+            (hasNext ? '<button class="btn-ghost" id="newOrdersNext">' + t().nextPage + '</button>' : '<span></span>') +
+            '</div>';
+        }
+        box.innerHTML = '<div class="job-list">' + cards + '</div>' + nav;
+
+        box.querySelectorAll('.btn-accept-order').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var oid = parseInt(btn.getAttribute('data-oid'), 10);
+            btn.disabled = true; btn.textContent = t().profileNewOrderAccepting;
+            apiPost('/api/public/profile/master/order/accept', { init_data: getInitData(), order_id: oid })
+              .then(function(r2){
+                if (r2.data && r2.data.ok) {
+                  haptic('ok');
+                  push({ view:'profileMasterOrderAccepted', order: r2.data.order, fromOffset: offset });
+                } else {
+                  haptic('tap');
+                  var errTxt = (r2.data && r2.data.error) || t().orderErrGeneric;
+                  alert(errTxt);
+                  var card = mainView.querySelector('#newOrderCard' + oid);
+                  if (card) card.remove();
+                  btn.disabled = false; btn.textContent = t().profileNewOrderAcceptBtn;
+                }
+              }).catch(function(){
+                alert(t().orderErrGeneric);
+                btn.disabled = false; btn.textContent = t().profileNewOrderAcceptBtn;
+              });
+          });
+        });
+        var prevBtn = box.querySelector('#newOrdersPrev');
+        if (prevBtn) prevBtn.addEventListener('click', function(){
+          haptic('select');
+          state.stack[state.stack.length - 1] = { view:'profileMasterNewOrders', offset: Math.max(0, offset - (res.limit||8)) };
+          render();
+        });
+        var nextBtn = box.querySelector('#newOrdersNext');
+        if (nextBtn) nextBtn.addEventListener('click', function(){
+          haptic('select');
+          state.stack[state.stack.length - 1] = { view:'profileMasterNewOrders', offset: offset + (res.limit||8) };
+          render();
+        });
+      }).catch(function(){
+        mainView.querySelector('#newOrdersBox').innerHTML = '<div class="empty">' + t().orderErrGeneric + '</div>';
+      });
+  }
+
+  function renderProfileMasterOrderAccepted(entry){
+    var o = entry.order || {};
+    var fio = [o.familya, o.ism].filter(Boolean).join(' ') || '—';
+    var loc = (o.lat != null && o.lon != null)
+      ? '<a class="tg" href="https://maps.google.com/?q=' + o.lat + ',' + o.lon + '" target="_blank">🗺 ' + t().viewOnMap + '</a>'
+      : '';
+    mainView.innerHTML =
+      '<div class="view"><div class="detail-head">' +
+      '<div class="eyebrow"><span class="ping"></span>' + t().profileNewOrdersTitle + '</div>' +
+      '<h2>' + t().profileNewOrderAcceptedTitle + '</h2></div>' +
+      '<div class="panel dashed">' +
+      '<div class="summary-row"><span class="k">👤</span><span class="v">' + esc(fio) + '</span></div>' +
+      '<div class="summary-row"><span class="k">🔧</span><span class="v">' + esc(o.xizmat || '—') + '</span></div>' +
+      '<div class="summary-row"><span class="k">🏠</span><span class="v">' + esc(o.manzil || '—') + '</span></div>' +
+      '<div class="summary-row"><span class="k">💬</span><span class="v">' + esc(o.muammo || '—') + '</span></div>' +
+      '</div>' +
+      '<div class="mc-actions">' +
+      '<a class="tel" href="tel:' + esc(o.telefon || '') + '">📞 ' + esc(o.telefon || '—') + '</a>' +
+      loc +
+      '</div>' +
+      '<button class="btn-accept-order" id="btnBackToJobs" style="margin-top:16px">' + t().profileNewOrderAcceptedOk + '</button>' +
+      '</div>';
+
+    mainView.querySelector('#btnBackToJobs').addEventListener('click', function(){
+      haptic('select');
+      state.stack.pop();
+      state.stack[state.stack.length - 1] = { view:'profileMasterNewOrders', offset: entry.fromOffset || 0 };
+      render();
+      if (tg && tg.BackButton && state.stack.length === 1) { tg.BackButton.hide(); }
+    });
   }
 
   function renderProfileEditMaster(entry){
@@ -3706,6 +3849,8 @@
     else if (entry.view === 'profileGate') renderProfileGate();
     else if (entry.view === 'profileMaster') renderProfileMaster(entry);
     else if (entry.view === 'profileMasterJobs') renderProfileMasterJobs(entry);
+    else if (entry.view === 'profileMasterNewOrders') renderProfileMasterNewOrders(entry);
+    else if (entry.view === 'profileMasterOrderAccepted') renderProfileMasterOrderAccepted(entry);
     else if (entry.view === 'profileMasterStats') renderProfileMasterStats(entry);
     else if (entry.view === 'profileEditMaster') renderProfileEditMaster(entry);
     else if (entry.view === 'profileUser') renderProfileUser(entry);
