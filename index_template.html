@@ -204,6 +204,12 @@ main{ flex:1; padding: 4px 16px calc(28px + var(--safe-bottom)); }
 .row .lbl{ flex:1; font-size:13.5px; line-height:1.4; color:var(--text-1); }
 .row .chev{ color:var(--text-3); font-size:13px; flex-shrink:0; }
 .row.brand-row .lbl{ font-family:var(--font-mono); font-weight:600; letter-spacing:.02em; font-size:12.5px; }
+.row-badge{
+  font-family:var(--font-mono); font-size:11px; font-weight:700; color:#191008;
+  background:linear-gradient(135deg, var(--amber), #E67635);
+  min-width:20px; height:20px; padding:0 6px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
 
 /* ---------------- DETAIL VIEW ---------------- */
 .detail-head{ padding: 6px 0 18px; }
@@ -505,6 +511,14 @@ main{ flex:1; padding: 4px 16px calc(28px + var(--safe-bottom)); }
 .job-meta .dim{ color:var(--text-3); }
 .job-status{ font-size:12.5px; color:var(--text-1); font-weight:500; margin-bottom:4px; }
 .job-time{ font-family:var(--font-mono); font-size:10.5px; color:var(--text-3); }
+
+.btn-accept-order{
+  width:100%; margin-top:10px; padding:12px; border-radius:11px;
+  font-family:var(--font-display); font-weight:600; font-size:13px;
+  background:linear-gradient(135deg, var(--amber), #E67635); color:#191008; transition:.15s;
+}
+.btn-accept-order:active{ transform:scale(.98); }
+.btn-accept-order:disabled{ opacity:.6; }
 
 .page-nav{ display:flex; justify-content:space-between; gap:10px; margin-top:14px; }
 .page-nav button{ flex:1; padding:11px; border-radius:11px; font-size:12.5px; }
