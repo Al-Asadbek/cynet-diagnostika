@@ -83,6 +83,9 @@
       codesTitle: "Xatolik kodlari",
       illusTitle: "Ko'rgazmali animatsiya",
       videoTitle: "Video ko'rsatma",
+      priceTitle: "Taxminiy ta'mirlash narxi",
+      priceBtn: "Narxni ko'rish",
+      priceNone: "Narx hali kiritilmagan. Aniq narxni usta tashxisdan keyin aytadi.",
       home: "Cynet Diagnostika",
       contactMaster: "Ustaga yozish",
       note: "Aniq diagnostika uchun qurilmani ko'zdan kechirish tavsiya etiladi. Murakkab holatlarda Cynet Service Center ustaxonasiga murojaat qiling.",
@@ -333,6 +336,9 @@
       codesTitle: "Коды ошибок",
       illusTitle: "Наглядная анимация",
       videoTitle: "Видео инструкция",
+      priceTitle: "Примерная стоимость ремонта",
+      priceBtn: "Узнать цену",
+      priceNone: "Цена пока не указана. Точную цену мастер назовёт после диагностики.",
       home: "Cynet Диагностика",
       contactMaster: "Написать мастеру",
       note: "Для точной диагностики рекомендуется осмотр устройства. В сложных случаях обратитесь в сервис-центр Cynet.",
@@ -3776,6 +3782,27 @@
       '</div>';
   }
 
+  var diagPricesCache = null;
+  function loadDiagPrices(){
+    if (diagPricesCache) return Promise.resolve(diagPricesCache);
+    return apiGet('/api/public/diag/prices').then(function(res){
+      diagPricesCache = (res && res.ok && res.prices) ? res.prices : {};
+      return diagPricesCache;
+    }).catch(function(){ return {}; });
+  }
+
+  function renderPriceSection(p){
+    var has = p && (p.narx || p.malumot);
+    var body = has
+      ? ((p.narx ? '<p><strong>' + esc(p.narx) + '</strong></p>' : '') +
+         (p.malumot ? '<p>' + esc(p.malumot) + '</p>' : ''))
+      : '<p>' + t().priceNone + '</p>';
+    return '<button class="btn-primary" id="priceBtn" style="width:100%;padding:14px;border-radius:11px;font-weight:600;margin-top:6px">' +
+      '💰 ' + t().priceBtn + '</button>' +
+      '<div class="panel" id="priceBox" style="display:none;margin-top:10px">' +
+      '<div class="ph">💰 ' + t().priceTitle + '</div>' + body + '</div>';
+  }
+
   function renderIssue(entry){
     var c = catById(entry.catId);
     var item, raw, label, diagKey, videoUrl;
@@ -3811,9 +3838,23 @@
       '<div class="eyebrow"><span class="ping"></span>' + t().diagnosing + '</div>' +
       '<h2>' + esc(label.replace(/^\S+\s/, function(m){ return ''; }) || label) + '</h2>' +
       '</div>' + illusHtml + videoHtml + html +
+      '<div id="priceSlot" style="margin:14px 0"></div>' +
       '<p class="note">ℹ️ ' + t().note + '</p></div>';
 
     wireIllustrationCycle();
+
+    loadDiagPrices().then(function(all){
+      var slot = mainView.querySelector('#priceSlot');
+      if (!slot) return;
+      slot.innerHTML = renderPriceSection(all[diagKey]);
+      var btn = slot.querySelector('#priceBtn');
+      var box = slot.querySelector('#priceBox');
+      btn.addEventListener('click', function(){
+        var open = box.style.display !== 'none';
+        box.style.display = open ? 'none' : 'block';
+        if (!open) { try { box.scrollIntoView({behavior:'smooth', block:'nearest'}); } catch(e){} }
+      });
+    });
   }
 
   // ---------- Master render dispatcher ----------
