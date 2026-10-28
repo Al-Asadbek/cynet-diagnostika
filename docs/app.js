@@ -2685,6 +2685,15 @@
         { icon:"🔄", caption_uz:"Qayta ishga tushiring", caption_ru:"Перезагрузите" },
       ],
     },
+    "tv_14": {
+      device: "📺",
+      steps: [
+        { icon:"🔌", caption_uz:"Rozetkadan darhol uzing", caption_ru:"Сразу отключите от розетки" },
+        { icon:"✋", caption_uz:"Ekranga tegmang va bosmang", caption_ru:"Не трогайте и не нажимайте на экран" },
+        { icon:"📸", caption_uz:"Suratga oling, modelni yozib oling", caption_ru:"Сфотографируйте, запишите модель" },
+        { icon:"🛠️", caption_uz:"Ustaga murojaat qiling — matritsa almashtiriladi", caption_ru:"Обратитесь к мастеру — замена матрицы" },
+      ],
+    },
     "kond_0": {
       device: "❄️",
       steps: [
@@ -3912,3 +3921,4 @@
 
   render();
 })();
+
