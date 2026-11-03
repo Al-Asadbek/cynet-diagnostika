@@ -764,6 +764,7 @@
     if (entry.view === 'topishTuman' || entry.view === 'topishXizmat' || entry.view === 'topishResults') return entry.viloyat;
     if (entry.view === 'orderXizmat' || entry.view === 'orderForm' || entry.view === 'orderConfirm') return entry.viloyat;
     if (entry.view === 'orderGate' || entry.view === 'orderSuccess') return t().menuOrder;
+    if (entry.view === 'map') return L('Xarita','Карта');
     if (entry.view === 'about') return t().menuAbout;
     if (entry.view === 'contact') return t().menuContact;
     if (entry.view === 'profileGate' || entry.view === 'profileMaster' || entry.view === 'profileUser') return t().menuProfile;
@@ -3895,6 +3896,8 @@
         count:t().itemsCount(totalIssues()), brand:L('Texnika','Техника'), action:function(){ push({ view:'home' }); } },
       { pal:'g-night', wide:true, icon:'🔍', title:cl(t().menuTopish), sub:t().menuTopishSub, cta:'🔎 ' + L('Qidirish','Искать') + ' ›',
         brand:L('Ustaxona','Мастерская'), action:function(){ push({ view:'topishViloyat' }); } },
+      { pal:'g-teal', wide:true, icon:'🗺️', title:L('Xarita','Карта'), sub:L('Yaqin atrofdagi ustalarni xaritada toping','Найдите мастеров рядом на карте'),
+        cta:'🗺 ' + L('Xaritani ochish','Открыть карту') + ' ›', brand:L('Xarita','Карта'), action:function(){ push({ view:'map' }); } },
       { pal:'g-pink', icon:'📋', title:cl(t().menuOrder), sub:t().menuOrderSub, brand:L('Buyurtma','Заказ'), action:function(){ push({ view:'orderGate' }); } },
       { pal:'g-sky', icon:'👤', title:cl(t().menuProfile), sub:t().menuProfileSub, brand:L('Profil','Профиль'), action:function(){ push({ view:'profileGate' }); } },
       { pal:'g-lime', icon:'📝', title:cl(t().menuAnketa), sub:t().menuAnketaSub, brand:L('Usta bo\'l','Стать мастером'), action:function(){ push({ view:'anketaGate' }); } },
@@ -4084,9 +4087,426 @@
     });
   }
 
+  // ---------- XARITA (Leaflet + OpenStreetMap) ----------
+  // Yangi soha qo'shish (do'konlar, servis markazlari va h.k.):
+  //   1) MAP_LAYERS ga yozuv qo'shing (bittadan ortiq bo'lsa yuqorida qatlam tablari chiqadi);
+  //   2) serverda /api/public/map/nearby dagi `layer` shartiga shu qatlam uchun ma'lumot ulang.
+  // Diqqat: bu fayldagi L() — til yordamchisi. Leaflet'ga window.L orqali LF sifatida murojaat qilinadi.
+  var MAP_LAYERS = [
+    { id:'ustalar', icon:'🛠️', name_uz:'Ustalar', name_ru:'Мастера',
+      ph_uz:'Usta ismi yoki xizmat...', ph_ru:'Имя мастера или услуга...',
+      unit_uz:'ta usta', unit_ru:'мастеров' }
+  ];
+  var MAP_DEFAULT = { lat: 41.3111, lon: 69.2797, zoom: 11 }; // Toshkent
+  var MAP_LIB = {
+    css: [
+      ['https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css', 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'],
+      ['https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css', 'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css']
+    ],
+    leaflet: ['https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js', 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'],
+    cluster: ['https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js', 'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js']
+  };
+  var mapUI = { layer:'ustalar', q:'', xizmatlar:[], dark:true }; // seans davomida eslab qolinadi
+  var mapRt = null;          // ochiq xarita holati
+  var mapLibPromise = null;
+
+  function mapEsc(s){
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function mapKm(a, b){
+    var R = 6371, rad = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
+    var x = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(a.lat*rad) * Math.cos(b.lat*rad) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+  }
+  function mapLayerDef(){
+    for (var i = 0; i < MAP_LAYERS.length; i++) if (MAP_LAYERS[i].id === mapUI.layer) return MAP_LAYERS[i];
+    return MAP_LAYERS[0];
+  }
+
+  function mapLoadCss(urls){
+    return new Promise(function(resolve){
+      var i = 0;
+      (function next(){
+        if (i >= urls.length) { resolve(); return; }
+        var l = document.createElement('link');
+        l.rel = 'stylesheet'; l.href = urls[i++];
+        l.onload = function(){ resolve(); };
+        l.onerror = function(){ l.remove(); next(); };
+        document.head.appendChild(l);
+      })();
+    });
+  }
+  function mapLoadScript(urls){
+    return new Promise(function(resolve, reject){
+      var i = 0;
+      (function next(){
+        if (i >= urls.length) { reject(new Error('script')); return; }
+        var s = document.createElement('script');
+        s.src = urls[i++];
+        s.onload = function(){ resolve(); };
+        s.onerror = function(){ s.remove(); next(); };
+        document.head.appendChild(s);
+      })();
+    });
+  }
+  // Leaflet faqat xarita ochilganda yuklanadi (ilovaning boshqa qismlari sekinlashmaydi).
+  function mapEnsureLib(){
+    if (window.L && window.L.map) return Promise.resolve();
+    if (mapLibPromise) return mapLibPromise;
+    mapLibPromise = Promise.all(MAP_LIB.css.map(mapLoadCss)).then(function(){
+      return mapLoadScript(MAP_LIB.leaflet);
+    }).then(function(){
+      return mapLoadScript(MAP_LIB.cluster).catch(function(){ /* klasterlashsiz ham ishlaydi */ });
+    }).catch(function(e){ mapLibPromise = null; throw e; });
+    return mapLibPromise;
+  }
+
+  function mapInjectCss(){
+    if (document.getElementById('mapxCss')) return;
+    var css = [
+      '.mapx{position:relative;isolation:isolate;overflow:hidden;border-radius:18px;border:1px solid var(--border);background:var(--bg-panel);margin-top:4px}',
+      '.mapx-canvas{position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;background:#0b0e13}',
+      '.mapx .leaflet-container{font-family:var(--font-body);background:#0b0e13;outline:none}',
+      '.mapx.dark .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.92) saturate(.8)}',
+      '.mapx .leaflet-control-attribution{background:rgba(14,17,22,.7);color:var(--text-3);font-size:9.5px}',
+      '.mapx .leaflet-control-attribution a{color:var(--text-2)}',
+      '.mapx-top{position:absolute;left:10px;right:10px;top:10px;z-index:1000;display:flex;flex-direction:column;gap:8px;pointer-events:none}',
+      '.mapx-top>*{pointer-events:auto}',
+      '.mapx-search{position:relative}',
+      '.mapx-search input{width:100%;box-sizing:border-box;background:rgba(23,27,33,.96);border:1px solid var(--border);border-radius:12px;padding:12px 38px;color:var(--text-1);font-size:16px;font-family:var(--font-body);box-shadow:0 6px 18px rgba(0,0,0,.35)}',
+      '.mapx-search input::placeholder{color:var(--text-3)}',
+      '.mapx-search .sic{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text-3)}',
+      '.mapx-clear{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:transparent;border:none;color:var(--text-2);font-size:14px}',
+      '.mapx-chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}',
+      '.mapx-chips::-webkit-scrollbar{display:none}',
+      '.mapx-chip{flex:0 0 auto;white-space:nowrap;background:rgba(23,27,33,.96);border:1px solid var(--border);color:var(--text-2);border-radius:999px;padding:8px 13px;font-size:12.5px;font-family:var(--font-body);font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.3)}',
+      '.mapx-chip.on{background:var(--cyan);border-color:var(--cyan);color:#06201d}',
+      '.mapx-badge{align-self:flex-start;background:rgba(23,27,33,.96);border:1px solid var(--border);color:var(--text-2);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.3)}',
+      '.mapx-badge:empty{display:none}',
+      '.mapx-badge.warn{color:var(--amber);border-color:var(--amber-dim)}',
+      '.mapx-here{align-self:center;background:var(--cyan);color:#06201d;border:none;border-radius:999px;padding:9px 16px;font-size:12.5px;font-weight:700;font-family:var(--font-body);box-shadow:0 6px 16px rgba(0,0,0,.4)}',
+      '.mapx-fabs{position:absolute;right:10px;top:156px;z-index:1000;display:flex;flex-direction:column;gap:8px}',
+      '.mapx-fab{width:42px;height:42px;border-radius:12px;background:rgba(23,27,33,.96);border:1px solid var(--border);color:var(--text-1);font-size:18px;line-height:1;box-shadow:0 4px 12px rgba(0,0,0,.35)}',
+      '.mapx-msg{position:absolute;left:20px;right:20px;top:50%;transform:translateY(-50%);z-index:1000;background:rgba(23,27,33,.97);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;color:var(--text-2);font-size:13px;line-height:1.5}',
+      '.mapx-card{position:absolute;left:10px;right:10px;bottom:26px;z-index:1000;animation:view-in .2s ease both}',
+      '.mapx-card .master-card{box-shadow:0 10px 30px rgba(0,0,0,.5)}',
+      '.mapx-close{position:absolute;top:6px;right:6px;z-index:2;width:30px;height:30px;border-radius:50%;background:var(--bg-panel-2);border:1px solid var(--border);color:var(--text-2);font-size:13px}',
+      '.mapx-hint{margin-top:8px;color:var(--text-3);font-size:11px}',
+      '.mapx-pin-wrap,.mapx-me-wrap,.mapx-cluster{background:none;border:none}',
+      '.mapx-pin{width:38px;height:38px;box-sizing:border-box;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--bg-panel);border:3px solid var(--green);box-shadow:0 4px 10px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}',
+      '.mapx-pin span{transform:rotate(45deg);font-size:17px;line-height:1}',
+      '.mapx-pin.busy{border-color:var(--red)}',
+      '.mapx-pin.prem{box-shadow:0 0 0 3px rgba(255,200,61,.55),0 4px 10px rgba(0,0,0,.45)}',
+      '.mapx-me{width:18px;height:18px;border-radius:50%;background:#3b82f6;border:3px solid #fff;animation:mapx-pulse 2s infinite}',
+      '@keyframes mapx-pulse{0%{box-shadow:0 0 0 0 rgba(59,130,246,.55)}70%{box-shadow:0 0 0 16px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}',
+      '.mapx-cluster div{width:40px;height:40px;box-sizing:border-box;border-radius:50%;background:var(--cyan);color:#06201d;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;border:3px solid rgba(255,255,255,.85);box-shadow:0 4px 12px rgba(0,0,0,.4)}'
+    ].join('\n');
+    var st = document.createElement('style');
+    st.id = 'mapxCss';
+    st.textContent = css;
+    document.head.appendChild(st);
+  }
+
+  function mapCleanup(){
+    if (!mapRt) return;
+    try { clearTimeout(mapRt.qTimer); } catch(e){}
+    try { window.removeEventListener('resize', mapRt.onResize); } catch(e){}
+    try { if (mapRt.map) mapRt.map.remove(); } catch(e){}
+    mapRt = null;
+  }
+
+  function mapPinIcon(m){
+    var LF = window.L;
+    var first = String(m.xizmatlar || '').split(',')[0].trim();
+    var tok = (first.match(/^\S+/) || [''])[0];
+    var em = (tok && tok.length <= 4) ? tok : '🛠️';
+    var cls = 'mapx-pin ' + (m.band ? 'busy' : 'free') + (m.is_premium ? ' prem' : '');
+    return LF.divIcon({ className:'mapx-pin-wrap', html:'<div class="' + cls + '"><span>' + mapEsc(em) + '</span></div>',
+      iconSize:[38, 46], iconAnchor:[19, 44] });
+  }
+
+  function mapAvatarHTML(m){
+    var initials = String(m.ism || '?').trim().split(/\s+/).slice(0, 2).map(function(w){ return w.charAt(0) || ''; }).join('').toUpperCase().replace(/[^A-Za-z0-9\u0400-\u04FF\u0100-\u024F]/g, '');
+    if (m.has_photo && API_BASE) {
+      return '<img class="mc-avatar-img" src="' + mapEsc(API_BASE) + '/api/public/master/photo?tg_id=' + encodeURIComponent(m.tg_id) +
+        '" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'mc-avatar-fallback\',textContent:\'' + initials + '\'}))">';
+    }
+    return '<div class="mc-avatar-fallback">' + mapEsc(initials) + '</div>';
+  }
+
+  function mapOpenCard(m){
+    var rt = mapRt; if (!rt) return;
+    var link = m.username ? ('https://t.me/' + encodeURIComponent(m.username)) : ('tg://user?id=' + encodeURIComponent(m.tg_id));
+    var ratingHtml = m.rating ? (mapEsc(m.rating) + ' <span class="mc-rc">(' + mapEsc(m.rating_count) + ')</span>') : '—';
+    var chips = String(m.xizmatlar || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean)
+      .map(function(s){ return '<span class="mc-chip">' + mapEsc(s) + '</span>'; }).join('');
+    var avail = '<span class="mc-avail ' + (m.band ? 'busy' : 'free') + '">' + (m.band ? t().topishBusy : t().topishFree) + '</span>';
+    var where = [m.viloyat, m.tuman].filter(Boolean).map(mapEsc).join(' · ');
+    var card = rt.cardEl;
+    card.innerHTML =
+      '<button class="mapx-close" id="mapxClose" aria-label="close">✕</button>' +
+      '<div class="master-card' + (m.is_premium ? ' premium' : '') + (m.band ? ' is-busy' : '') + '">' +
+      (m.is_premium ? '<div class="mc-premium-tag">⭐ PREMIUM</div>' : '') +
+      '<div class="mc-top"><div class="mc-avatar">' + mapAvatarHTML(m) + '</div>' +
+      '<div class="mc-id"><div class="mc-name">' + mapEsc(m.ism) + '</div>' +
+      '<div class="mc-stats"><span class="mc-stat mc-rating">⭐ ' + ratingHtml + '</span>' +
+      (m.masofa_km != null ? '<span class="mc-stat">📏 ' + mapEsc(m.masofa_km) + ' km</span>' : '') + '</div></div></div>' +
+      '<div class="mc-chips">' + chips + avail + '</div>' +
+      '<div class="mc-actions">' +
+      '<a class="tel" href="tel:' + mapEsc(m.telefon) + '">📞 ' + mapEsc(m.telefon) + '</a>' +
+      '<a class="tg" href="' + mapEsc(link) + '" target="_blank">✈️ ' + t().topishWrite + '</a></div>' +
+      '<div class="mapx-hint">📍 ' + (where ? where + ' · ' : '') + L('Taxminiy joylashuv', 'Примерное местоположение') + '</div>' +
+      '</div>';
+    card.hidden = false;
+    card.querySelector('#mapxClose').addEventListener('click', function(){ haptic('tap'); mapCloseCard(); });
+    haptic('select');
+  }
+  function mapCloseCard(){
+    if (mapRt && mapRt.cardEl) { mapRt.cardEl.hidden = true; mapRt.cardEl.innerHTML = ''; }
+  }
+
+  function mapBadge(text, warn){
+    if (!mapRt) return;
+    mapRt.badgeEl.textContent = text || '';
+    mapRt.badgeEl.classList.toggle('warn', !!warn);
+  }
+  function mapMsg(text){
+    if (!mapRt) return;
+    mapRt.msgEl.hidden = !text;
+    mapRt.msgEl.textContent = text || '';
+  }
+
+  function mapSetView(latlng, zoom){
+    if (!mapRt) return;
+    mapRt.progUntil = Date.now() + 900;
+    mapRt.map.setView(latlng, zoom, { animate: true });
+  }
+  function mapFitResults(items){
+    var rt = mapRt; if (!rt) return;
+    var pts = items.slice(0, 20).map(function(m){ return [m.lat, m.lon]; });
+    if (rt.user) pts.push([rt.user.lat, rt.user.lon]);
+    if (!pts.length) return;
+    rt.progUntil = Date.now() + 1200;
+    if (pts.length === 1) { rt.map.setView(pts[0], 14, { animate: true }); return; }
+    rt.map.fitBounds(pts, { paddingTopLeft:[40, 170], paddingBottomRight:[40, 60], maxZoom:15, animate:true });
+  }
+
+  function mapRenderMarkers(items){
+    var rt = mapRt; if (!rt) return;
+    var LF = window.L;
+    rt.group.clearLayers();
+    var markers = items.map(function(m){
+      var mk = LF.marker([m.lat, m.lon], { icon: mapPinIcon(m), title: m.ism || '', keyboard: false });
+      mk.on('click', function(){ mapOpenCard(m); });
+      return mk;
+    });
+    if (rt.group.addLayers) rt.group.addLayers(markers);
+    else markers.forEach(function(mk){ rt.group.addLayer(mk); });
+  }
+
+  function mapFetch(o){
+    var rt = mapRt; if (!rt) return;
+    o = o || {};
+    var id = ++rt.reqId;
+    var c = o.center || rt.map.getCenter();
+    var clat = c.lat, clon = (c.lng != null ? c.lng : c.lon);
+    if (!getInitData()) { mapMsg(t().topishNoInitData); mapBadge(''); return; }
+    if (!API_BASE) { mapMsg(t().topishApiMissing); mapBadge(''); return; }
+    mapMsg(null);
+    mapBadge('⏳ ' + L('Qidirilmoqda...', 'Поиск...'));
+    apiPost('/api/public/map/nearby', {
+      init_data: getInitData(), layer: mapUI.layer, lat: clat, lon: clon,
+      ulat: rt.user ? rt.user.lat : null, ulon: rt.user ? rt.user.lon : null,
+      xizmatlar: mapUI.xizmatlar, q: mapUI.q
+    }).then(function(res){
+      if (!mapRt || id !== mapRt.reqId) return;
+      var body = res.data;
+      if (!body || !body.ok) { mapBadge(''); mapMsg(body && body.error ? body.error : t().orderErrGeneric); return; }
+      var items = body.items || [];
+      mapRt.items = items;
+      mapRt.lastCenter = { lat: clat, lon: clon };
+      mapRt.hereBtn.hidden = true;
+      mapCloseCard();
+      mapRenderMarkers(items);
+      var unit = L(mapLayerDef().unit_uz, mapLayerDef().unit_ru);
+      if (!items.length) mapBadge('😔 ' + t().topishNoResults, true);
+      else mapBadge(items.length + ' ' + unit);
+      if (o.refit && items.length) mapFitResults(items);
+    }).catch(function(){
+      if (!mapRt || id !== mapRt.reqId) return;
+      mapBadge(''); mapMsg(t().orderErrGeneric);
+    });
+  }
+
+  function mapSetUser(loc){
+    var rt = mapRt; if (!rt || !loc) return;
+    var LF = window.L;
+    rt.user = loc;
+    if (rt.userMarker) rt.userMarker.setLatLng([loc.lat, loc.lon]);
+    else rt.userMarker = LF.marker([loc.lat, loc.lon], {
+      icon: LF.divIcon({ className:'mapx-me-wrap', html:'<div class="mapx-me"></div>', iconSize:[18, 18], iconAnchor:[9, 9] }),
+      interactive: false, keyboard: false, zIndexOffset: 1000
+    }).addTo(rt.map);
+  }
+
+  function mapLocate(initial){
+    var rt = mapRt; if (!rt) return;
+    requestLocation().then(function(loc){
+      if (!mapRt) return;
+      if (!loc) { if (!initial) { mapBadge('⚠️ ' + L('Joylashuvga ruxsat berilmadi', 'Нет доступа к геолокации'), true); } return; }
+      mapSetUser(loc);
+      mapSetView([loc.lat, loc.lon], 14);
+      mapFetch({ center: loc, refit: true });
+    });
+  }
+
+  function renderMap(entry){
+    mapInjectCss();
+    var layer = mapLayerDef();
+    var services = DATA.xizmatlar || [];
+    mainView.innerHTML =
+      '<div class="view"><div class="mapx' + (mapUI.dark ? ' dark' : '') + '" id="mapx">' +
+      '<div class="mapx-canvas" id="mapxCanvas"></div>' +
+      '<div class="mapx-top">' +
+        (MAP_LAYERS.length > 1 ? '<div class="mapx-chips" id="mapxTabs">' + MAP_LAYERS.map(function(l){
+          return '<button class="mapx-chip' + (l.id === mapUI.layer ? ' on' : '') + '" data-layer="' + mapEsc(l.id) + '">' + l.icon + ' ' + mapEsc(pick(l, 'name')) + '</button>';
+        }).join('') + '</div>' : '') +
+        '<div class="mapx-search"><span class="sic">🔎</span>' +
+          '<input id="mapxQ" type="search" autocomplete="off" placeholder="' + mapEsc(pick(layer, 'ph')) + '" value="' + mapEsc(mapUI.q) + '">' +
+          '<button class="mapx-clear" id="mapxClear" aria-label="clear"' + (mapUI.q ? '' : ' hidden') + '>✕</button></div>' +
+        '<div class="mapx-chips" id="mapxChips"></div>' +
+        '<div class="mapx-badge" id="mapxBadge"></div>' +
+        '<button class="mapx-here" id="mapxHere" hidden>🔄 ' + L('Shu hududda qidirish', 'Искать в этой области') + '</button>' +
+      '</div>' +
+      '<div class="mapx-fabs">' +
+        '<button class="mapx-fab" id="mapxLocate" aria-label="locate">📍</button>' +
+        '<button class="mapx-fab" id="mapxZoomIn" aria-label="zoom in">＋</button>' +
+        '<button class="mapx-fab" id="mapxZoomOut" aria-label="zoom out">－</button>' +
+        '<button class="mapx-fab" id="mapxTheme" aria-label="theme">' + (mapUI.dark ? '☀️' : '🌙') + '</button>' +
+      '</div>' +
+      '<div class="mapx-msg" id="mapxMsg" hidden></div>' +
+      '<div class="mapx-card" id="mapxCard" hidden></div>' +
+      '</div></div>';
+
+    var root = mainView.querySelector('#mapx');
+    var chipsEl = mainView.querySelector('#mapxChips');
+
+    function drawChips(){
+      var none = mapUI.xizmatlar.length === 0;
+      chipsEl.innerHTML = '<button class="mapx-chip' + (none ? ' on' : '') + '" data-x="">' + L('Barchasi', 'Все') + '</button>' +
+        services.map(function(x, i){
+          var on = mapUI.xizmatlar.indexOf(x) > -1;
+          return '<button class="mapx-chip' + (on ? ' on' : '') + '" data-i="' + i + '">' + mapEsc(x) + '</button>';
+        }).join('');
+    }
+    drawChips();
+
+    // Ekran balandligiga moslash
+    function fit(){
+      var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      var h = Math.max(380, Math.floor(vh - (root.getBoundingClientRect().top) - 14));
+      root.style.height = h + 'px';
+      if (mapRt && mapRt.map) mapRt.map.invalidateSize();
+    }
+    fit();
+
+    mapCleanup();
+    mapRt = {
+      map: null, group: null, items: [], user: null, userMarker: null, reqId: 0, lastCenter: null, progUntil: 0,
+      qTimer: null, onResize: fit,
+      cardEl: mainView.querySelector('#mapxCard'), badgeEl: mainView.querySelector('#mapxBadge'),
+      msgEl: mainView.querySelector('#mapxMsg'), hereBtn: mainView.querySelector('#mapxHere')
+    };
+    var rt = mapRt;
+    window.addEventListener('resize', fit);
+
+    function refetch(){ mapFetch({ refit: true }); }
+
+    // --- boshqaruv elementlari ---
+    var qInput = mainView.querySelector('#mapxQ');
+    var clearBtn = mainView.querySelector('#mapxClear');
+    qInput.addEventListener('input', function(){
+      mapUI.q = qInput.value;
+      clearBtn.hidden = !qInput.value;
+      clearTimeout(rt.qTimer);
+      rt.qTimer = setTimeout(refetch, 350);
+    });
+    qInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') { qInput.blur(); } });
+    clearBtn.addEventListener('click', function(){
+      haptic('tap'); qInput.value = ''; mapUI.q = ''; clearBtn.hidden = true; refetch();
+    });
+    chipsEl.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('.mapx-chip') : null;
+      if (!b) return;
+      haptic('select');
+      if (b.getAttribute('data-x') === '') mapUI.xizmatlar = [];
+      else {
+        var x = services[parseInt(b.getAttribute('data-i'), 10)];
+        var k = mapUI.xizmatlar.indexOf(x);
+        if (k > -1) mapUI.xizmatlar.splice(k, 1); else mapUI.xizmatlar.push(x);
+      }
+      drawChips();
+      refetch();
+    });
+    var tabs = mainView.querySelector('#mapxTabs');
+    if (tabs) tabs.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('.mapx-chip') : null;
+      if (!b || b.getAttribute('data-layer') === mapUI.layer) return;
+      haptic('select');
+      mapUI.layer = b.getAttribute('data-layer'); mapUI.q = ''; mapUI.xizmatlar = [];
+      renderMap(entry);
+    });
+    mainView.querySelector('#mapxLocate').addEventListener('click', function(){ haptic('tap'); mapLocate(false); });
+    mainView.querySelector('#mapxZoomIn').addEventListener('click', function(){ haptic('tap'); if (rt.map) rt.map.zoomIn(); });
+    mainView.querySelector('#mapxZoomOut').addEventListener('click', function(){ haptic('tap'); if (rt.map) rt.map.zoomOut(); });
+    mainView.querySelector('#mapxTheme').addEventListener('click', function(){
+      haptic('tap'); mapUI.dark = !mapUI.dark;
+      root.classList.toggle('dark', mapUI.dark);
+      this.textContent = mapUI.dark ? '☀️' : '🌙';
+    });
+    rt.hereBtn.addEventListener('click', function(){ haptic('select'); mapFetch({ refit: false }); });
+
+    // --- Leaflet'ni yuklab, xaritani qurish ---
+    mapBadge('⏳ ' + L('Xarita yuklanmoqda...', 'Загрузка карты...'));
+    mapEnsureLib().then(function(){
+      if (mapRt !== rt) return; // foydalanuvchi boshqa sahifaga o'tib ketgan
+      var LF = window.L;
+      var map = LF.map(root.querySelector('#mapxCanvas'), { zoomControl: false, attributionControl: true, tap: true });
+      map.attributionControl.setPrefix(false);
+      LF.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+      }).addTo(map);
+      map.setView([MAP_DEFAULT.lat, MAP_DEFAULT.lon], MAP_DEFAULT.zoom);
+      rt.map = map;
+      rt.group = LF.markerClusterGroup ? LF.markerClusterGroup({
+        showCoverageOnHover: false, maxClusterRadius: 45, spiderfyOnMaxZoom: true,
+        iconCreateFunction: function(cl){
+          return LF.divIcon({ html: '<div><span>' + cl.getChildCount() + '</span></div>', className: 'mapx-cluster', iconSize: LF.point(40, 40) });
+        }
+      }) : LF.layerGroup();
+      rt.group.addTo(map);
+      map.on('click', function(){ mapCloseCard(); });
+      map.on('moveend', function(){
+        if (Date.now() < rt.progUntil || !rt.lastCenter) return;
+        var c = map.getCenter();
+        if (mapKm(rt.lastCenter, { lat: c.lat, lon: c.lng }) > 2) rt.hereBtn.hidden = false;
+      });
+      fit();
+      mapBadge('');
+      mapFetch({ refit: false });
+      mapLocate(true);
+    }).catch(function(){
+      if (mapRt !== rt) return;
+      mapBadge('');
+      mapMsg(L('Xaritani yuklab bo\'lmadi. Internetni tekshirib, qayta urinib ko\'ring.', 'Не удалось загрузить карту. Проверьте интернет и повторите попытку.'));
+    });
+  }
+
   // ---------- Master render dispatcher ----------
   function render(){
     var entry = state.stack[state.stack.length - 1];
+    mapCleanup();
     backBtn.classList.toggle('show', state.stack.length > 1);
     renderCrumb();
     window.scrollTo(0,0);
@@ -4107,6 +4527,7 @@
     else if (entry.view === 'topishTuman') renderTopishTuman(entry);
     else if (entry.view === 'topishXizmat') renderTopishXizmat(entry);
     else if (entry.view === 'topishResults') renderTopishResults(entry);
+    else if (entry.view === 'map') renderMap(entry);
     else if (entry.view === 'orderGate') renderOrderGate(entry);
     else if (entry.view === 'orderViloyat') renderOrderViloyat(entry);
     else if (entry.view === 'orderXizmat') renderOrderXizmat(entry);
