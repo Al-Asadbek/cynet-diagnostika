@@ -4182,11 +4182,22 @@
       '.mapx-chips::-webkit-scrollbar{display:none}',
       '.mapx-chip{flex:0 0 auto;white-space:nowrap;background:rgba(23,27,33,.96);border:1px solid var(--border);color:var(--text-2);border-radius:999px;padding:8px 13px;font-size:12.5px;font-family:var(--font-body);font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.3)}',
       '.mapx-chip.on{background:var(--cyan);border-color:var(--cyan);color:#06201d}',
+      '.mapx-filter{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;max-width:calc(100% - 44px);background:rgba(23,27,33,.96);border:1px solid var(--border);color:var(--text-1);border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:600;font-family:var(--font-body);box-shadow:0 4px 12px rgba(0,0,0,.3)}',
+      '.mapx-filter .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.mapx-filter .car{color:var(--text-3);font-size:11px;transition:transform .18s}',
+      '.mapx-filter.open .car{transform:rotate(180deg)}',
+      '.mapx-filter.on{border-color:var(--cyan);color:var(--cyan)}',
+      '.mapx-drop{align-self:flex-start;width:min(320px,calc(100% - 44px));overflow-y:auto;-webkit-overflow-scrolling:touch;background:rgba(23,27,33,.98);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.5);animation:view-in .16s ease both}',
+      '.mapx-opt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;box-sizing:border-box;padding:13px 16px;background:transparent;border:none;border-bottom:1px solid var(--border-soft);color:var(--text-1);font-size:14px;font-family:var(--font-body);text-align:left}',
+      '.mapx-opt:last-child{border-bottom:none}',
+      '.mapx-opt:active{background:var(--bg-panel-hover)}',
+      '.mapx-opt.on{color:var(--cyan);font-weight:700}',
+      '.mapx-opt .tick{font-size:15px}',
       '.mapx-badge{align-self:flex-start;background:rgba(23,27,33,.96);border:1px solid var(--border);color:var(--text-2);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.3)}',
       '.mapx-badge:empty{display:none}',
       '.mapx-badge.warn{color:var(--amber);border-color:var(--amber-dim)}',
       '.mapx-here{align-self:center;background:var(--cyan);color:#06201d;border:none;border-radius:999px;padding:9px 16px;font-size:12.5px;font-weight:700;font-family:var(--font-body);box-shadow:0 6px 16px rgba(0,0,0,.4)}',
-      '.mapx-fabs{position:absolute;right:10px;top:156px;z-index:1000;display:flex;flex-direction:column;gap:8px}',
+      '.mapx-fabs{position:absolute;right:10px;top:140px;z-index:1000;display:flex;flex-direction:column;gap:8px}',
       '.mapx-fab{width:42px;height:42px;border-radius:12px;background:rgba(23,27,33,.96);border:1px solid var(--border);color:var(--text-1);font-size:18px;line-height:1;box-shadow:0 4px 12px rgba(0,0,0,.35)}',
       '.mapx-msg{position:absolute;left:20px;right:20px;top:50%;transform:translateY(-50%);z-index:1000;background:rgba(23,27,33,.97);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;color:var(--text-2);font-size:13px;line-height:1.5}',
       '.mapx-card{position:absolute;left:10px;right:10px;bottom:26px;z-index:1000;animation:view-in .2s ease both}',
@@ -4375,7 +4386,8 @@
         '<div class="mapx-search"><span class="sic">🔎</span>' +
           '<input id="mapxQ" type="search" autocomplete="off" placeholder="' + mapEsc(pick(layer, 'ph')) + '" value="' + mapEsc(mapUI.q) + '">' +
           '<button class="mapx-clear" id="mapxClear" aria-label="clear"' + (mapUI.q ? '' : ' hidden') + '>✕</button></div>' +
-        '<div class="mapx-chips" id="mapxChips"></div>' +
+        '<button class="mapx-filter" id="mapxFilter"></button>' +
+        '<div class="mapx-drop" id="mapxDrop" hidden></div>' +
         '<div class="mapx-badge" id="mapxBadge"></div>' +
         '<button class="mapx-here" id="mapxHere" hidden>🔄 ' + L('Shu hududda qidirish', 'Искать в этой области') + '</button>' +
       '</div>' +
@@ -4390,17 +4402,34 @@
       '</div></div>';
 
     var root = mainView.querySelector('#mapx');
-    var chipsEl = mainView.querySelector('#mapxChips');
+    var filterBtn = mainView.querySelector('#mapxFilter');
+    var dropEl = mainView.querySelector('#mapxDrop');
 
-    function drawChips(){
+    function filterLabel(){
+      return mapUI.xizmatlar.length ? mapEsc(mapUI.xizmatlar[0]) : '🔧 ' + L('Xizmat turi', 'Тип услуги');
+    }
+    function drawFilter(){
+      filterBtn.innerHTML = '<span class="lbl">' + filterLabel() + '</span><span class="car">▼</span>';
+      filterBtn.classList.toggle('on', mapUI.xizmatlar.length > 0);
+    }
+    function drawDrop(){
       var none = mapUI.xizmatlar.length === 0;
-      chipsEl.innerHTML = '<button class="mapx-chip' + (none ? ' on' : '') + '" data-x="">' + L('Barchasi', 'Все') + '</button>' +
+      dropEl.innerHTML = '<button class="mapx-opt' + (none ? ' on' : '') + '" data-x="">' +
+        '<span>' + L('Barcha xizmat turlari', 'Все типы услуг') + '</span><span class="tick">' + (none ? '✓' : '') + '</span></button>' +
         services.map(function(x, i){
           var on = mapUI.xizmatlar.indexOf(x) > -1;
-          return '<button class="mapx-chip' + (on ? ' on' : '') + '" data-i="' + i + '">' + mapEsc(x) + '</button>';
+          return '<button class="mapx-opt' + (on ? ' on' : '') + '" data-i="' + i + '"><span>' + mapEsc(x) + '</span><span class="tick">' + (on ? '✓' : '') + '</span></button>';
         }).join('');
     }
-    drawChips();
+    function openDrop(open){
+      if (open) {
+        drawDrop();
+        dropEl.style.maxHeight = Math.max(180, root.clientHeight - 190) + 'px';
+      }
+      dropEl.hidden = !open;
+      filterBtn.classList.toggle('open', !!open);
+    }
+    drawFilter();
 
     // Ekran balandligiga moslash
     function fit(){
@@ -4436,18 +4465,22 @@
     clearBtn.addEventListener('click', function(){
       haptic('tap'); qInput.value = ''; mapUI.q = ''; clearBtn.hidden = true; refetch();
     });
-    chipsEl.addEventListener('click', function(e){
-      var b = e.target.closest ? e.target.closest('.mapx-chip') : null;
+    filterBtn.addEventListener('click', function(){ haptic('tap'); openDrop(dropEl.hidden); });
+    dropEl.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('.mapx-opt') : null;
       if (!b) return;
       haptic('select');
       if (b.getAttribute('data-x') === '') mapUI.xizmatlar = [];
-      else {
-        var x = services[parseInt(b.getAttribute('data-i'), 10)];
-        var k = mapUI.xizmatlar.indexOf(x);
-        if (k > -1) mapUI.xizmatlar.splice(k, 1); else mapUI.xizmatlar.push(x);
-      }
-      drawChips();
+      else mapUI.xizmatlar = [services[parseInt(b.getAttribute('data-i'), 10)]];
+      drawFilter();
+      openDrop(false);
       refetch();
+    });
+    // ro'yxatdan tashqarini bosganda yopiladi
+    root.addEventListener('click', function(e){
+      if (dropEl.hidden) return;
+      if (e.target.closest && (e.target.closest('#mapxDrop') || e.target.closest('#mapxFilter'))) return;
+      openDrop(false);
     });
     var tabs = mainView.querySelector('#mapxTabs');
     if (tabs) tabs.addEventListener('click', function(e){
