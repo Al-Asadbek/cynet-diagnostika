@@ -11,8 +11,8 @@
     try {
       tg.ready();
       tg.expand();
-      tg.setHeaderColor && tg.setHeaderColor('#0E1116');
-      tg.setBackgroundColor && tg.setBackgroundColor('#0E1116');
+      tg.setHeaderColor && tg.setHeaderColor('#07080d');
+      tg.setBackgroundColor && tg.setBackgroundColor('#07080d');
     } catch(e){}
   }
   function haptic(kind){
@@ -810,38 +810,6 @@
         '<button class="btn-ghost" style="width:100%;padding:13px;border-radius:11px" id="ofertaReviewBtn">' +
         t().ofertaReview + '</button></div>';
       mainView.querySelector('#ofertaReviewBtn').addEventListener('click', function(){ render(); });
-    });
-  }
-
-  function renderMainMenu(){
-    var items = [
-      { icon:'🔧', title:t().menuTechs, sub:t().menuTechsSub, action:function(){ push({ view:'home' }); } },
-      { icon:'🔍', title:t().menuTopish, sub:t().menuTopishSub, accent:true, action:function(){ push({ view:'topishViloyat' }); } },
-      { icon:'📋', title:t().menuOrder, sub:t().menuOrderSub, accent:true, action:function(){ push({ view:'orderGate' }); } },
-      { icon:'👤', title:t().menuProfile, sub:t().menuProfileSub, accent:true, action:function(){ push({ view:'profileGate' }); } },
-      { icon:'📝', title:t().menuAnketa, sub:t().menuAnketaSub, accent:true, action:function(){ push({ view:'anketaGate' }); } },
-      { icon:'ℹ️', title:t().menuAbout, sub:t().menuAboutSub, action:function(){ push({ view:'about' }); } },
-      { icon:'📞', title:t().menuContact, sub:t().menuContactSub, action:function(){ push({ view:'contact' }); } },
-    ];
-    var cardsHtml = items.map(function(it, i){
-      var titleClean = it.title.replace(/^\S+\s?/, '');
-      return '<button class="menu-card' + (it.accent ? ' accent' : '') + '" data-mi="' + i + '" ' +
-        'style="animation:view-in .25s ' + (i*0.04) + 's both">' +
-        '<span class="mc-icn">' + it.icon + '</span>' +
-        '<span class="mc-body"><span class="mc-title">' + titleClean + '</span>' +
-        '<span class="mc-sub">' + it.sub + '</span></span>' +
-        '<span class="mc-chev">→</span></button>';
-    }).join('');
-    mainView.innerHTML =
-      '<div class="view"><div class="hero">' +
-      '<h1>' + t().home + '</h1>' +
-      '<div class="scope-line">' + svgTrace() + '</div>' +
-      '</div><div class="menu-grid">' + cardsHtml + '</div></div>';
-    mainView.querySelectorAll('[data-mi]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        haptic('select');
-        items[parseInt(btn.getAttribute('data-mi'), 10)].action();
-      });
     });
   }
 
@@ -2320,50 +2288,6 @@
     mainView.querySelector('#anketaSuccessBack').addEventListener('click', function(){ resetHome(); });
   }
 
-  function renderHome(){
-    var q = (state.homeQuery || '').trim().toLowerCase();
-    var filtered = CATS.filter(function(c){
-      if (!q) return true;
-      var nm = pick(c,'name').toLowerCase();
-      return nm.indexOf(q) > -1;
-    });
-    var cards = filtered.map(function(c, i){
-      var count = countForCategory(c);
-      return '<button class="cat-card" data-cat="' + c.id + '" style="animation:view-in .3s ' + (i*0.03) + 's both">' +
-        '<span class="corner"></span>' +
-        '<span class="icn">' + c.icon + '</span>' +
-        '<span class="nm">' + pick(c,'name') + '</span>' +
-        '<span class="ct">' + t().itemsCount(count) + '</span>' +
-        '</button>';
-    }).join('');
-
-    mainView.innerHTML =
-      '<div class="view">' +
-      '<div class="hero">' +
-        '<h1>' + t().heroTitle + '</h1>' +
-        '<p>' + t().heroDesc + '</p>' +
-        '<div class="scope-line">' + svgTrace() + '</div>' +
-      '</div>' +
-      '<div class="search-wrap"><span class="sic">🔎</span><input id="homeSearch" placeholder="' + t().searchPh + '" value="' + (state.homeQuery||'') + '"></div>' +
-      (filtered.length ? '<div class="grid">' + cards + '</div>' : '<div class="empty">' + t().notFound + '</div>') +
-      '</div>';
-
-    var search = document.getElementById('homeSearch');
-    search.addEventListener('input', function(){
-      state.homeQuery = search.value;
-      renderHome();
-      search.focus();
-      search.setSelectionRange(search.value.length, search.value.length);
-    });
-
-    mainView.querySelectorAll('.cat-card').forEach(function(card){
-      card.addEventListener('click', function(){
-        haptic('select');
-        openCategory(card.getAttribute('data-cat'));
-      });
-    });
-  }
-
   function countForCategory(c){
     if (c.type === 'flat' || c.type === 'flat_with_codes') return c.items.length;
     if (c.type === 'single') return 1;
@@ -2406,10 +2330,12 @@
 
     // flat / flat_with_codes
     var rows = c.items.map(function(item, i){
-      return '<button class="row" data-idx="' + i + '" style="animation:view-in .22s ' + (Math.min(i,10)*0.03) + 's both">' +
+      var hasAnim = true;
+      return '<button class="row" data-idx="' + i + '" style="animation:view-in .3s ' + (Math.min(i,10)*0.04) + 's both">' +
         '<span class="idx">' + String(i+1).padStart(2,'0') + '</span>' +
         '<span class="lbl">' + esc(pick(item,'label')) + '</span>' +
-        '<span class="chev">→</span></button>';
+        (hasAnim ? '<span class="play"><b></b>VIDEO</span>' : '') +
+        '</button>';
     }).join('');
 
     var codesRow = '';
@@ -3746,40 +3672,332 @@
     return m ? ('https://www.youtube.com/embed/' + m[1]) : null;
   }
 
-  function renderIllustrationBlock(diagKey){
+  // ================= V2: animatsion sahnalar (SVG) =================
+  // Har bir sahna 230x210 viewBox. `only0/only1/only2` — faqat shu qadamda ko'rinadi.
+  function seedNoise(){
+    var s = '', r = 7;
+    for (var y = 0; y < 8; y++) for (var x = 0; x < 12; x++) {
+      r = (r * 9301 + 49297) % 233280;
+      var g = 90 + Math.floor((r / 233280) * 160);
+      s += '<rect x="' + (22 + x*15.5) + '" y="' + (32 + y*16) + '" width="15.5" height="16" fill="rgb(' + g + ',' + g + ',' + g + ')" style="animation-delay:' + ((r % 100) / 500) + 's"/>';
+    }
+    return s;
+  }
+  var SCENES = {
+    tv: function(){
+      var bars = ['#fff','#ffe14a','#2be4e4','#3be15b','#ff4bd8','#ff4040','#3a5bff'].map(function(c,i){
+        return '<rect x="' + (22 + i*26.6) + '" y="32" width="26.8" height="128" fill="' + c + '"/>';
+      }).join('');
+      return '<ellipse cx="115" cy="200" rx="78" ry="7" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="97" y="168" width="36" height="22" rx="4" fill="#2b2f45"/><rect x="68" y="186" width="94" height="9" rx="4.5" fill="#1b1f33"/>' +
+        '<rect x="10" y="20" width="210" height="152" rx="18" fill="#161a33"/><rect x="10" y="20" width="210" height="152" rx="18" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2"/>' +
+        '<clipPath id="tvc"><rect x="22" y="32" width="186" height="128" rx="9"/></clipPath>' +
+        '<g clip-path="url(#tvc)"><rect x="22" y="32" width="186" height="128" fill="#0b1226"/>' +
+        '<g class="only0 sv-noise">' + seedNoise() + '</g>' +
+        '<g class="only1"><path class="sv-flow" d="M22 100 Q50 50 78 100 T134 100 T190 100 T246 100" fill="none" stroke="#3bf0d8" stroke-width="5" stroke-linecap="round"/>' +
+        '<text x="115" y="146" text-anchor="middle" font-size="13" font-weight="800" fill="#7df" class="sv-blink">SIGNAL…</text></g>' +
+        '<g class="only2">' + bars + '<g class="sv-pulse"><circle cx="115" cy="96" r="26" fill="rgba(0,0,0,.55)"/><path d="M102 96 l9 10 l19 -22" stroke="#4dff88" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>' +
+        '<rect class="sv-scan" style="--sh:112px" x="22" y="32" width="186" height="12" fill="rgba(255,255,255,.2)"/></g>' +
+        '<circle cx="195" cy="165" r="3.5" fill="#ff5a5a" class="sv-blink"/>';
+    },
+    kond: function(){
+      var snow = '';
+      for (var i = 0; i < 9; i++) snow += '<text class="sv-fall" x="' + (26 + i*22) + '" y="118" font-size="' + (13 + (i%3)*4) + '" style="animation-delay:' + (i*0.27) + 's">❄️</text>';
+      return '<rect x="6" y="22" width="218" height="84" rx="26" fill="#f6f8ff"/><rect x="6" y="22" width="218" height="84" rx="26" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"/>' +
+        '<rect x="22" y="36" width="186" height="9" rx="4.5" fill="#dde4fa"/>' +
+        '<g class="sv-bob"><rect x="20" y="82" width="190" height="14" rx="7" fill="#b9c6f0"/></g>' +
+        '<circle cx="196" cy="62" r="5" fill="#34e07a" class="sv-blink"/>' +
+        '<text class="only0 sv-blink" x="30" y="72" font-size="26" font-weight="900" fill="#ff3b3b" font-family="Space Grotesk,sans-serif">E4 ✖</text>' +
+        '<text class="only1" x="30" y="72" font-size="22" font-weight="900" fill="#2a6bff" font-family="Space Grotesk,sans-serif">⚙ …</text>' +
+        '<text class="only2" x="30" y="74" font-size="30" font-weight="900" fill="#1f7bff" font-family="Space Grotesk,sans-serif">18°C</text>' + snow +
+        '<g class="only1"><text class="sv-wrench" x="140" y="196" font-size="52">🔧</text></g>' +
+        '<g class="only2"><path class="sv-flow" d="M30 130 q40 24 80 0 t80 0" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path class="sv-flow" d="M20 160 q50 26 100 0 t90 0" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="4" stroke-linecap="round"/></g>';
+    },
+    xolod: function(){
+      var fl = '';
+      for (var i = 0; i < 7; i++) fl += '<text class="sv-rise" x="' + (74 + (i%4)*24) + '" y="' + (80 + (i%3)*36) + '" font-size="15" style="animation-delay:' + (i*0.33) + 's">❄️</text>';
+      return '<ellipse cx="115" cy="204" rx="62" ry="6" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="60" y="6" width="110" height="196" rx="20" fill="#f2f7ff"/><rect x="60" y="6" width="110" height="196" rx="20" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2"/>' +
+        '<rect x="60" y="72" width="110" height="5" fill="#c9d6f2"/>' +
+        '<rect x="148" y="30" width="7" height="28" rx="3.5" fill="#9fb2dd"/><rect x="148" y="104" width="7" height="50" rx="3.5" fill="#9fb2dd"/>' +
+        '<rect x="74" y="20" width="56" height="26" rx="6" fill="#0f1b3d"/><text x="102" y="39" text-anchor="middle" font-size="15" font-weight="900" fill="#47f0ff" font-family="JetBrains Mono,monospace">-18°</text>' +
+        '<g class="only0"><text class="sv-fall" x="84" y="86" font-size="20">💧</text><text class="sv-fall" x="112" y="90" font-size="16" style="animation-delay:.6s">💧</text><circle cx="128" cy="34" r="5" fill="#ff4040" class="sv-blink"/></g>' +
+        '<g class="only1"><rect class="sv-pulse" x="72" y="86" width="72" height="96" rx="8" fill="rgba(255,240,150,.85)"/><text class="sv-wrench" x="86" y="162" font-size="46">🔧</text></g>' +
+        '<g class="only2">' + fl + '<g class="sv-pulse"><circle cx="108" cy="134" r="24" fill="#2fd27a"/><path d="M96 134 l9 10 l18 -21" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>';
+    },
+    kir: function(){
+      var cl = '<rect x="92" y="96" width="26" height="16" rx="6" fill="#ff5fa2"/><rect x="118" y="120" width="26" height="16" rx="6" fill="#ffd23f"/><rect x="96" y="128" width="22" height="14" rx="6" fill="#4ad0ff"/><rect x="124" y="94" width="18" height="14" rx="6" fill="#fff"/>';
+      return '<ellipse cx="115" cy="204" rx="78" ry="6" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="36" y="8" width="158" height="192" rx="22" fill="#f6f8ff"/><rect x="36" y="8" width="158" height="192" rx="22" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2"/>' +
+        '<rect x="48" y="20" width="134" height="30" rx="10" fill="#e1e8fb"/><circle cx="70" cy="35" r="9" fill="#9fb2dd"/><rect x="100" y="28" width="46" height="14" rx="5" fill="#0f1b3d"/><circle cx="162" cy="35" r="4" fill="#34e07a" class="sv-blink"/>' +
+        '<circle cx="115" cy="122" r="60" fill="#c3cff0"/><circle cx="115" cy="122" r="51" fill="#12315f"/>' +
+        '<clipPath id="drc"><circle cx="115" cy="122" r="49"/></clipPath>' +
+        '<g clip-path="url(#drc)"><rect x="60" y="112" width="110" height="60" fill="#37b5ff" opacity=".8"/><g class="sv-spin only1" style="animation-duration:.6s">' + cl + '</g><g class="sv-spin slow only0 only2">' + cl + '</g></g>' +
+        '<circle cx="115" cy="122" r="51" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="4"/>' +
+        '<g class="only0"><text class="sv-fall" x="62" y="196" font-size="22">💧</text><text class="sv-fall" x="150" y="196" font-size="18" style="animation-delay:.7s">💧</text></g>' +
+        '<g class="only2"><text class="sv-rise" x="84" y="110" font-size="16">🫧</text><text class="sv-rise" x="130" y="130" font-size="20" style="animation-delay:.5s">🫧</text><text class="sv-rise" x="108" y="150" font-size="14" style="animation-delay:1s">✨</text></g>';
+    },
+    suv: function(){
+      return '<ellipse cx="115" cy="204" rx="50" ry="6" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="62" y="8" width="106" height="190" rx="36" fill="#f6f8ff"/><rect x="62" y="8" width="106" height="190" rx="36" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2"/>' +
+        '<circle cx="115" cy="76" r="32" fill="#0f1b3d"/><circle cx="115" cy="76" r="27" fill="#16275a"/>' +
+        '<g class="only0 only1 only2"><line class="sv-sw" x1="115" y1="76" x2="115" y2="54" stroke="#ff6a3d" stroke-width="4" stroke-linecap="round"/></g><circle cx="115" cy="76" r="5" fill="#fff"/>' +
+        '<rect x="82" y="128" width="66" height="12" rx="6" fill="#e1e8fb"/><circle cx="96" cy="160" r="6" fill="#ff3b3b" class="sv-blink"/><circle cx="116" cy="160" r="6" fill="#34e07a"/>' +
+        '<rect x="88" y="196" width="10" height="12" fill="#4a90ff"/><rect x="132" y="196" width="10" height="12" fill="#ff5a3a"/>' +
+        '<text class="sv-rise" x="40" y="130" font-size="24">♨️</text><text class="sv-rise" x="176" y="150" font-size="24" style="animation-delay:.8s">♨️</text>' +
+        '<g class="only1"><text class="sv-wrench" x="160" y="186" font-size="48">🔧</text></g>' +
+        '<g class="only2"><text class="sv-bob" x="104" y="122" font-size="22">🌡️</text></g>';
+    },
+    komp: function(){
+      return '<ellipse cx="115" cy="200" rx="100" ry="7" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="30" y="16" width="170" height="122" rx="12" fill="#161a33"/><rect x="30" y="16" width="170" height="122" rx="12" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/><rect x="38" y="24" width="154" height="106" rx="6" fill="#0b1226"/>' +
+        '<g class="only0"><text x="46" y="48" font-size="11" font-weight="700" fill="#4dff88" font-family="JetBrains Mono,monospace">BIOS v2.1</text><text x="46" y="64" font-size="10" fill="#9ad" font-family="JetBrains Mono,monospace">CPU … OK</text><text x="46" y="78" font-size="10" fill="#f66" font-family="JetBrains Mono,monospace" class="sv-blink">DISK … ERR</text><rect x="46" y="100" width="138" height="9" rx="4.5" fill="#1d2748"/><rect class="sv-fill" x="46" y="100" width="138" height="9" rx="4.5" fill="#4dff88"/></g>' +
+        '<g class="only1"><g class="sv-spin" transform="translate(115 78)"><path d="M0 0 C-4 -26 4 -26 0 0 M0 0 C22 -14 26 -6 0 0 M0 0 C22 14 18 20 0 0 M0 0 C-4 26 -12 24 0 0 M0 0 C-22 14 -26 6 0 0 M0 0 C-22 -14 -18 -20 0 0" stroke="#47f0ff" stroke-width="5" fill="#47f0ff" /></g><text x="115" y="118" text-anchor="middle" font-size="12" font-weight="800" fill="#ffb347" class="sv-blink" font-family="JetBrains Mono,monospace">92°C → 48°C</text></g>' +
+        '<g class="only2"><rect x="46" y="34" width="60" height="38" rx="5" fill="#3a7bff"/><rect x="112" y="34" width="72" height="22" rx="5" fill="#ff7a3d"/><rect x="112" y="60" width="72" height="42" rx="5" fill="#2fd27a"/><rect x="46" y="78" width="60" height="24" rx="5" fill="#a56bff"/><g class="sv-pulse"><circle cx="115" cy="80" r="20" fill="rgba(0,0,0,.6)"/><path d="M105 80 l7 8 l14 -16" stroke="#4dff88" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>' +
+        '<path d="M14 142 H216 L204 172 Q202 178 194 178 H36 Q28 178 26 172 Z" fill="#dfe6fa"/><rect x="88" y="146" width="54" height="8" rx="4" fill="#b4c0e6"/>';
+    },
+    dux: function(){
+      return '<ellipse cx="115" cy="200" rx="90" ry="7" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="22" y="22" width="186" height="168" rx="20" fill="#eef1fa"/><rect x="22" y="22" width="186" height="168" rx="20" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2"/>' +
+        '<rect x="34" y="32" width="162" height="30" rx="10" fill="#d4dbf0"/>' +
+        '<circle cx="58" cy="47" r="9" fill="#2b2f45"/><circle cx="92" cy="47" r="9" fill="#2b2f45"/><rect x="118" y="38" width="46" height="18" rx="5" fill="#0f1b3d"/><text x="141" y="52" text-anchor="middle" font-size="11" font-weight="800" fill="#ff9a3d" font-family="JetBrains Mono,monospace">200°</text><circle cx="180" cy="47" r="4" fill="#ff5a3a" class="sv-blink"/>' +
+        '<rect x="42" y="76" width="146" height="96" rx="12" fill="#161a33"/><rect x="48" y="82" width="134" height="84" rx="8" fill="#241a1f"/>' +
+        '<g class="only0 only2"><rect class="sv-pulse" x="58" y="96" width="114" height="7" rx="3.5" fill="#ff4a2a"/><rect class="sv-pulse" x="58" y="150" width="114" height="7" rx="3.5" fill="#ff7a2a" style="animation-delay:.4s"/></g>' +
+        '<g class="only1"><rect x="58" y="96" width="114" height="7" rx="3.5" fill="#5a4a50"/><text class="sv-wrench" x="132" y="156" font-size="44">🔧</text></g>' +
+        '<g class="only2"><text class="sv-bob" x="96" y="140" font-size="34">🍪</text></g><rect x="62" y="172" width="106" height="4" rx="2" fill="#aab4d4"/>';
+    },
+    mikro: function(){
+      return '<ellipse cx="115" cy="190" rx="94" ry="7" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="12" y="44" width="206" height="136" rx="20" fill="#eef1fa"/><rect x="12" y="44" width="206" height="136" rx="20" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2"/>' +
+        '<rect x="26" y="58" width="124" height="108" rx="12" fill="#161a33"/><rect x="32" y="64" width="112" height="96" rx="8" fill="#0d1226"/>' +
+        '<ellipse cx="88" cy="140" rx="42" ry="9" fill="#2b3566"/>' +
+        '<g class="sv-spin slow" style="transform-origin:88px 140px"><ellipse cx="88" cy="140" rx="30" ry="6" fill="none" stroke="#8fa3ff" stroke-width="2" stroke-dasharray="6 6"/><circle cx="62" cy="136" r="9" fill="#ff7a3d"/></g>' +
+        '<g class="only0"><text x="88" y="100" text-anchor="middle" font-size="14" font-weight="800" fill="#ff5a5a" class="sv-blink" font-family="JetBrains Mono,monospace">NO HEAT</text></g>' +
+        '<g class="only1"><text class="sv-wrench" x="100" y="112" font-size="40">🔧</text></g>' +
+        '<g class="only2"><path class="sv-flow" d="M44 90 q10 -10 20 0 t20 0 t20 0 t20 0" stroke="#ffb347" stroke-width="3.5" fill="none" stroke-linecap="round"/><path class="sv-flow" d="M44 106 q10 -10 20 0 t20 0 t20 0 t20 0" stroke="#ff7a3d" stroke-width="3.5" fill="none" stroke-linecap="round"/></g>' +
+        '<rect x="160" y="58" width="46" height="24" rx="6" fill="#0f1b3d"/><text x="183" y="75" text-anchor="middle" font-size="13" font-weight="800" fill="#47f0ff" class="sv-blink" font-family="JetBrains Mono,monospace">0:30</text>' +
+        '<g fill="#c4cce8"><rect x="160" y="92" width="20" height="16" rx="4"/><rect x="186" y="92" width="20" height="16" rx="4"/><rect x="160" y="114" width="20" height="16" rx="4"/><rect x="186" y="114" width="20" height="16" rx="4"/></g><rect x="160" y="140" width="46" height="20" rx="8" fill="#34e07a"/>';
+    },
+    piles: function(){
+      var d = '';
+      for (var i = 0; i < 6; i++) d += '<circle class="sv-rise" cx="' + (36 + i*10) + '" cy="150" r="' + (3 + i%3) + '" fill="#6b4a2b" style="animation-delay:' + (i*0.35) + 's"/>';
+      return '<ellipse cx="110" cy="200" rx="86" ry="7" fill="rgba(0,0,0,.28)"/>' +
+        '<path class="sv-flow" d="M150 100 C 210 100 214 40 176 30 C 150 22 130 44 130 44" fill="none" stroke="#2b2f45" stroke-width="12" stroke-linecap="round" style="stroke-dasharray:none;animation:none"/>' +
+        '<path d="M150 100 C 210 100 214 40 176 30 C 150 22 130 44 130 44" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="3" stroke-dasharray="4 10" class="sv-flow"/>' +
+        '<ellipse cx="100" cy="144" rx="72" ry="44" fill="#f2f5ff"/><ellipse cx="100" cy="144" rx="72" ry="44" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2"/>' +
+        '<rect x="60" y="92" width="80" height="26" rx="13" fill="#ffffff"/><circle cx="100" cy="105" r="8" fill="#ff6a3d" class="sv-pulse"/>' +
+        '<circle cx="44" cy="184" r="15" fill="#2b2f45"/><circle cx="156" cy="184" r="15" fill="#2b2f45"/><circle cx="44" cy="184" r="6" fill="#9fb2dd" class="sv-spin"/><circle cx="156" cy="184" r="6" fill="#9fb2dd" class="sv-spin"/>' +
+        '<rect x="18" y="156" width="40" height="12" rx="6" fill="#2b2f45"/>' + d +
+        '<g class="only0"><text class="sv-blink" x="76" y="152" font-size="16" font-weight="900" fill="#ff3b3b" font-family="Space Grotesk,sans-serif">0%</text></g>' +
+        '<g class="only1"><text class="sv-wrench" x="108" y="170" font-size="44">🔧</text></g>' +
+        '<g class="only2"><text class="sv-bob" x="78" y="158" font-size="22">💨</text></g>';
+    },
+    dazmol: function(){
+      return '<ellipse cx="115" cy="190" rx="92" ry="7" fill="rgba(0,0,0,.28)"/>' +
+        '<path d="M26 160 H196 Q214 160 210 140 L188 96 Q178 78 150 78 H70 Q40 78 34 110 Z" fill="#3a8bff"/><path d="M26 160 H196 Q214 160 210 140 L188 96 Q178 78 150 78 H70 Q40 78 34 110 Z" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2"/>' +
+        '<path d="M70 78 Q70 38 118 38 Q158 38 158 78" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>' +
+        '<path d="M22 160 H212 Q214 176 196 176 H38 Q20 176 22 160 Z" fill="#dfe6fa"/>' +
+        '<circle cx="122" cy="116" r="14" fill="#0f1b3d"/><circle cx="122" cy="116" r="6" fill="#ff9a3d" class="sv-blink"/>' +
+        '<text class="sv-rise" x="40" y="150" font-size="26">☁️</text><text class="sv-rise" x="80" y="156" font-size="22" style="animation-delay:.6s">☁️</text><text class="sv-rise" x="120" y="152" font-size="26" style="animation-delay:1.2s">☁️</text>' +
+        '<g class="only0"><text x="150" y="130" font-size="16" font-weight="900" fill="#fff" class="sv-blink" font-family="Space Grotesk,sans-serif">⚠</text></g>' +
+        '<g class="only1"><text class="sv-wrench" x="148" y="150" font-size="40">🔧</text></g>' +
+        '<g class="only2"><text class="sv-bob" x="150" y="130" font-size="26">👕</text></g>';
+    },
+    vent: function(){
+      var bl = '';
+      [0,120,240].forEach(function(a){ bl += '<ellipse cx="115" cy="58" rx="16" ry="38" fill="#fff" opacity=".95" transform="rotate(' + a + ' 115 90)"/>'; });
+      return '<ellipse cx="115" cy="202" rx="52" ry="6" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="108" y="150" width="14" height="46" rx="6" fill="#dfe6fa"/><rect x="72" y="190" width="86" height="12" rx="6" fill="#c5cff0"/>' +
+        '<circle cx="115" cy="90" r="74" fill="rgba(255,255,255,.14)"/><circle cx="115" cy="90" r="74" fill="none" stroke="#fff" stroke-width="4"/><circle cx="115" cy="90" r="54" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2"/><circle cx="115" cy="90" r="34" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2"/>' +
+        '<g class="sv-spin only0" style="animation-duration:2.4s;transform-origin:115px 90px">' + bl + '</g><g class="sv-spin only1 only2" style="animation-duration:.35s;transform-origin:115px 90px">' + bl + '</g>' +
+        '<circle cx="115" cy="90" r="12" fill="#2b2f45"/><circle cx="115" cy="90" r="4" fill="#9fb2dd"/>' +
+        '<g class="only2"><path class="sv-flow" d="M200 70 h26 M204 90 h22 M200 110 h26" stroke="#fff" stroke-width="4" stroke-linecap="round"/></g>' +
+        '<g class="only1"><text class="sv-wrench" x="150" y="170" font-size="40">🔧</text></g>';
+    },
+    stab: function(){
+      return '<ellipse cx="115" cy="196" rx="86" ry="7" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="22" y="40" width="186" height="140" rx="22" fill="#2b2f45"/><rect x="22" y="40" width="186" height="140" rx="22" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>' +
+        '<path d="M52 128 A63 63 0 0 1 178 128 Z" fill="#f6f8ff"/><path d="M62 124 A53 53 0 0 1 168 124" fill="none" stroke="#ff4a3a" stroke-width="6" stroke-dasharray="14 8"/>' +
+        '<g class="sv-sw" style="transform-origin:115px 128px"><line x1="115" y1="128" x2="115" y2="78" stroke="#1b1f33" stroke-width="4" stroke-linecap="round"/></g><circle cx="115" cy="128" r="8" fill="#1b1f33"/>' +
+        '<text x="115" y="156" text-anchor="middle" font-size="16" font-weight="900" fill="#34e07a" font-family="JetBrains Mono,monospace">220 V</text>' +
+        '<circle cx="48" cy="60" r="5" fill="#34e07a" class="sv-blink"/><circle cx="64" cy="60" r="5" fill="#ffd23f"/><circle cx="80" cy="60" r="5" fill="#ff4a3a" class="sv-blink" style="animation-delay:.5s"/>' +
+        '<text class="sv-spark" x="170" y="62" font-size="26">⚡</text><text class="sv-spark" x="40" y="176" font-size="20" style="animation-delay:.4s">⚡</text>' +
+        '<g class="only1"><text class="sv-wrench" x="150" y="190" font-size="42">🔧</text></g><g class="only2"><circle class="sv-pulse" cx="190" cy="60" r="12" fill="#2fd27a"/><path d="M184 60 l4 5 l9 -11" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>';
+    },
+    ups: function(){
+      return '<ellipse cx="115" cy="198" rx="80" ry="7" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="34" y="26" width="162" height="158" rx="24" fill="#2b2f45"/><rect x="34" y="26" width="162" height="158" rx="24" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>' +
+        '<rect x="62" y="56" width="98" height="52" rx="10" fill="none" stroke="#fff" stroke-width="5"/><rect x="162" y="72" width="10" height="20" rx="3" fill="#fff"/>' +
+        '<rect class="sv-fill only0" x="68" y="62" width="30" height="40" rx="5" fill="#ff4a3a"/><rect class="sv-fill only1 only2" x="68" y="62" width="86" height="40" rx="5" fill="#34e07a"/>' +
+        '<text class="sv-pulse" x="102" y="152" font-size="40">⚡</text>' +
+        '<circle cx="52" cy="46" r="4.5" fill="#34e07a" class="sv-blink"/><circle cx="68" cy="46" r="4.5" fill="#ffd23f"/>' +
+        '<g class="only1"><text class="sv-wrench" x="150" y="176" font-size="42">🔧</text></g><g class="only2"><text class="sv-bob" x="150" y="44" font-size="26">🔋</text></g>';
+    },
+    printer: function(){
+      return '<ellipse cx="115" cy="196" rx="94" ry="7" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="62" y="22" width="106" height="64" rx="6" fill="#fff"/><g stroke="#cfd5ea" stroke-width="3"><path d="M72 38 h86 M72 50 h86 M72 62 h60"/></g>' +
+        '<rect x="14" y="80" width="202" height="86" rx="20" fill="#eef1fa"/><rect x="14" y="80" width="202" height="86" rx="20" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2"/>' +
+        '<rect x="28" y="92" width="52" height="22" rx="6" fill="#0f1b3d"/><text x="54" y="108" text-anchor="middle" font-size="11" font-weight="800" fill="#47f0ff" class="sv-blink" font-family="JetBrains Mono,monospace">READY</text><circle cx="196" cy="102" r="5" fill="#34e07a" class="sv-blink"/>' +
+        '<rect x="30" y="140" width="170" height="10" rx="5" fill="#1b1f33"/>' +
+        '<clipPath id="ppc"><rect x="50" y="150" width="130" height="50"/></clipPath>' +
+        '<g clip-path="url(#ppc)"><g class="sv-feed"><rect x="62" y="122" width="106" height="64" fill="#fff" rx="3"/><path d="M72 138 h86 M72 150 h70 M72 162 h86" stroke="#4a5bd0" stroke-width="3.5"/></g></g>' +
+        '<g class="only0"><circle class="sv-fall" cx="100" cy="116" r="5" fill="#00d1ff"/><circle class="sv-fall" cx="120" cy="116" r="5" fill="#ff3fa8" style="animation-delay:.4s"/><circle class="sv-fall" cx="140" cy="116" r="5" fill="#ffe14a" style="animation-delay:.8s"/></g>' +
+        '<g class="only1"><text class="sv-wrench" x="150" y="112" font-size="40">🔧</text></g>' +
+        '<g class="only2"><g class="sv-pulse"><circle cx="196" cy="60" r="16" fill="#2fd27a"/><path d="M188 60 l6 7 l12 -15" stroke="#fff" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>';
+    },
+    _gen: function(){
+      return '<g class="sv-spin slow" style="transform-origin:115px 100px"><text x="115" y="140" text-anchor="middle" font-size="130">⚙️</text></g><text class="sv-wrench" x="140" y="180" font-size="52">🔧</text>';
+    }
+  };
+
+  // ================= V2: yorqin plitkalar + animatsiya pleyer =================
+  var PAL = { tv:'g-pink', kond:'g-sky', xolod:'g-ice', kir:'g-indigo', suv:'g-fire', komp:'g-violet', dux:'g-coral',
+    mikro:'g-gold', piles:'g-lime', dazmol:'g-rose', vent:'g-teal', stab:'g-sun', ups:'g-mint', printer:'g-fire' };
+  function palOf(id){ return PAL[id] || 'g-violet'; }
+  var STAR_SVG = '<svg viewBox="0 0 24 24"><path fill="#fff" d="M12 1l2.6 8.4L23 12l-8.4 2.6L12 23l-2.6-8.4L1 12l8.4-2.6z"/></svg>';
+
+  function buildStars(){
+    if (document.getElementById('stars')) return;
+    var d = document.createElement('div'); d.id = 'stars';
+    var h = '';
+    for (var i = 0; i < 30; i++) {
+      h += '<i style="left:' + (Math.random()*100).toFixed(1) + '%;top:' + (Math.random()*100).toFixed(1) + '%;animation-delay:' + (Math.random()*4).toFixed(2) + 's;animation-duration:' + (3 + Math.random()*3).toFixed(1) + 's"></i>';
+    }
+    d.innerHTML = h;
+    document.body.insertBefore(d, document.body.firstChild);
+  }
+  buildStars();
+
+  function userName(){
+    try { var u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user; if (u && u.first_name) return esc(u.first_name); } catch(e){}
+    return 'Cynet';
+  }
+
+  function tileHTML(o, i){
+    return '<button class="tile ' + o.pal + (o.wide ? ' wide' : '') + (o.tall ? ' tall' : '') + '" data-ti="' + i + '" style="animation-delay:' + (i*0.07) + 's;--sd:' + ((i*0.6)%4).toFixed(1) + 's">' +
+      '<span class="burst"></span><span class="burst b2"></span>' +
+      '<span class="brandrow">' + STAR_SVG + '<span>cynet<small>' + (o.brand || '') + '</small></span></span>' +
+      (o.badge ? '<span class="badge">' + o.badge + '</span>' : '') +
+      '<span class="emo">' + o.icon + '</span>' +
+      '<span class="ttl">' + o.title + '</span>' +
+      (o.sub ? '<span class="sub">' + o.sub + '</span>' : '') +
+      (o.count ? '<span class="count">' + o.count + '</span>' : '') +
+      (o.cta ? '<span class="cta">' + o.cta + '</span>' : '') +
+      '</button>';
+  }
+
+  function totalIssues(){ var n = 0; CATS.forEach(function(c){ n += countForCategory(c); }); return n; }
+
+  function renderMainMenu(){
+    var cl = function(s){ return s.replace(/^\S+\s?/, ''); };
+    var items = [
+      { pal:'g-sun', wide:true, tall:true, icon:'🛠️', title:cl(t().menuTechs), sub:t().menuTechsSub, badge:'🎬 ' + L('ANIMATSIYA','АНИМАЦИЯ'),
+        count:t().itemsCount(totalIssues()), brand:L('Texnika','Техника'), action:function(){ push({ view:'home' }); } },
+      { pal:'g-night', wide:true, icon:'🔍', title:cl(t().menuTopish), sub:t().menuTopishSub, cta:'🔎 ' + L('Qidirish','Искать') + ' ›',
+        brand:L('Ustaxona','Мастерская'), action:function(){ push({ view:'topishViloyat' }); } },
+      { pal:'g-pink', icon:'📋', title:cl(t().menuOrder), sub:t().menuOrderSub, brand:L('Buyurtma','Заказ'), action:function(){ push({ view:'orderGate' }); } },
+      { pal:'g-sky', icon:'👤', title:cl(t().menuProfile), sub:t().menuProfileSub, brand:L('Profil','Профиль'), action:function(){ push({ view:'profileGate' }); } },
+      { pal:'g-lime', icon:'📝', title:cl(t().menuAnketa), sub:t().menuAnketaSub, brand:L('Usta bo\'l','Стать мастером'), action:function(){ push({ view:'anketaGate' }); } },
+      { pal:'g-fire', icon:'🏆', title:cl(t().menuAbout), sub:t().menuAboutSub, brand:L('Biz','Мы'), action:function(){ push({ view:'about' }); } },
+      { pal:'g-violet', wide:true, icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, cta:'+998 99 009 90 37', brand:L('Aloqa','Связь'), action:function(){ push({ view:'contact' }); } }
+    ];
+    mainView.innerHTML =
+      '<div class="view"><div class="hello"><h1>' + L('Salom','Привет') + ', <span class="gr">' + userName() + '</span> <span class="wave">👋</span></h1>' +
+      '<p>' + L('Barcha bo\'limlar shu yerda — tanlang','Все разделы здесь — выбирайте') + '</p></div>' +
+      '<div class="tiles">' + items.map(tileHTML).join('') + '</div></div>';
+    mainView.querySelectorAll('[data-ti]').forEach(function(btn){
+      btn.addEventListener('click', function(){ haptic('select'); items[parseInt(btn.getAttribute('data-ti'), 10)].action(); });
+    });
+  }
+
+  function renderHome(){
+    var q = (state.homeQuery || '').trim().toLowerCase();
+    var filtered = CATS.filter(function(c){ return !q || pick(c,'name').toLowerCase().indexOf(q) > -1; });
+    filtered.sort(function(a,b){ return (b.id === 'printer') - (a.id === 'printer'); });
+    var rest = filtered.length - (filtered.length && filtered[0].id === 'printer' ? 1 : 0);
+    var items = filtered.map(function(c, i){
+      var wide = (c.id === 'printer') || (i === filtered.length - 1 && rest % 2 === 1 && c.id !== 'printer');
+      return { pal:palOf(c.id), wide:wide, tall:(c.id === 'printer'), icon:c.icon, title:pick(c,'name'),
+        count:t().itemsCount(countForCategory(c)), brand:L('Texnika','Техника'), cid:c.id };
+    });
+    mainView.innerHTML =
+      '<div class="view"><div class="hero v2"><h1>' + t().heroTitle + '</h1><p>' + t().heroDesc + '</p></div>' +
+      '<div class="search-wrap"><span class="sic">🔎</span><input id="homeSearch" placeholder="' + t().searchPh + '" value="' + (state.homeQuery||'') + '"></div>' +
+      (items.length ? '<div class="tiles">' + items.map(tileHTML).join('') + '</div>' : '<div class="empty">' + t().notFound + '</div>') + '</div>';
+    var search = document.getElementById('homeSearch');
+    search.addEventListener('input', function(){
+      state.homeQuery = search.value; renderHome(); search.focus(); search.setSelectionRange(search.value.length, search.value.length);
+    });
+    mainView.querySelectorAll('[data-ti]').forEach(function(btn){
+      btn.addEventListener('click', function(){ haptic('select'); openCategory(items[parseInt(btn.getAttribute('data-ti'),10)].cid); });
+    });
+  }
+
+  // ---------- Animatsiya pleyer ----------
+  var curIllus = null;
+  var STEP_MS = 3800;
+  function genericSteps(){
+    return [
+      { icon:'🔍', caption_uz:'Nosozlik joyini aniqlang', caption_ru:'Определите место неисправности' },
+      { icon:'🔧', caption_uz:'Tuzating yoki almashtiring', caption_ru:'Устраните или замените' },
+      { icon:'✅', caption_uz:'Sinab ko\'ring — tayyor!', caption_ru:'Проверьте — готово!' }
+    ];
+  }
+  function renderIllustrationBlock(diagKey, cat){
     var conf = ILLUSTRATIONS[diagKey];
-    if (!conf) return '';
-    var stepsHtml = conf.steps.map(function(s, i){
-      return '<div class="illus-step' + (i === 0 ? ' active' : '') + '" data-i="' + i + '">' +
-        '<div class="illus-step-icn">' + s.icon + '</div>' +
-        '<div class="illus-step-cap">' + esc(pick(s, 'caption')) + '</div>' +
-        '</div>';
-    }).join('');
-    return '<div class="panel illus-panel">' +
-      '<div class="ph">🎬 ' + t().illusTitle + '</div>' +
-      '<div class="illus-stage"><div class="illus-pulse-ring" id="illusRing"></div>' +
-      '<div class="illus-device">' + conf.device + '</div></div>' +
-      '<div class="illus-steps-row" id="illusStepsRow">' + stepsHtml + '</div>' +
-      '</div>';
+    var steps = conf ? conf.steps : genericSteps();
+    var cid = cat ? cat.id : '';
+    curIllus = { steps: steps, scene: SCENES[cid] ? cid : '_gen' };
+    var segs = steps.map(function(s, i){ return '<div class="vp-seg" data-i="' + i + '"><i></i></div>'; }).join('');
+    return '<div class="vp playing" id="vp" data-step="0" style="--dur:' + (STEP_MS/1000) + 's">' +
+      '<div class="vp-stage"><div class="vp-grid"></div><div class="vp-live"><i></i>' + L('ANIMATSIYA','АНИМАЦИЯ') + '</div>' +
+      '<div class="vp-count" id="vpCount"></div><div class="vp-ring"></div>' +
+      '<div class="vp-dev"><svg viewBox="0 0 230 210" aria-hidden="true">' + SCENES[curIllus.scene]() + '</svg></div>' +
+      '<div class="vp-tool" id="vpTool"></div></div>' +
+      '<div class="vp-cap" id="vpCap"></div>' +
+      '<div class="vp-bar"><button class="vp-btn" id="vpPlay" aria-label="play/pause">❚❚</button><div class="vp-segs" id="vpSegs">' + segs + '</div><button class="vp-replay" id="vpReplay" aria-label="replay">↻</button></div></div>';
   }
 
   function wireIllustrationCycle(){
-    var row = mainView.querySelector('#illusStepsRow');
-    if (!row) return;
-    var ring = mainView.querySelector('#illusRing');
-    var steps = Array.prototype.slice.call(row.querySelectorAll('.illus-step'));
-    if (steps.length < 2) return;
-    var idx = 0;
-    if (illusTimer) clearInterval(illusTimer);
-    illusTimer = setInterval(function(){
-      idx = (idx + 1) % steps.length;
-      steps.forEach(function(s, i){ s.classList.toggle('active', i === idx); });
-      if (ring) {
-        ring.classList.remove('pulse');
-        void ring.offsetWidth; // reflow — animatsiyani qayta ishga tushirish uchun
-        ring.classList.add('pulse');
-      }
-    }, 2200);
+    var vp = mainView.querySelector('#vp');
+    if (!vp || !curIllus) return;
+    if (illusTimer) clearTimeout(illusTimer);
+    var steps = curIllus.steps, n = steps.length, cur = 0, playing = true, started = 0, remain = STEP_MS;
+    var segs = Array.prototype.slice.call(vp.querySelectorAll('.vp-seg'));
+    var playBtn = vp.querySelector('#vpPlay');
+    function paint(){
+      var s = steps[cur];
+      vp.setAttribute('data-step', String(cur));
+      vp.querySelector('#vpCount').textContent = (cur+1) + ' / ' + n;
+      vp.querySelector('#vpCap').innerHTML = '<div class="n">' + L('Qadam','Шаг') + ' ' + (cur+1) + '</div><div class="t">' + esc(pick(s,'caption')) + '</div>';
+      var tool = vp.querySelector('#vpTool'), nt = tool.cloneNode(false);
+      nt.innerHTML = '<span>' + s.icon + '</span>'; tool.parentNode.replaceChild(nt, tool);
+      segs.forEach(function(sg, i){
+        sg.classList.remove('cur'); sg.classList.toggle('done', i < cur);
+        if (i === cur) { void sg.offsetWidth; sg.classList.add('cur'); }
+      });
+    }
+    function schedule(ms){
+      clearTimeout(illusTimer); started = Date.now(); remain = ms;
+      illusTimer = setTimeout(function(){
+        if (!document.body.contains(vp)) return;
+        cur = (cur + 1) % n; paint(); schedule(STEP_MS);
+      }, ms);
+    }
+    function setPlaying(p){
+      playing = p; vp.classList.toggle('playing', p); playBtn.textContent = p ? '❚❚' : '▶';
+      if (p) schedule(remain); else { clearTimeout(illusTimer); remain = Math.max(300, remain - (Date.now() - started)); }
+    }
+    playBtn.addEventListener('click', function(){ haptic('tap'); setPlaying(!playing); });
+    vp.querySelector('#vpReplay').addEventListener('click', function(){ haptic('select'); cur = 0; paint(); vp.classList.add('playing'); playBtn.textContent = '❚❚'; playing = true; schedule(STEP_MS); });
+    segs.forEach(function(sg){ sg.addEventListener('click', function(){
+      haptic('select'); cur = parseInt(sg.getAttribute('data-i'),10); paint(); if (playing) schedule(STEP_MS); else remain = STEP_MS;
+    }); });
+    document.addEventListener('visibilitychange', function h(){
+      if (!document.body.contains(vp)) { document.removeEventListener('visibilitychange', h); return; }
+      if (document.hidden && playing) setPlaying(false);
+    });
+    paint(); schedule(STEP_MS);
   }
 
   function renderVideoBlock(url){
@@ -3839,7 +4057,7 @@
 
     var blocks = parseDiagText(raw);
     var html = blocksToHTML(blocks);
-    var illusHtml = renderIllustrationBlock(diagKey);
+    var illusHtml = renderIllustrationBlock(diagKey, c);
     var videoHtml = renderVideoBlock(videoUrl);
 
     mainView.innerHTML =
@@ -3872,6 +4090,7 @@
     backBtn.classList.toggle('show', state.stack.length > 1);
     renderCrumb();
     window.scrollTo(0,0);
+    mainView.className = entry.catId ? palOf(entry.catId) : '';
 
     if (entry.view === 'oferta') renderOferta();
     else if (entry.view === 'mainMenu') renderMainMenu();
@@ -3921,4 +4140,3 @@
 
   render();
 })();
-
