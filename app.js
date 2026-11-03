@@ -1,5 +1,5 @@
 /* ============================================================
-   CYNET DIAGNOSTIKA — app logic
+   ONLINE USTAXONA DIAGNOSTIKA — app logic
    Vanilla JS, no build step. Data comes from #APP_DATA script tag.
 ============================================================ */
 (function(){
@@ -67,9 +67,9 @@
   // ---------- I18N strings ----------
   var STR = {
     uz: {
-      subtitle: "SERVICE CENTER · TOSHKENT",
+      subtitle: "DIAGNOSTIKA · TOSHKENT",
       heroTitle: "Nosozlikni tanlang, <em>yechimini</em> ko'ring",
-      heroDesc: "14 texnika turi bo'yicha diagnostika va batafsil ta'mirlash yo'riqnomasi — Cynet Service Center texniklari tayyorlagan.",
+      heroDesc: "14 texnika turi bo'yicha diagnostika va batafsil ta'mirlash yo'riqnomasi — Online Ustaxona texniklari tayyorlagan.",
       searchPh: "Texnika turini qidirish...",
       itemsCount: function(n){ return n + " ta holat"; },
       chooseIssue: "Nosozlikni tanlang",
@@ -86,9 +86,9 @@
       priceTitle: "Taxminiy ta'mirlash narxi",
       priceBtn: "Narxni ko'rish",
       priceNone: "Narx hali kiritilmagan. Aniq narxni usta tashxisdan keyin aytadi.",
-      home: "Cynet Diagnostika",
+      home: "Online Ustaxona Diagnostika",
       contactMaster: "Ustaga yozish",
-      note: "Aniq diagnostika uchun qurilmani ko'zdan kechirish tavsiya etiladi. Murakkab holatlarda Cynet Service Center ustaxonasiga murojaat qiling.",
+      note: "Aniq diagnostika uchun qurilmani ko'zdan kechirish tavsiya etiladi. Murakkab holatlarda Online Ustaxona ustalariga murojaat qiling.",
       notFound: "Hech narsa topilmadi",
       all: "Barchasi",
 
@@ -99,20 +99,20 @@
       ofertaDeclinedMsg: "Botdan foydalanish uchun shartlarni qabul qilishingiz kerak.",
       ofertaReview: "📜 Shartlarni qayta ko'rish",
       ofertaText:
-        "🏢 Online Ustaxona — Cynet kompaniyasi platformasi\n\n" +
+        "🏢 Online Ustaxona platformasi\n\n" +
         "Botdan foydalanish uchun quyidagi shartlarni o'qing:\n\n" +
         "1️⃣ Ma'lumotlar to'g'riligi\n" +
         "Ustalar o'z ma'lumotlarini to'liq va to'g'ri taqdim etishi shart. Noto'g'ri ma'lumot uchun usta shaxsan javob beradi.\n\n" +
         "2️⃣ Javobgarlik\n" +
         "Online Ustaxona foydalanuvchi va ustalar o'rtasidagi munosabatlar, bajarilgan ishlar sifati hamda oqibatlari uchun javobgarlik olmaydi.\n\n" +
         "3️⃣ Intellektual mulk\n" +
-        "Online Ustaxona boti Cynet kompaniyasining mulki. Nusxalash, o'xshash platforma yaratish va tijoriy foydalanish qonunan taqiqlanadi.\n\n" +
+        "Ushbu bot Online Ustaxona platformasining mulki. Nusxalash, o'xshash platforma yaratish va tijoriy foydalanish qonunan taqiqlanadi.\n\n" +
         "4️⃣ Elektr xavfsizligi\n" +
         "Texnikani ta'mirlash yoki tekshirishdan oldin albatta elektr tarmog'idan uzing. Elektr toki hayot uchun xavfli!\n\n" +
         "5️⃣ Texnika xavfsizligi\n" +
         "Barcha ta'mirlash ishlarida xavfsizlik qoidalariga qat'iy amal qiling. Xavfli holatlarda faqat mutaxassisga murojaat qiling.\n\n" +
         "6️⃣ Shartlar o'zgarishi\n" +
-        "Cynet kompaniyasi platforma shartlarini oldindan xabardor etgan holda o'zgartirish huquqini saqlab qoladi.",
+        "Online Ustaxona platforma shartlarini oldindan xabardor etgan holda o'zgartirish huquqini saqlab qoladi.",
 
       // ── Asosiy menyu ──
       menuTechs: "🔧 Texnikalar",
@@ -320,9 +320,9 @@
       contactAddress: "📍 Toshkent shahri",
     },
     ru: {
-      subtitle: "СЕРВИС-ЦЕНТР · ТАШКЕНТ",
+      subtitle: "ДИАГНОСТИКА · ТАШКЕНТ",
       heroTitle: "Выберите неисправность — <em>получите</em> решение",
-      heroDesc: "Диагностика и подробная инструкция по ремонту для 14 видов техники — подготовлено мастерами Cynet Service Center.",
+      heroDesc: "Диагностика и подробная инструкция по ремонту для 14 видов техники — подготовлено мастерами Online Ustaxona.",
       searchPh: "Поиск по типу техники...",
       itemsCount: function(n){ return n + " случаев"; },
       chooseIssue: "Выберите неисправность",
@@ -339,9 +339,9 @@
       priceTitle: "Примерная стоимость ремонта",
       priceBtn: "Узнать цену",
       priceNone: "Цена пока не указана. Точную цену мастер назовёт после диагностики.",
-      home: "Cynet Диагностика",
+      home: "Online Ustaxona Диагностика",
       contactMaster: "Написать мастеру",
-      note: "Для точной диагностики рекомендуется осмотр устройства. В сложных случаях обратитесь в сервис-центр Cynet.",
+      note: "Для точной диагностики рекомендуется осмотр устройства. В сложных случаях обратитесь к мастерам Online Ustaxona.",
       notFound: "Ничего не найдено",
       all: "Все",
 
@@ -352,20 +352,20 @@
       ofertaDeclinedMsg: "Для использования бота необходимо принять условия.",
       ofertaReview: "📜 Пересмотреть условия",
       ofertaText:
-        "🏢 Online Ustaxona — платформа компании Cynet\n\n" +
+        "🏢 Платформа Online Ustaxona\n\n" +
         "Для использования бота прочитайте условия:\n\n" +
         "1️⃣ Достоверность данных\n" +
         "Мастера обязаны предоставлять полные и достоверные данные. За недостоверные данные мастер несёт личную ответственность.\n\n" +
         "2️⃣ Ответственность\n" +
         "Online Ustaxona не несёт ответственности за отношения между пользователями и мастерами, качество и последствия работ.\n\n" +
         "3️⃣ Интеллектуальная собственность\n" +
-        "Бот Online Ustaxona является собственностью Cynet. Копирование, создание аналогов и коммерческое использование запрещены законом.\n\n" +
+        "Данный бот является собственностью платформы Online Ustaxona. Копирование, создание аналогов и коммерческое использование запрещены законом.\n\n" +
         "4️⃣ Электробезопасность\n" +
         "Перед ремонтом или проверкой техники обязательно отключите её от электросети. Электрический ток опасен для жизни!\n\n" +
         "5️⃣ Техника безопасности\n" +
         "При любых ремонтных работах строго соблюдайте правила безопасности. В опасных ситуациях обращайтесь к специалисту.\n\n" +
         "6️⃣ Изменения условий\n" +
-        "Компания Cynet оставляет за собой право изменять условия с предварительным уведомлением пользователей.",
+        "Online Ustaxona оставляет за собой право изменять условия с предварительным уведомлением пользователей.",
 
       // ── Главное меню ──
       menuTechs: "🔧 Техника",
@@ -3870,13 +3870,13 @@
 
   function userName(){
     try { var u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user; if (u && u.first_name) return esc(u.first_name); } catch(e){}
-    return 'Cynet';
+    return L("Mehmon","Гость");
   }
 
   function tileHTML(o, i){
     return '<button class="tile ' + o.pal + (o.wide ? ' wide' : '') + (o.tall ? ' tall' : '') + '" data-ti="' + i + '" style="animation-delay:' + (i*0.07) + 's;--sd:' + ((i*0.6)%4).toFixed(1) + 's">' +
       '<span class="burst"></span><span class="burst b2"></span>' +
-      '<span class="brandrow">' + STAR_SVG + '<span>cynet<small>' + (o.brand || '') + '</small></span></span>' +
+      '<span class="brandrow">' + STAR_SVG + '<span>Online Ustaxona<small>' + (o.brand || '') + '</small></span></span>' +
       (o.badge ? '<span class="badge">' + o.badge + '</span>' : '') +
       '<span class="emo">' + o.icon + '</span>' +
       '<span class="ttl">' + o.title + '</span>' +

@@ -1,5 +1,5 @@
 
-# Cynet Diagnostika + Online Ustaxona — Web App
+# Online Ustaxona Diagnostika — Web App
 
 Telegram bot ichida ochiladigan **to'liq funksional** web-ilova. Endi
 faqat diagnostika emas — botning butun asosiy oqimi:
