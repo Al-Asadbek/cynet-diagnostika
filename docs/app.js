@@ -40,16 +40,27 @@
 
   function apiGet(path){
     if (!API_BASE) return Promise.reject(new Error('NO_API_BASE'));
-    return fetch(API_BASE + path).then(function(r){ return r.json(); });
+    return fetch(API_BASE + path, { cache: 'no-store' }).then(function(r){ return r.json(); });
+  }
+  // Eski server versiyasi ommaviy yo'nalishni bilmasa "Token noto'g'ri" qaytaradi —
+  // foydalanuvchiga tushunarli xabar ko'rsatamiz.
+  function fixApiError(status, data){
+    if (data && (status === 404 || (status === 401 && data.error === "Token noto'g'ri"))) {
+      data.error = (state && state.lang === 'ru')
+        ? 'Сервер не обновлён: эта функция пока недоступна. Сообщите администратору.'
+        : "Server yangilanmagan: bu funksiya hali ishlamaydi. Administratorga xabar bering.";
+    }
+    return data;
   }
   function apiPost(path, body){
     if (!API_BASE) return Promise.reject(new Error('NO_API_BASE'));
     return fetch(API_BASE + path, {
       method: 'POST',
+      cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     }).then(function(r){
-      return r.json().then(function(data){ return { status: r.status, data: data }; });
+      return r.json().then(function(data){ return { status: r.status, data: fixApiError(r.status, data) }; });
     });
   }
 
