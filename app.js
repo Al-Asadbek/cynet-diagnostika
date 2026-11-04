@@ -772,6 +772,7 @@
     if (entry.view === 'profileMasterNewOrders') return t().profileNewOrdersTitle;
     if (entry.view === 'profileMasterOrderAccepted') return t().profileNewOrderAcceptedTitle;
     if (entry.view === 'profileEditMaster') return t().profileEditTitle;
+    if (entry.view === 'profileMasterLocation') return L('Joylashuv','Локация');
     if (entry.view === 'profileUserOrders') return t().profileOrdersTitle;
     if (entry.view === 'anketaGate') return t().menuAnketa;
     if (entry.view === 'anketaViloyat') return t().menuAnketa;
@@ -947,6 +948,7 @@
             (m.masofa_km != null ? '<span class="mc-stat">📏 ' + m.masofa_km + ' km</span>' : '') +
             '</div></div></div>' +
             (chipsHtml ? '<div class="mc-chips">' + chipsHtml + availHtml + '</div>' : '<div class="mc-chips">' + availHtml + '</div>') +
+            pfCardExtras(m) +
             '<div class="mc-actions">' +
             '<a class="tel" href="tel:' + esc(m.telefon) + '">📞 ' + esc(m.telefon) + '</a>' +
             '<a class="tg" href="' + link + '" target="_blank">✈️ ' + t().topishWrite + '</a>' +
@@ -1359,6 +1361,7 @@
 
   function renderProfileMaster(entry){
     var m = entry.master;
+    pfInjectCss();
     var reyting = m.rating ? ('⭐ ' + m.rating + ' (' + m.rating_count + ')') : ('⭐ ' + t().profileNoRating);
     var subHolat = m.sub_ok ? t().profileActiveUntil(m.sub_until) : t().profileNotPaid;
     var premHolat = m.premium_ok ? t().profileActiveUntil(m.premium_until) : t().profileNotEnabled;
@@ -1366,10 +1369,8 @@
     var isBusy = !!m.band;
 
     mainView.innerHTML =
-      '<div class="view"><div class="detail-head">' +
-      '<div class="eyebrow"><span class="ping"></span>' + t().menuProfile + '</div>' +
-      '<h2>' + esc(m.ism || '—') + '</h2></div>' +
-      '<div class="panel dashed">' +
+      '<div class="view">' + pfMasterTop(m) +
+      '<div class="panel dashed pf-rise" style="--i:4;margin-top:14px">' +
       '<div class="summary-row"><span class="k">' + t().profileAvailTitle + '</span></div>' +
       '<div class="avail-toggle" id="availToggle">' +
       '<button type="button" class="avail-opt' + (!isBusy ? ' active' : '') + '" data-band="0">' +
@@ -1401,6 +1402,8 @@
       '<button class="row" id="btnMasterJobs"><span class="idx">📋</span><span class="lbl">' + t().profileJobsBtn + '</span><span class="chev">→</span></button>' +
       '</div>' +
       '</div>';
+
+    pfBindMasterTop(m);
 
     mainView.querySelector('#availToggle').querySelectorAll('.avail-opt').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -1736,35 +1739,694 @@
     });
   }
 
-  function renderProfileEditMaster(entry){
-    var m = entry.master;
-    mainView.innerHTML =
-      '<div class="view"><div class="list-title">✏️ ' + t().profileEditTitle + '</div>' +
-      '<div class="form-card">' +
-      '<div class="field"><label>👤 ' + t().fIsm + '</label><input id="peIsm" value="' + esc(m.ism||'') + '"></div>' +
-      '<div class="field"><label>📱 ' + t().fTel + '</label><input id="peTel" type="tel" value="' + esc(m.telefon||'') + '"></div>' +
-      '<div class="field"><label>🌍 ' + t().fViloyat + '</label><select id="peViloyat" class="select-field"></select></div>' +
-      '<div class="field"><label>📍 ' + t().fTuman + '</label><select id="peTuman" class="select-field"></select></div>' +
-      '<div class="field"><label>🔧 ' + t().profileEditChooseServices + '</label><div class="chip-toggle-list" id="peXizmatlar"></div></div>' +
+  // ================= PROFIL: QULAYLIKLAR + XARITADA JOYLASHUV =================
+  // Usta profilidagi yangi imkoniyatlar: xaritadagi joylashuvni belgilash (pin bilan),
+  // profil to'liqlik halqasi, qulayliklar (ish vaqti, tajriba, kafolat, to'lov turlari...).
+  // Mijoz kartalarida (Ustaxona topish + Xarita) ham shu ma'lumotlar ko'rinadi.
+  var PF_AMEN = [
+    { k:'chiqib_keladi', ic:'🚗', uz:'Uyga borib xizmat',     ru:'Выезд к клиенту' },
+    { k:'ustaxona',      ic:'🏠', uz:'Ustaxonada qabul',      ru:'Приём в мастерской' },
+    { k:'soat24',        ic:'🌙', uz:'24/7 ishlayman',        ru:'Работаю 24/7' },
+    { k:'bepul_diag',    ic:'🆓', uz:'Bepul diagnostika',     ru:'Бесплатная диагностика' },
+    { k:'original',      ic:'🔩', uz:'Original ehtiyot qism', ru:'Оригинальные запчасти' },
+    { k:'chek',          ic:'🧾', uz:'Chek / hujjat beraman', ru:'Выдаю чек / документ' },
+    { k:'naqd',          ic:'💵', uz:'Naqd to\'lov',          ru:'Наличные' },
+    { k:'karta',         ic:'💳', uz:'Karta orqali',          ru:'Оплата картой' },
+    { k:'onlayn',        ic:'📲', uz:'Click / Payme',         ru:'Click / Payme' }
+  ];
+  var PF_DAYS = [
+    { n:1, uz:'Du', ru:'Пн' }, { n:2, uz:'Se', ru:'Вт' }, { n:3, uz:'Ch', ru:'Ср' }, { n:4, uz:'Pa', ru:'Чт' },
+    { n:5, uz:'Ju', ru:'Пт' }, { n:6, uz:'Sh', ru:'Сб' }, { n:7, uz:'Ya', ru:'Вс' }
+  ];
+  var PF_WARRANTY = [
+    { d:0,   uz:'Yo\'q',   ru:'Нет' },     { d:7,  uz:'7 kun',  ru:'7 дн.' },
+    { d:14,  uz:'2 hafta', ru:'2 нед.' },  { d:30, uz:'1 oy',   ru:'1 мес.' },
+    { d:60,  uz:'2 oy',    ru:'2 мес.' },  { d:90, uz:'3 oy',   ru:'3 мес.' },
+    { d:180, uz:'6 oy',    ru:'6 мес.' },  { d:365, uz:'1 yil',  ru:'1 год' }
+  ];
+  var PF_REGION_CENTER = [
+    ['toshkent shahri', 41.3111, 69.2797, 12], ['toshkent', 41.05, 69.35, 9], ['samarqand', 39.6542, 66.9597, 11],
+    ['farg', 40.3842, 71.7843, 11], ['andijon', 40.7821, 72.3442, 11], ['namangan', 40.9983, 71.6726, 11],
+    ['buxoro', 39.7747, 64.4286, 11], ['xorazm', 41.55, 60.6333, 10], ['qashqadaryo', 38.8606, 65.7891, 10],
+    ['surxondaryo', 37.2242, 67.2783, 10], ['jizzax', 40.1158, 67.8422, 11], ['sirdaryo', 40.4897, 68.7842, 11],
+    ['navoiy', 40.0844, 65.3792, 11], ['qoraqalpog', 42.4531, 59.6103, 10]
+  ];
+  var pfRt = null; // ochiq joylashuv-xaritasi holati
+
+  function pfRegionCenter(viloyat){
+    var v = String(viloyat || '').toLowerCase().replace(/[‘’`´ʻʼ']/g, '');
+    for (var i = 0; i < PF_REGION_CENTER.length; i++) {
+      if (v.indexOf(PF_REGION_CENTER[i][0].replace(/'/g, '')) !== -1) {
+        return { lat: PF_REGION_CENTER[i][1], lon: PF_REGION_CENTER[i][2], zoom: PF_REGION_CENTER[i][3] };
+      }
+    }
+    return { lat: MAP_DEFAULT.lat, lon: MAP_DEFAULT.lon, zoom: 11 };
+  }
+  function pfMyId(){
+    try { return tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null; } catch(e){ return null; }
+  }
+  function pfAmenDef(k){ for (var i = 0; i < PF_AMEN.length; i++) if (PF_AMEN[i].k === k) return PF_AMEN[i]; return null; }
+  function pfWarrLabel(d){
+    for (var i = 0; i < PF_WARRANTY.length; i++) if (PF_WARRANTY[i].d === d) return L(PF_WARRANTY[i].uz, PF_WARRANTY[i].ru);
+    return d + ' ' + L('kun', 'дн.');
+  }
+  function pfYears(n){
+    if (state.lang === 'uz') return n + ' yil';
+    var a = n % 10, b = n % 100;
+    return n + ' ' + ((a === 1 && b !== 11) ? 'год' : ((a >= 2 && a <= 4 && (b < 12 || b > 14)) ? 'года' : 'лет'));
+  }
+
+  function pfToast(msg){
+    var old = document.getElementById('pfToast'); if (old) old.remove();
+    var el = document.createElement('div');
+    el.id = 'pfToast'; el.className = 'pf-toast'; el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(function(){ el.classList.add('out'); }, 2600);
+    setTimeout(function(){ try { el.remove(); } catch(e){} }, 3100);
+  }
+
+  function pfInjectCss(){
+    if (document.getElementById('pfCss')) return;
+    var css = [
+      /* ---- umumiy kirish animatsiyasi ---- */
+      '.pf-rise{opacity:0;transform:translateY(24px) scale(.97);animation:pf-rise .7s cubic-bezier(.2,.9,.3,1.12) forwards;animation-delay:calc(var(--i,0) * 75ms)}',
+      '@keyframes pf-rise{to{opacity:1;transform:none}}',
+      '@keyframes pf-pop{from{transform:scale(.3) rotate(-14deg);opacity:0}to{transform:none;opacity:1}}',
+      '@keyframes pf-ping{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.28);opacity:0}}',
+      '@keyframes pf-spin{to{transform:rotate(360deg)}}',
+      '@keyframes pf-ping-big{0%{transform:scale(.5);opacity:.9}100%{transform:scale(1.9);opacity:0}}',
+      '@keyframes pf-drift{to{transform:translate3d(34px,26px,0) scale(1.28)}}',
+      '@keyframes pf-blink{50%{opacity:.25}}',
+      '@keyframes pf-shine{0%,50%{left:-70%}100%{left:140%}}',
+      '@keyframes pf-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}',
+      '@keyframes pf-pulse{0%,100%{box-shadow:0 0 0 0 var(--pc,rgba(255,145,66,.55))}70%{box-shadow:0 0 0 14px rgba(255,145,66,0)}}',
+      '@keyframes pf-draw{to{stroke-dashoffset:0}}',
+      '@keyframes pf-conf{0%{transform:translate3d(0,0,0) rotate(0);opacity:1}100%{transform:translate3d(var(--dx),var(--dy),0) rotate(var(--rot));opacity:0}}',
+      '@keyframes pf-glow{0%{box-shadow:0 0 0 0 rgba(79,216,201,.8)}100%{box-shadow:0 0 0 22px rgba(79,216,201,0)}}',
+      '@keyframes pf-drop{0%{transform:translateY(-34px) rotate(-45deg);opacity:0}60%{transform:translateY(4px) rotate(-45deg);opacity:1}100%{transform:translateY(0) rotate(-45deg)}}',
+      '@keyframes pf-toast-in{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}',
+
+      /* ---- HERO ---- */
+      '.pf-hero{position:relative;overflow:hidden;border-radius:30px;padding:26px 16px 20px;text-align:center;isolation:isolate;border:1px solid rgba(255,255,255,.14);background:linear-gradient(160deg,rgba(79,216,201,.16),rgba(120,80,255,.16) 55%,rgba(255,145,66,.13));box-shadow:0 24px 54px -24px rgba(79,216,201,.6),inset 0 1px 0 rgba(255,255,255,.22)}',
+      '.pf-aurora{position:absolute;inset:0;z-index:-1;pointer-events:none}',
+      '.pf-aurora i{position:absolute;width:230px;height:230px;border-radius:50%;filter:blur(40px);opacity:.5;animation:pf-drift 9s ease-in-out infinite alternate}',
+      '.pf-aurora i:nth-child(1){left:-70px;top:-80px;background:#2b86ff}',
+      '.pf-aurora i:nth-child(2){right:-80px;top:-40px;background:#ff9142;animation-delay:-3s}',
+      '.pf-aurora i:nth-child(3){left:28%;bottom:-130px;background:#4af0e0;animation-delay:-6s}',
+      '.pf-av{position:relative;width:132px;height:132px;margin:0 auto 18px}',
+      '.pf-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}',
+      '.pf-ring .bg{fill:none;stroke:rgba(255,255,255,.12);stroke-width:4.5}',
+      '.pf-ring .fg{fill:none;stroke:url(#pfg);stroke-width:4.5;stroke-linecap:round;stroke-dasharray:289.03;stroke-dashoffset:289.03;transition:stroke-dashoffset 1.7s cubic-bezier(.2,.8,.2,1) .3s;filter:drop-shadow(0 0 5px rgba(79,216,201,.85))}',
+      '.pf-av-in{position:absolute;inset:12px;border-radius:50%;overflow:hidden;background:linear-gradient(145deg,#2b86ff,#7b4dff);display:flex;align-items:center;justify-content:center;font-family:var(--f-big,var(--font-display));font-weight:800;font-size:34px;color:#fff;animation:pf-pop .9s cubic-bezier(.3,1.5,.5,1) both .1s;box-shadow:0 10px 26px -8px rgba(0,0,0,.6)}',
+      '.pf-av-in img{width:100%;height:100%;object-fit:cover;display:block}',
+      '.pf-pct{position:absolute;left:50%;bottom:-13px;transform:translateX(-50%);padding:5px 12px;border-radius:999px;background:#0b0e13;border:1px solid rgba(79,216,201,.55);font-family:var(--font-mono);font-weight:700;font-size:12px;color:var(--cyan);box-shadow:0 8px 18px -6px rgba(79,216,201,.7);white-space:nowrap;animation:pf-float 3.4s ease-in-out infinite}',
+      '.pf-name{font-family:var(--f-big,var(--font-display));font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1.12;background:linear-gradient(100deg,#fff 20%,#bff7f0 70%,#9ec9ff);-webkit-background-clip:text;background-clip:text;color:transparent}',
+      '.pf-sub{margin-top:6px;color:var(--text-2);font-size:13px;font-weight:500}',
+      '.pf-badges{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:13px}',
+      '.pf-b{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;font-size:11.5px;font-weight:700;color:var(--text-1);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(6px)}',
+      '.pf-b.g{color:var(--green);border-color:rgba(111,207,151,.4);background:rgba(111,207,151,.1)}',
+      '.pf-b.a{color:var(--amber);border-color:rgba(255,145,66,.4);background:rgba(255,145,66,.1)}',
+      '.pf-b i{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pf-blink 1.4s infinite}',
+
+      /* ---- LOKATSIYA KARTASI ---- */
+      '.pf-loc{--lc:#ff9142;position:relative;overflow:hidden;margin-top:14px;border-radius:26px;padding:16px;border:1px solid color-mix(in srgb,var(--lc) 45%,transparent);background:linear-gradient(150deg,color-mix(in srgb,var(--lc) 14%,transparent),rgba(255,255,255,.03));display:flex;flex-direction:column;gap:13px}',
+      '.pf-loc.ok{--lc:#6fcf97}',
+      '.pf-loc-top{display:flex;gap:14px;align-items:center}',
+      '.pf-radar{position:relative;width:66px;height:66px;flex:none;color:var(--lc);margin:8px 6px 8px 8px}',
+      '.pf-radar i{position:absolute;inset:0;border-radius:50%;border:2px solid currentColor;opacity:0;animation:pf-ping 2.6s cubic-bezier(.2,.6,.3,1) infinite}',
+      '.pf-radar i:nth-child(2){animation-delay:.87s}.pf-radar i:nth-child(3){animation-delay:1.74s}',
+      '.pf-radar::after{content:"";position:absolute;inset:6px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 70%,color-mix(in srgb,currentColor 55%,transparent) 100%);animation:pf-spin 2.8s linear infinite;-webkit-mask:radial-gradient(circle,transparent 30%,#000 32%);mask:radial-gradient(circle,transparent 30%,#000 32%)}',
+      '.pf-radar span{position:absolute;inset:16px;border-radius:50%;background:#0b0e13;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:17px;z-index:2;animation:pf-float 2.8s ease-in-out infinite}',
+      '.pf-loc-t{font-family:var(--f-big,var(--font-display));font-weight:800;font-size:17px;line-height:1.2;color:var(--text-1)}',
+      '.pf-loc-s{margin-top:4px;font-size:12.5px;line-height:1.5;color:var(--text-2)}',
+      '.pf-btns{display:flex;gap:9px}',
+      '.pf-cta{position:relative;overflow:hidden;flex:1;border:none;border-radius:16px;padding:14px 16px;font-family:var(--font-body);font-weight:800;font-size:14.5px;color:#1a0f05;background:linear-gradient(135deg,#ffb15c,#ff7a2e);box-shadow:0 12px 26px -10px rgba(255,122,46,.8);transition:transform .15s}',
+      '.pf-cta:active{transform:scale(.96)}',
+      '.pf-cta.pulse{animation:pf-pulse 2s infinite}',
+      '.pf-cta::after{content:"";position:absolute;top:0;bottom:0;width:45%;left:-70%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:pf-shine 3.2s ease-in-out infinite}',
+      '.pf-cta.cyan{color:#06201d;background:linear-gradient(135deg,#6af2e3,#2fb8ff);box-shadow:0 12px 26px -10px rgba(47,184,255,.8)}',
+      '.pf-ghost{flex:1;border-radius:16px;padding:14px 12px;font-family:var(--font-body);font-weight:700;font-size:13.5px;color:var(--text-1);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14)}',
+      '.pf-ghost:active{background:rgba(255,255,255,.12)}',
+
+      /* ---- TO'LIQLIK RO'YXATI ---- */
+      '.pf-card{margin-top:14px;border-radius:26px;padding:16px;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.1)}',
+      '.pf-card h3{font-family:var(--f-big,var(--font-display));font-weight:800;font-size:16px;margin-bottom:11px;display:flex;align-items:center;gap:8px}',
+      '.pf-todo{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:11px 12px;margin-top:8px;border-radius:16px;font-family:var(--font-body);color:var(--text-1);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);transition:transform .2s cubic-bezier(.3,1.5,.5,1),background .2s}',
+      '.pf-todo:first-of-type{margin-top:0}',
+      '.pf-todo:active{transform:scale(.97);background:rgba(255,255,255,.09)}',
+      '.pf-todo .ic{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;background:rgba(255,255,255,.07);flex:none}',
+      '.pf-todo .tx{flex:1;font-size:13.5px;font-weight:600;line-height:1.3}',
+      '.pf-todo .tx small{display:block;font-weight:500;font-size:11px;color:var(--text-3);margin-top:2px}',
+      '.pf-todo .w{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--amber);padding:4px 8px;border-radius:99px;background:rgba(255,145,66,.12)}',
+      '.pf-todo.done{opacity:.72}',
+      '.pf-todo.done .ic{background:rgba(111,207,151,.16);color:var(--green)}',
+      '.pf-todo.done .w{color:var(--green);background:rgba(111,207,151,.12)}',
+      '.pf-full{display:flex;align-items:center;gap:12px;font-size:13.5px;font-weight:600;color:var(--text-1)}',
+      '.pf-full b{font-size:30px;animation:pf-float 2.4s ease-in-out infinite}',
+      '.pf-amen-view{display:flex;flex-wrap:wrap;gap:7px}',
+      '.pf-amen-view span{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:99px;font-size:12px;font-weight:600;background:rgba(79,216,201,.09);border:1px solid rgba(79,216,201,.28);color:var(--text-1)}',
+
+      /* ---- TAHRIR EKRANI ---- */
+      '.pf-sec{margin-top:14px;border-radius:26px;padding:16px;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.1);scroll-margin-top:calc(var(--tb,64px) + 12px)}',
+      '.pf-sec.flash{opacity:1;transform:none;animation:pf-glow 1.2s ease-out 2}',
+      '.pf-sec h3{font-family:var(--f-big,var(--font-display));font-weight:800;font-size:16px;margin-bottom:4px;display:flex;align-items:center;gap:8px}',
+      '.pf-sec .hint{font-size:12px;color:var(--text-3);margin-bottom:12px;line-height:1.45}',
+      '.pf-sec textarea{width:100%;min-height:104px;resize:none;border-radius:16px;padding:13px;font-size:15px;line-height:1.5;font-family:var(--font-body);color:var(--text-1);background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.12);transition:border-color .2s,box-shadow .2s}',
+      '.pf-sec textarea:focus,.pf-time:focus{outline:none;border-color:var(--cyan-dim);box-shadow:0 0 0 3px var(--cyan-glow)}',
+      '.pf-bio-foot{display:flex;align-items:center;justify-content:space-between;margin-top:9px;gap:10px}',
+      '.pf-sample{padding:8px 12px;border-radius:99px;font-size:12px;font-weight:700;font-family:var(--font-body);color:var(--cyan);background:rgba(79,216,201,.1);border:1px solid rgba(79,216,201,.35)}',
+      '.pf-cnt{font-family:var(--font-mono);font-size:11px;color:var(--text-3)}',
+      '.pf-cnt.hi{color:var(--green)}.pf-cnt.max{color:var(--amber)}',
+      '.pf-step{display:flex;align-items:center;justify-content:center;gap:16px;margin:4px 0 12px}',
+      '.pf-step button{width:46px;height:46px;border-radius:15px;font-size:22px;font-weight:700;color:var(--text-1);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);transition:transform .15s cubic-bezier(.3,1.6,.5,1)}',
+      '.pf-step button:active{transform:scale(.88)}',
+      '.pf-step .num{min-width:120px;text-align:center;font-family:var(--f-big,var(--font-display));font-weight:800;font-size:28px;line-height:1}',
+      '.pf-step .num.bump{animation:pf-pop .35s cubic-bezier(.3,1.6,.5,1)}',
+      '.pf-chips{display:flex;flex-wrap:wrap;gap:8px}',
+      '.pf-chip{padding:9px 13px;border-radius:99px;font-family:var(--font-body);font-size:13px;font-weight:700;color:var(--text-2);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);transition:transform .2s cubic-bezier(.3,1.6,.5,1),background .2s,color .2s,border-color .2s}',
+      '.pf-chip:active{transform:scale(.92)}',
+      '.pf-chip.on{color:#06201d;background:linear-gradient(135deg,#6af2e3,#2fb8ff);border-color:transparent;box-shadow:0 8px 18px -8px rgba(47,184,255,.9);transform:translateY(-1px)}',
+      '.pf-time-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}',
+      '.pf-time-row .dash{color:var(--text-3);font-weight:800}',
+      '.pf-time{flex:1;min-width:0;border-radius:16px;padding:12px;font-size:17px;font-family:var(--font-mono);font-weight:700;text-align:center;color:var(--text-1);background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.12);color-scheme:dark}',
+      '.pf-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:10px 0}',
+      '.pf-day{padding:11px 0;border-radius:13px;font-size:12.5px;font-weight:800;font-family:var(--font-body);color:var(--text-2);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);transition:transform .2s cubic-bezier(.3,1.6,.5,1),background .2s}',
+      '.pf-day.on{color:#06201d;background:linear-gradient(135deg,#6af2e3,#2fb8ff);border-color:transparent;transform:translateY(-2px)}',
+      '.pf-amen-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}',
+      '.pf-amen{position:relative;text-align:left;border-radius:18px;padding:12px 11px;display:flex;gap:9px;align-items:center;font-family:var(--font-body);color:var(--text-1);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);transition:transform .25s cubic-bezier(.3,1.6,.5,1),background .25s,border-color .25s,box-shadow .25s}',
+      '.pf-amen:active{transform:scale(.94)}',
+      '.pf-amen .ic{font-size:22px;transition:transform .45s cubic-bezier(.3,1.8,.5,1),filter .25s;filter:grayscale(1) opacity(.65)}',
+      '.pf-amen .lb{flex:1;font-size:12.3px;font-weight:600;line-height:1.25}',
+      '.pf-amen .sw{width:34px;height:20px;border-radius:99px;background:rgba(255,255,255,.16);position:relative;flex:none;transition:background .25s}',
+      '.pf-amen .sw::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .32s cubic-bezier(.3,1.6,.5,1)}',
+      '.pf-amen.on{border-color:rgba(79,216,201,.6);background:linear-gradient(145deg,rgba(79,216,201,.17),rgba(43,134,255,.1));box-shadow:0 12px 26px -16px rgba(79,216,201,1)}',
+      '.pf-amen.on .ic{filter:none;transform:scale(1.2) rotate(-7deg)}',
+      '.pf-amen.on .sw{background:var(--cyan)}',
+      '.pf-amen.on .sw::after{transform:translateX(14px)}',
+      '.pf-savebar{position:sticky;bottom:0;z-index:20;margin:18px -4px 0;padding:12px 4px calc(12px + var(--safe-bottom,0px));background:linear-gradient(180deg,transparent,rgba(7,8,13,.92) 38%)}',
+
+      /* ---- JOYLASHUV XARITASI ---- */
+      '.pf-lhead{padding:4px 2px 14px}',
+      '.pf-lhead h2{font-family:var(--f-big,var(--font-display));font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1.12}',
+      '.pf-lhead p{margin-top:7px;color:var(--text-2);font-size:13.5px;line-height:1.5}',
+      '.pfmap{position:relative;border-radius:28px;overflow:hidden;height:clamp(320px,52vh,520px);border:1px solid rgba(255,255,255,.16);background:#0b0e13;isolation:isolate;box-shadow:0 24px 50px -26px rgba(0,0,0,.9)}',
+      '.pfmap-canvas{position:absolute;inset:0;z-index:0}',
+      '.pfmap.dark .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.92) saturate(.8)}',
+      '.pfmap .leaflet-container{background:#0b0e13;font-family:var(--font-body);outline:none}',
+      '.pfmap .leaflet-control-attribution{background:rgba(14,17,22,.7);color:var(--text-3);font-size:9.5px}',
+      '.pfmap .leaflet-control-attribution a{color:var(--text-2)}',
+      '.pfmap-load{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-2);font-size:13px;background:#0b0e13;text-align:center;padding:20px}',
+      '.pfmap-load .sp{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.14);border-top-color:var(--cyan);animation:pf-spin .9s linear infinite}',
+      '.pfmap-pin{position:absolute;left:50%;top:50%;width:0;height:0;z-index:600;pointer-events:none}',
+      '.pfmap-pin .ring{position:absolute;left:-14px;top:-7px;width:28px;height:14px;border-radius:50%;border:2px solid rgba(79,216,201,.9);animation:pf-ping-big 2s ease-out infinite}',
+      '.pfmap-pin .ring.r2{animation-delay:1s}',
+      '.pfmap-pin .shd{position:absolute;left:-9px;top:-3px;width:18px;height:7px;border-radius:50%;background:rgba(0,0,0,.6);filter:blur(2px);transition:transform .25s,opacity .25s}',
+      '.pfmap-pin .hd{position:absolute;left:-22px;top:-62px;width:44px;height:44px;box-sizing:border-box;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:linear-gradient(145deg,#6af2e3,#2f8bff);border:3px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 22px rgba(0,0,0,.55);transition:top .22s cubic-bezier(.3,1.5,.5,1)}',
+      '.pfmap-pin .hd span{transform:rotate(45deg);font-size:19px;line-height:1}',
+      '.pfmap-pin.lift .hd{top:-82px}',
+      '.pfmap-pin.lift .shd{transform:scale(.5);opacity:.35}',
+      '.pfmap-pin.drop .hd{animation:pf-drop .6s cubic-bezier(.3,1.5,.5,1)}',
+      '.pfmap-fab{position:absolute;right:12px;bottom:12px;z-index:700;width:50px;height:50px;border-radius:16px;font-size:22px;background:rgba(23,27,33,.96);border:1px solid rgba(255,255,255,.18);color:var(--text-1);box-shadow:0 8px 20px rgba(0,0,0,.5);transition:transform .15s}',
+      '.pfmap-fab:active{transform:scale(.9)}',
+      '.pfmap-fab.busy{animation:pf-spin 1s linear infinite}',
+      '.pfmap-hint{position:absolute;left:12px;top:12px;z-index:700;max-width:calc(100% - 24px);padding:8px 13px;border-radius:99px;font-size:12px;font-weight:700;color:var(--text-1);background:rgba(23,27,33,.92);border:1px solid rgba(255,255,255,.16);box-shadow:0 6px 16px rgba(0,0,0,.4);transition:opacity .4s}',
+      '.pfmap-hint.off{opacity:0}',
+      '.pf-sheet{margin-top:14px;border-radius:26px;padding:16px;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.1)}',
+      '.pf-coord{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border-radius:15px;background:rgba(0,0,0,.3);border:1px dashed rgba(255,255,255,.16);font-family:var(--font-mono);font-size:12.5px;color:var(--text-2)}',
+      '.pf-coord b{color:var(--cyan);font-weight:700}',
+      '.pf-coord .st{font-family:var(--font-body);font-size:11.5px;font-weight:700;color:var(--amber)}',
+      '.pf-coord .st.ok{color:var(--green)}',
+      '.pf-field{margin-top:12px}',
+      '.pf-field label{display:block;font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:7px}',
+      '.pf-field input{width:100%;border-radius:15px;padding:13px;font-size:15px;font-family:var(--font-body);color:var(--text-1);background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.12)}',
+      '.pf-field input:focus{outline:none;border-color:var(--cyan-dim);box-shadow:0 0 0 3px var(--cyan-glow)}',
+      '.pf-priv{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:11px 12px;border-radius:15px;font-size:11.8px;line-height:1.5;color:var(--text-2);background:rgba(79,216,201,.07);border:1px solid rgba(79,216,201,.22)}',
+      '.pf-priv span{font-size:16px}',
+      '.pf-cta[disabled]{opacity:.45;box-shadow:none;animation:none}',
+      '.pf-link{display:block;width:100%;margin-top:11px;padding:11px;font-size:12.5px;font-weight:700;font-family:var(--font-body);color:var(--red);background:none;border:none}',
+
+      /* ---- MUVAFFAQIYAT ---- */
+      '.pf-done{position:fixed;inset:0;z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;text-align:center;background:radial-gradient(circle at 50% 38%,rgba(79,216,201,.28),rgba(7,8,13,.96) 62%);backdrop-filter:blur(10px);animation:fade-in .3s ease both;overflow:hidden}',
+      '.pf-done .badge{position:relative;width:132px;height:132px;display:flex;align-items:center;justify-content:center}',
+      '.pf-done .badge i{position:absolute;inset:0;border-radius:50%;border:3px solid var(--green);opacity:0;animation:pf-ping-big 1.8s ease-out infinite}',
+      '.pf-done .badge i:nth-child(2){animation-delay:.6s}',
+      '.pf-done svg{position:relative;width:104px;height:104px;filter:drop-shadow(0 0 18px rgba(111,207,151,.8))}',
+      '.pf-done svg circle{fill:rgba(111,207,151,.14);stroke:var(--green);stroke-width:4;stroke-dasharray:289;stroke-dashoffset:289;animation:pf-draw .7s ease forwards}',
+      '.pf-done svg path{fill:none;stroke:#fff;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60;animation:pf-draw .5s ease .55s forwards}',
+      '.pf-done h2{font-family:var(--f-big,var(--font-display));font-weight:800;font-size:25px;line-height:1.2;animation:cap-in .5s ease .5s both}',
+      '.pf-done p{color:var(--text-2);font-size:14px;line-height:1.55;max-width:320px;animation:cap-in .5s ease .7s both}',
+      '.pf-done .pf-cta{flex:none;min-width:220px;animation:cap-in .5s ease .9s both}',
+      '.pf-conf{position:absolute;left:50%;top:38%;width:9px;height:14px;border-radius:2px;animation:pf-conf 1.7s cubic-bezier(.15,.7,.3,1) forwards;pointer-events:none}',
+      '.pf-toast{position:fixed;left:50%;bottom:calc(26px + var(--safe-bottom,0px));transform:translateX(-50%);z-index:6000;max-width:calc(100% - 40px);padding:12px 18px;border-radius:16px;font-size:13px;font-weight:600;line-height:1.4;color:var(--text-1);background:rgba(23,27,33,.98);border:1px solid rgba(255,255,255,.18);box-shadow:0 14px 34px rgba(0,0,0,.6);animation:pf-toast-in .35s cubic-bezier(.3,1.4,.5,1) both;transition:opacity .4s}',
+      '.pf-toast.out{opacity:0}',
+
+      /* ---- MIJOZ KARTALARIDAGI QULAYLIKLAR ---- */
+      '.pfc{margin-top:11px;display:flex;flex-direction:column;gap:8px}',
+      '.pfc-row{display:flex;flex-wrap:wrap;gap:6px}',
+      '.pfc-b{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:700;color:var(--text-2);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}',
+      '.pfc-b.open{color:var(--green);border-color:rgba(111,207,151,.38);background:rgba(111,207,151,.1)}',
+      '.pfc-b.open i{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pf-blink 1.4s infinite}',
+      '.pfc-b.warr{color:#ffd37a;border-color:rgba(255,200,61,.32);background:rgba(255,200,61,.08)}',
+      '.pfc-b.exp{color:var(--cyan);border-color:rgba(79,216,201,.32);background:rgba(79,216,201,.08)}',
+      '.pfc-bio{font-size:12.5px;line-height:1.5;color:var(--text-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}',
+      '.pfc-loc{font-size:11.5px;color:var(--text-3)}',
+
+      '@media (prefers-reduced-motion:reduce){.pf-rise{opacity:1;transform:none;animation:none}.pf-aurora i,.pf-radar i,.pf-radar::after,.pf-radar span,.pf-cta,.pf-cta::after,.pf-pct,.pf-full b,.pfmap-pin .ring{animation:none!important}.pf-ring .fg{transition:none}}'
+    ].join('\n');
+    var st = document.createElement('style');
+    st.id = 'pfCss'; st.textContent = css;
+    document.head.appendChild(st);
+  }
+
+  function pfCountUp(el, to, ms){
+    if (!el) return;
+    var t0 = null;
+    function step(ts){
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / ms), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(to * e);
+      if (p < 1 && document.body.contains(el)) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function pfConfetti(host, n){
+    var colors = ['#6af2e3', '#ffb15c', '#ff7ac8', '#9b6bff', '#6fcf97', '#ffe259', '#35b6ff'];
+    for (var i = 0; i < (n || 26); i++) {
+      var c = document.createElement('i');
+      c.className = 'pf-conf';
+      var ang = Math.random() * Math.PI * 2, dist = 120 + Math.random() * 190;
+      c.style.setProperty('--dx', Math.round(Math.cos(ang) * dist) + 'px');
+      c.style.setProperty('--dy', Math.round(Math.sin(ang) * dist - 40 + Math.random() * 160) + 'px');
+      c.style.setProperty('--rot', Math.round(Math.random() * 720 - 360) + 'deg');
+      c.style.background = colors[i % colors.length];
+      c.style.animationDelay = (Math.random() * 0.2) + 's';
+      host.appendChild(c);
+    }
+  }
+
+  // Profil to'liqlik hisobi
+  function pfScore(m){
+    var x = m.extra || {};
+    var q = x.qulayliklar || [];
+    var hasLoc = m.lat != null && m.lon != null;
+    var items = [
+      { k:'loc',   w:30, ic:'📍', done: hasLoc,
+        uz:'Xaritadagi joylashuv', ru:'Точка на карте',
+        suz:'Xaritada ko\'rinish uchun eng muhimi', sru:'Самое важное, чтобы вас видели на карте', go:'loc' },
+      { k:'bio',   w:20, ic:'👋', done: String(x.bio || '').trim().length >= 20,
+        uz:'O\'zingiz haqingizda qisqa matn', ru:'Коротко о себе',
+        suz:'Mijoz sizga ishonch hosil qiladi', sru:'Клиенты больше доверяют', go:'bio' },
+      { k:'hours', w:15, ic:'🕘', done: !!(x.ish_boshlash && x.ish_tugash) || q.indexOf('soat24') >= 0,
+        uz:'Ish vaqti', ru:'Время работы',
+        suz:'Mijoz qachon murojaat qilishni biladi', sru:'Клиент знает, когда звонить', go:'hours' },
+      { k:'amen',  w:15, ic:'✨', done: q.length >= 3,
+        uz:'Qulayliklar (kamida 3 ta)', ru:'Удобства (минимум 3)',
+        suz:'Uyga borish, bepul diagnostika, to\'lov turlari...', sru:'Выезд, диагностика, способы оплаты...', go:'amen' },
+      { k:'exp',   w:10, ic:'🏅', done: x.tajriba_yil != null && x.tajriba_yil !== '',
+        uz:'Ish tajribasi', ru:'Опыт работы',
+        suz:'Necha yildan beri ishlaysiz', sru:'Сколько лет вы работаете', go:'exp' },
+      { k:'warr',  w:10, ic:'🛡️', done: (x.kafolat_kun || 0) > 0,
+        uz:'Ish kafolati', ru:'Гарантия на работу',
+        suz:'Kafolatli ustalarga ko\'proq ishonishadi', sru:'Мастерам с гарантией доверяют больше', go:'warr' }
+    ];
+    var pct = 0;
+    items.forEach(function(it){ if (it.done) pct += it.w; });
+    return { pct: pct, items: items };
+  }
+
+  function pfMasterTop(m){
+    var x = m.extra || {};
+    var sc = pfScore(m);
+    var hasLoc = m.lat != null && m.lon != null;
+    var initials = String(m.ism || '?').trim().split(/\s+/).slice(0, 2).map(function(w){ return w.charAt(0) || ''; }).join('').toUpperCase().replace(/[^A-Za-z0-9\u0400-\u04FF\u0100-\u024F]/g, '') || '?';
+    var uid = pfMyId();
+    var avatar = (m.has_photo && API_BASE && uid)
+      ? '<img src="' + esc(API_BASE) + '/api/public/master/photo?tg_id=' + encodeURIComponent(uid) + '" alt="" onerror="this.replaceWith(document.createTextNode(\'' + initials + '\'))">'
+      : initials;
+    var sub = [];
+    if (m.rating) sub.push('⭐ ' + m.rating + ' (' + m.rating_count + ')');
+    if (x.tajriba_yil != null && x.tajriba_yil !== '') sub.push('🏅 ' + pfYears(x.tajriba_yil));
+    var badges = '';
+    if (m.band) badges += '<span class="pf-b a"><i></i>' + L('Hozir band', 'Сейчас занят') + '</span>';
+    else badges += '<span class="pf-b g"><i></i>' + L('Buyurtmaga tayyor', 'Готов к заказам') + '</span>';
+    badges += hasLoc ? '<span class="pf-b g">📍 ' + L('Xaritada ko\'rinasiz', 'Вы на карте') + '</span>'
+                     : '<span class="pf-b a">📍 ' + L('Xaritada yo\'q', 'Вас нет на карте') + '</span>';
+
+    var hero =
+      '<div class="pf-hero pf-rise" style="--i:0">' +
+      '<div class="pf-aurora"><i></i><i></i><i></i></div>' +
+      '<div class="pf-av">' +
+        '<svg class="pf-ring" viewBox="0 0 100 100"><defs><linearGradient id="pfg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6af2e3"/><stop offset="1" stop-color="#9b6bff"/></linearGradient></defs>' +
+        '<circle class="bg" cx="50" cy="50" r="46"/><circle class="fg" id="pfRingFg" cx="50" cy="50" r="46"/></svg>' +
+        '<div class="pf-av-in">' + avatar + '</div>' +
+        '<div class="pf-pct"><span id="pfPct" data-to="' + sc.pct + '">0</span>% ' + L('to\'liq', 'заполнен') + '</div>' +
       '</div>' +
-      '<div id="peMsg"></div>' +
+      '<div class="pf-name">' + esc(m.ism || '—') + '</div>' +
+      (sub.length ? '<div class="pf-sub">' + sub.join('  ·  ') + '</div>' : '') +
+      '<div class="pf-badges">' + badges + '</div>' +
       '</div>';
 
-    var bar = document.createElement('div');
-    bar.className = 'action-bar'; bar.style.position = 'static'; bar.style.background = 'none'; bar.style.backdropFilter = 'none';
-    bar.innerHTML = '<button class="btn-primary" id="peSave" style="width:100%">' + t().profileEditSaveBtn + '</button>';
-    mainView.querySelector('.view').appendChild(bar);
+    var loc;
+    if (hasLoc) {
+      loc =
+        '<div class="pf-loc ok pf-rise" style="--i:1"><div class="pf-loc-top">' +
+        '<div class="pf-radar"><i></i><i></i><i></i><span>📍</span></div>' +
+        '<div><div class="pf-loc-t">' + L('Siz xaritada ko\'rinasiz ✓', 'Вы отображаетесь на карте ✓') + '</div>' +
+        '<div class="pf-loc-s">' + L('Mijozlarga aniq manzil emas, taxminiy nuqta (150–400 m) ko\'rsatiladi.', 'Клиентам показывается приблизительная точка (150–400 м), а не точный адрес.') + '</div></div></div>' +
+        (x.moljal ? '<div class="pf-loc-s" style="margin-top:-4px">📌 ' + esc(x.moljal) + '</div>' : '') +
+        '<div class="pf-btns"><button class="pf-ghost" id="pfLocEdit">✏️ ' + L('Yangilash', 'Обновить') + '</button>' +
+        '<button class="pf-ghost" id="pfLocView">🗺 ' + L('Xaritada ko\'rish', 'Смотреть на карте') + '</button></div></div>';
+    } else {
+      loc =
+        '<div class="pf-loc warn pf-rise" style="--i:1"><div class="pf-loc-top">' +
+        '<div class="pf-radar"><i></i><i></i><i></i><span>📍</span></div>' +
+        '<div><div class="pf-loc-t">' + L('Siz xaritada ko\'rinmaysiz', 'Вас не видно на карте') + '</div>' +
+        '<div class="pf-loc-s">' + L('Joylashuvingizni belgilang — mijozlar sizni xaritadan topib, yaqinlikka qarab murojaat qiladi. Bu 20 soniya vaqt oladi.', 'Отметьте свою точку — клиенты найдут вас на карте и обратятся по близости. Это займёт 20 секунд.') + '</div></div></div>' +
+        '<div class="pf-btns"><button class="pf-cta pulse" id="pfLocEdit">📍 ' + L('Joylashuvni qo\'shish', 'Добавить местоположение') + '</button></div></div>';
+    }
 
-    var currentXizmatlar = (m.xizmatlar || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    var todo = '';
+    var left = sc.items.filter(function(it){ return !it.done; });
+    if (left.length === 0) {
+      todo = '<div class="pf-card pf-rise" style="--i:2"><div class="pf-full"><b>🏆</b><div>' +
+        L('Ajoyib! Profilingiz 100% to\'liq — mijozlar sizga ko\'proq ishonadi.', 'Отлично! Профиль заполнен на 100% — клиенты доверяют вам больше.') + '</div></div></div>';
+    } else {
+      todo = '<div class="pf-card pf-rise" style="--i:2"><h3>🚀 ' + L('Profilni kuchaytiring', 'Усильте профиль') + '</h3>' +
+        left.map(function(it){
+          return '<button class="pf-todo" data-go="' + it.go + '"><span class="ic">' + it.ic + '</span>' +
+            '<span class="tx">' + L(it.uz, it.ru) + '<small>' + L(it.suz, it.sru) + '</small></span>' +
+            '<span class="w">+' + it.w + '%</span></button>';
+        }).join('') + '</div>';
+    }
+
+    var q = (x.qulayliklar || []);
+    var amen = '';
+    if (q.length || (x.kafolat_kun || 0) > 0) {
+      amen = '<div class="pf-card pf-rise" style="--i:3"><h3>✨ ' + L('Sizning qulayliklaringiz', 'Ваши удобства') + '</h3><div class="pf-amen-view">' +
+        q.map(function(k){ var d = pfAmenDef(k); return d ? '<span>' + d.ic + ' ' + L(d.uz, d.ru) + '</span>' : ''; }).join('') +
+        ((x.kafolat_kun || 0) > 0 ? '<span>🛡️ ' + L('Kafolat', 'Гарантия') + ': ' + pfWarrLabel(x.kafolat_kun) + '</span>' : '') +
+        '</div></div>';
+    }
+    return hero + loc + todo + amen;
+  }
+
+  function pfBindMasterTop(m){
+    var ring = mainView.querySelector('#pfRingFg'), pct = mainView.querySelector('#pfPct');
+    if (ring && pct) {
+      var to = parseInt(pct.getAttribute('data-to'), 10) || 0;
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ ring.style.strokeDashoffset = String(289.03 * (1 - to / 100)); }); });
+      pfCountUp(pct, to, 1700);
+    }
+    var openLoc = function(){ haptic('select'); push({ view:'profileMasterLocation', master: m }); };
+    var b1 = mainView.querySelector('#pfLocEdit'); if (b1) b1.addEventListener('click', openLoc);
+    var b2 = mainView.querySelector('#pfLocView'); if (b2) b2.addEventListener('click', function(){ haptic('select'); push({ view:'map' }); });
+    Array.prototype.forEach.call(mainView.querySelectorAll('.pf-todo'), function(btn){
+      btn.addEventListener('click', function(){
+        var go = btn.getAttribute('data-go');
+        haptic('select');
+        if (go === 'loc') openLoc();
+        else push({ view:'profileEditMaster', master: m, focus: go });
+      });
+    });
+  }
+
+  // ---------- Joylashuvni aniqlash (Telegram LocationManager -> brauzer GPS) ----------
+  function pfGetLocation(){
+    return new Promise(function(resolve){
+      var done = false;
+      function fin(v){ if (!done) { done = true; resolve(v); } }
+      function viaBrowser(){
+        if (!navigator.geolocation) { fin({ error:'unsupported' }); return; }
+        navigator.geolocation.getCurrentPosition(
+          function(pos){ fin({ lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy }); },
+          function(err){ fin({ error: (err && err.code === 1) ? 'denied' : 'failed' }); },
+          { enableHighAccuracy: true, timeout: 12000, maximumAge: 15000 }
+        );
+      }
+      try {
+        var lm = tg && tg.LocationManager;
+        if (lm && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0')) {
+          lm.init(function(){
+            if (!lm.isLocationAvailable) { viaBrowser(); return; }
+            if (!lm.isAccessGranted) {
+              if (lm.isAccessRequested) { fin({ error:'denied' }); try { lm.openSettings(); } catch(e){} return; }
+              // birinchi so'rov — getLocation ruxsat dialogini ochadi
+            }
+            lm.getLocation(function(data){
+              if (data && data.latitude != null) fin({ lat: data.latitude, lon: data.longitude, acc: data.horizontal_accuracy || null });
+              else fin({ error:'denied' });
+            });
+          });
+          setTimeout(function(){ if (!done) viaBrowser(); }, 4000);
+          return;
+        }
+      } catch(e){}
+      viaBrowser();
+    });
+  }
+
+  function pfCleanup(){
+    if (!pfRt) return;
+    try { if (pfRt.map) pfRt.map.remove(); } catch(e){}
+    try { window.removeEventListener('resize', pfRt.onResize); } catch(e){}
+    pfRt = null;
+  }
+
+  function renderProfileMasterLocation(entry){
+    pfInjectCss();
+    var m = entry.master;
+    var x = m.extra || {};
+    var hasSaved = m.lat != null && m.lon != null;
+    var reg = pfRegionCenter(m.viloyat);
+    var start = hasSaved ? { lat: m.lat, lon: m.lon, zoom: 17 } : reg;
+
+    mainView.innerHTML =
+      '<div class="view">' +
+      '<div class="pf-lhead pf-rise" style="--i:0"><h2>📍 ' + L('Joylashuvni belgilang', 'Отметьте местоположение') + '</h2>' +
+      '<p>' + L('Xaritani siljitib, pinni ish joyingiz (ustaxona yoki uyingiz) ustiga qo\'ying. Yoki 🎯 tugmasi bilan avtomatik aniqlang.', 'Двигайте карту, чтобы пин оказался на вашем месте работы. Или нажмите 🎯 для автоопределения.') + '</p></div>' +
+      '<div class="pfmap dark pf-rise" style="--i:1" id="pfMap">' +
+        '<div class="pfmap-canvas" id="pfMapCanvas"></div>' +
+        '<div class="pfmap-load" id="pfMapLoad"><div class="sp"></div><div>' + L('Xarita yuklanmoqda...', 'Карта загружается...') + '</div></div>' +
+        '<div class="pfmap-pin drop" id="pfPin"><i class="ring"></i><i class="ring r2"></i><div class="shd"></div><div class="hd"><span>🛠️</span></div></div>' +
+        '<div class="pfmap-hint" id="pfHint">' + L('👆 Xaritani siljiting', '👆 Двигайте карту') + '</div>' +
+        '<button class="pfmap-fab" id="pfLocate" aria-label="GPS">🎯</button>' +
+      '</div>' +
+      '<div class="pf-sheet pf-rise" style="--i:2">' +
+        '<div class="pf-coord"><span id="pfCoordTxt">—</span><span class="st" id="pfCoordSt"></span></div>' +
+        '<div class="pf-field"><label>📌 ' + L('Mo\'ljal (ixtiyoriy)', 'Ориентир (необязательно)') + '</label>' +
+        '<input id="pfMoljal" maxlength="120" placeholder="' + esc(L('Masalan: Havas market yonida, 2-qavat', 'Например: рядом с рынком, 2 этаж')) + '" value="' + esc(x.moljal || '') + '"></div>' +
+        '<div class="pf-priv"><span>🔒</span><div>' + L('Mijozlarga sizning aniq manzilingiz emas, 150–400 metr siljitilgan taxminiy nuqta ko\'rsatiladi. Aniq joyni faqat siz bilasiz.', 'Клиентам показывается не точный адрес, а приблизительная точка со смещением 150–400 м. Точное место знаете только вы.') + '</div></div>' +
+        '<div class="pf-btns" style="margin-top:14px"><button class="pf-cta cyan" id="pfSave" disabled>💾 ' + L('Saqlash', 'Сохранить') + '</button></div>' +
+        (hasSaved ? '<button class="pf-link" id="pfRemove">🗑 ' + L('Xaritadan yashirish', 'Скрыть с карты') + '</button>' : '') +
+      '</div></div>';
+
+    var rt = pfRt = { map:null, touched: hasSaved, center: { lat: start.lat, lon: start.lon }, acc: null, accCircle: null, onResize:null };
+    var pinEl = mainView.querySelector('#pfPin');
+    var coordTxt = mainView.querySelector('#pfCoordTxt'), coordSt = mainView.querySelector('#pfCoordSt');
+    var saveBtn = mainView.querySelector('#pfSave'), hintEl = mainView.querySelector('#pfHint');
+    var locBtn = mainView.querySelector('#pfLocate');
+    setTimeout(function(){ if (pinEl) pinEl.classList.remove('drop'); }, 800);
+
+    function refreshCoords(){
+      if (rt.touched) {
+        coordTxt.innerHTML = '<b>' + rt.center.lat.toFixed(5) + '</b>, <b>' + rt.center.lon.toFixed(5) + '</b>';
+        coordSt.textContent = rt.acc ? ('±' + Math.round(rt.acc) + ' m') : '✓';
+        coordSt.className = 'st ok';
+        saveBtn.disabled = false;
+      } else {
+        coordTxt.textContent = L('Nuqta hali tanlanmagan', 'Точка ещё не выбрана');
+        coordSt.textContent = ''; coordSt.className = 'st';
+        saveBtn.disabled = true;
+      }
+    }
+    refreshCoords();
+
+    function useFallbackNoMap(){
+      var ld = mainView.querySelector('#pfMapLoad');
+      if (ld) ld.innerHTML = '<div style="font-size:30px">🗺️</div><div>' + L('Xarita yuklanmadi. Internetni tekshiring yoki 🎯 tugmasi bilan joylashuvni aniqlang.', 'Карта не загрузилась. Проверьте интернет или нажмите 🎯 для автоопределения.') + '</div>';
+    }
+
+    function applyGps(loc){
+      rt.center = { lat: loc.lat, lon: loc.lon }; rt.acc = loc.acc || null; rt.touched = true;
+      rt.progUntil = Date.now() + 1900;
+      if (rt.map) {
+        rt.map.flyTo([loc.lat, loc.lon], 17, { duration: 1.1 });
+        try {
+          if (rt.accCircle) rt.map.removeLayer(rt.accCircle);
+          if (loc.acc && loc.acc < 800) rt.accCircle = window.L.circle([loc.lat, loc.lon], { radius: loc.acc, color:'#4FD8C9', weight:1, fillColor:'#4FD8C9', fillOpacity:.12 }).addTo(rt.map);
+        } catch(e){}
+      }
+      if (hintEl) hintEl.classList.add('off');
+      refreshCoords();
+    }
+
+    locBtn.addEventListener('click', function(){
+      haptic('select');
+      locBtn.classList.add('busy');
+      pfGetLocation().then(function(res){
+        locBtn.classList.remove('busy');
+        if (res && res.lat != null) { haptic('ok'); applyGps(res); return; }
+        if (res && res.error === 'denied') pfToast(L('GPS ruxsati berilmadi. Telegram sozlamalarida joylashuvga ruxsat bering yoki xaritani qo\'lda siljiting.', 'Нет доступа к GPS. Разрешите геолокацию в настройках Telegram или двигайте карту вручную.'));
+        else pfToast(L('Joylashuvni aniqlab bo\'lmadi. Xaritani qo\'lda siljiting.', 'Не удалось определить местоположение. Двигайте карту вручную.'));
+      });
+    });
+
+    mapEnsureLib().then(function(){
+      if (pfRt !== rt) return; // foydalanuvchi ketib qolgan
+      var LF = window.L;
+      var canvas = mainView.querySelector('#pfMapCanvas');
+      if (!canvas) return;
+      var map = LF.map(canvas, { zoomControl:false, attributionControl:true, tap:true });
+      rt.map = map;
+      map.setView([start.lat, start.lon], start.zoom);
+      LF.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap' }).addTo(map);
+      var ld = mainView.querySelector('#pfMapLoad'); if (ld) { ld.style.transition = 'opacity .5s'; ld.style.opacity = '0'; setTimeout(function(){ try { ld.remove(); } catch(e){} }, 520); }
+      rt.progUntil = Date.now() + 600;
+      map.on('movestart', function(){ if (pinEl) pinEl.classList.add('lift'); });
+      map.on('moveend', function(){
+        if (pinEl) { pinEl.classList.remove('lift'); pinEl.classList.add('drop'); setTimeout(function(){ if (pinEl) pinEl.classList.remove('drop'); }, 620); }
+        var c = map.getCenter();
+        rt.center = { lat: c.lat, lon: c.lng };
+        if (Date.now() > rt.progUntil && !rt.flying) { rt.touched = true; rt.acc = null; if (hintEl) hintEl.classList.add('off'); }
+        refreshCoords();
+      });
+      rt.onResize = function(){ try { map.invalidateSize(); } catch(e){} };
+      window.addEventListener('resize', rt.onResize);
+      setTimeout(function(){ try { map.invalidateSize(); } catch(e){} }, 250);
+      if (hasSaved) { if (hintEl) setTimeout(function(){ hintEl.classList.add('off'); }, 2500); }
+    }).catch(function(){ useFallbackNoMap(); });
+
+    saveBtn.addEventListener('click', function(){
+      if (!rt.touched) return;
+      var moljal = mainView.querySelector('#pfMoljal').value.trim();
+      saveBtn.disabled = true; saveBtn.textContent = L('Saqlanmoqda...', 'Сохраняется...');
+      apiPost('/api/public/profile/master/location', { init_data: getInitData(), lat: rt.center.lat, lon: rt.center.lon, moljal: moljal })
+        .then(function(r){
+          if (r.data && r.data.ok) {
+            haptic('ok');
+            m.lat = rt.center.lat; m.lon = rt.center.lon; m.has_location = true;
+            m.extra = m.extra || {}; m.extra.moljal = moljal; m.extra.has_location = true;
+            pfShowDone(function(){ pop(); });
+          } else {
+            pfToast((r.data && r.data.error) || t().orderErrGeneric);
+            saveBtn.disabled = false; saveBtn.textContent = '💾 ' + L('Saqlash', 'Сохранить');
+          }
+        }).catch(function(){
+          pfToast(t().orderErrGeneric);
+          saveBtn.disabled = false; saveBtn.textContent = '💾 ' + L('Saqlash', 'Сохранить');
+        });
+    });
+
+    var rem = mainView.querySelector('#pfRemove');
+    if (rem) rem.addEventListener('click', function(){
+      var ask = L('Xaritadan yashirilsangiz, mijozlar sizni xaritada ko\'rmaydi. Davom etasizmi?', 'Если скрыть себя с карты, клиенты не увидят вас на ней. Продолжить?');
+      var go = function(ok){
+        if (!ok) return;
+        apiPost('/api/public/profile/master/location', { init_data: getInitData(), lat: null, lon: null }).then(function(r){
+          if (r.data && r.data.ok) { m.lat = null; m.lon = null; m.has_location = false; if (m.extra) m.extra.has_location = false; pfToast(L('Xaritadan yashirildi', 'Скрыто с карты')); pop(); }
+          else pfToast((r.data && r.data.error) || t().orderErrGeneric);
+        }).catch(function(){ pfToast(t().orderErrGeneric); });
+      };
+      if (tg && tg.showConfirm) tg.showConfirm(ask, go); else go(window.confirm(ask));
+    });
+  }
+
+  function pfShowDone(after){
+    var ov = document.createElement('div');
+    ov.className = 'pf-done';
+    ov.innerHTML =
+      '<div class="badge"><i></i><i></i><svg viewBox="0 0 104 104"><circle cx="52" cy="52" r="46"/><path d="M32 54 L46 68 L73 38"/></svg></div>' +
+      '<h2>' + L('Siz endi xaritada ko\'rinasiz!', 'Теперь вас видно на карте!') + '</h2>' +
+      '<p>' + L('Mijozlar sizni yaqinlik bo\'yicha topib, to\'g\'ridan-to\'g\'ri murojaat qila oladi.', 'Клиенты смогут находить вас по близости и обращаться напрямую.') + '</p>' +
+      '<button class="pf-cta" id="pfDoneOk">🎉 ' + L('Zo\'r!', 'Отлично!') + '</button>';
+    document.body.appendChild(ov);
+    pfConfetti(ov, 34);
+    var closed = false;
+    function close(){
+      if (closed) return; closed = true;
+      ov.style.transition = 'opacity .3s'; ov.style.opacity = '0';
+      setTimeout(function(){ try { ov.remove(); } catch(e){} if (after) after(); }, 300);
+    }
+    ov.querySelector('#pfDoneOk').addEventListener('click', function(){ haptic('select'); close(); });
+    setTimeout(close, 4200);
+  }
+
+  // ---------- Tahrirlash ekrani (asosiy + qulayliklar) ----------
+  function renderProfileEditMaster(entry){
+    pfInjectCss();
+    var m = entry.master;
+    var src = m.extra || {};
+    var ex = {
+      bio: src.bio || '',
+      tajriba_yil: (src.tajriba_yil == null || src.tajriba_yil === '') ? null : src.tajriba_yil,
+      ish_boshlash: src.ish_boshlash || '',
+      ish_tugash: src.ish_tugash || '',
+      ish_kunlari: (src.ish_kunlari || []).slice(),
+      qulayliklar: (src.qulayliklar || []).slice(),
+      kafolat_kun: src.kafolat_kun || 0,
+      moljal: src.moljal || ''
+    };
+    var BIO_MAX = 300;
+    var sample = L('Tajribali usta. Ishni sifatli va va\'da qilingan muddatda bajaraman. Avval bepul maslahat beraman, narxni oldindan kelishib olamiz.',
+                   'Опытный мастер. Выполняю работу качественно и в обещанные сроки. Сначала бесплатная консультация, цену согласуем заранее.');
+
+    mainView.innerHTML =
+      '<div class="view"><div class="list-title pf-rise" style="--i:0">' + t().profileEditTitle + '</div>' +
+
+      '<div class="pf-sec pf-rise" style="--i:1" data-sec="main"><h3>👤 ' + L('Asosiy ma\'lumotlar', 'Основное') + '</h3><div style="height:10px"></div>' +
+      '<div class="form-card">' +
+      '<div class="field"><label>👤 ' + t().fIsm + '</label><input id="peIsm" value="' + esc(m.ism || '') + '"></div>' +
+      '<div class="field"><label>📱 ' + t().fTel + '</label><input id="peTel" type="tel" value="' + esc(m.telefon || '') + '"></div>' +
+      '<div class="field"><label>🌍 ' + t().fViloyat + '</label><select id="peViloyat" class="select-field"></select></div>' +
+      '<div class="field"><label>📍 ' + t().fTuman + '</label><select id="peTuman" class="select-field"></select></div>' +
+      '<div class="field" style="margin-bottom:0"><label>🔧 ' + t().profileEditChooseServices + '</label><div class="chip-toggle-list" id="peXizmatlar"></div></div>' +
+      '</div></div>' +
+
+      '<div class="pf-sec pf-rise" style="--i:2" data-sec="bio"><h3>👋 ' + L('Men haqimda', 'Обо мне') + '</h3>' +
+      '<div class="hint">' + L('Mijozlar sizni tanlashdan oldin shu matnni o\'qiydi. Qisqa va aniq yozing.', 'Клиенты читают этот текст перед выбором. Пишите коротко и по делу.') + '</div>' +
+      '<textarea id="peBio" maxlength="' + BIO_MAX + '" placeholder="' + esc(L('Masalan: 8 yillik tajriba, muzlatgich va kir yuvish mashinalari ustasi...', 'Например: 8 лет опыта, ремонт холодильников и стиральных машин...')) + '">' + esc(ex.bio) + '</textarea>' +
+      '<div class="pf-bio-foot"><button class="pf-sample" id="peSample" type="button">✨ ' + L('Namuna matn', 'Пример текста') + '</button><span class="pf-cnt" id="peCnt"></span></div></div>' +
+
+      '<div class="pf-sec pf-rise" style="--i:3" data-sec="exp"><h3>🏅 ' + L('Ish tajribasi', 'Опыт работы') + '</h3>' +
+      '<div class="hint">' + L('Necha yildan beri shu sohada ishlaysiz?', 'Сколько лет вы работаете в этой сфере?') + '</div>' +
+      '<div class="pf-step"><button type="button" id="peExpMinus">−</button><div class="num" id="peExpNum"></div><button type="button" id="peExpPlus">+</button></div>' +
+      '<div class="pf-chips" id="peExpChips" style="justify-content:center">' +
+      [1, 3, 5, 10, 15, 20].map(function(n){ return '<button type="button" class="pf-chip" data-n="' + n + '">' + pfYears(n) + '</button>'; }).join('') + '</div></div>' +
+
+      '<div class="pf-sec pf-rise" style="--i:4" data-sec="hours"><h3>🕘 ' + L('Ish vaqti', 'Время работы') + '</h3>' +
+      '<div class="hint">' + L('Mijozlar sizni "Hozir ochiq" belgisi bilan ko\'radi. 24/7 ishlasangiz, pastdagi qulayliklardan tanlang.', 'Клиенты увидят отметку «Сейчас открыто». Если работаете 24/7 — отметьте в удобствах ниже.') + '</div>' +
+      '<div class="pf-time-row"><input type="time" class="pf-time" id="peT1" value="' + esc(ex.ish_boshlash) + '"><span class="dash">—</span><input type="time" class="pf-time" id="peT2" value="' + esc(ex.ish_tugash) + '"></div>' +
+      '<div class="pf-chips" id="peTPre">' +
+      [['09:00', '18:00'], ['08:00', '20:00'], ['10:00', '22:00'], ['07:00', '23:00']].map(function(p){ return '<button type="button" class="pf-chip" data-a="' + p[0] + '" data-b="' + p[1] + '">' + p[0] + '–' + p[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="pf-days" id="peDays">' +
+      PF_DAYS.map(function(d){ return '<button type="button" class="pf-day' + (ex.ish_kunlari.indexOf(d.n) >= 0 ? ' on' : '') + '" data-n="' + d.n + '">' + L(d.uz, d.ru) + '</button>'; }).join('') + '</div>' +
+      '<div class="hint" style="margin:0">' + L('Ish kunlarini belgilang (hech narsa tanlamasangiz — har kuni).', 'Отметьте рабочие дни (если ничего не выбрано — каждый день).') + '</div></div>' +
+
+      '<div class="pf-sec pf-rise" style="--i:5" data-sec="amen"><h3>✨ ' + L('Qulayliklar', 'Удобства') + '</h3>' +
+      '<div class="hint">' + L('Mijozga qulay bo\'lgan hamma narsani belgilang — shunda sizni tanlash ehtimoli oshadi.', 'Отметьте всё, что удобно клиенту — так вас выберут чаще.') + '</div>' +
+      '<div class="pf-amen-grid" id="peAmen">' +
+      PF_AMEN.map(function(a){ return '<button type="button" class="pf-amen' + (ex.qulayliklar.indexOf(a.k) >= 0 ? ' on' : '') + '" data-k="' + a.k + '"><span class="ic">' + a.ic + '</span><span class="lb">' + L(a.uz, a.ru) + '</span><span class="sw"></span></button>'; }).join('') +
+      '</div></div>' +
+
+      '<div class="pf-sec pf-rise" style="--i:6" data-sec="warr"><h3>🛡️ ' + L('Ish kafolati', 'Гарантия на работу') + '</h3>' +
+      '<div class="hint">' + L('Bajarilgan ishga qancha muddat kafolat berasiz?', 'На какой срок вы даёте гарантию на выполненную работу?') + '</div>' +
+      '<div class="pf-chips" id="peWarr">' +
+      PF_WARRANTY.map(function(w){ return '<button type="button" class="pf-chip' + (ex.kafolat_kun === w.d ? ' on' : '') + '" data-d="' + w.d + '">' + L(w.uz, w.ru) + '</button>'; }).join('') + '</div></div>' +
+
+      '<div id="peMsg"></div>' +
+      '<div class="pf-savebar"><button class="pf-cta" id="peSave" style="width:100%">' + t().profileEditSaveBtn + '</button></div>' +
+      '</div>';
+
+    // --- Asosiy maydonlar (avvalgidek) ---
     var selectedX = {};
-    currentXizmatlar.forEach(function(x){ selectedX[x] = true; });
-
+    (m.xizmatlar || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean).forEach(function(x){ selectedX[x] = true; });
     apiGet('/api/public/profile/meta').then(function(meta){
       var viloyatSel = mainView.querySelector('#peViloyat');
+      if (!viloyatSel) return;
       viloyatSel.innerHTML = (meta.viloyatlar || []).map(function(v){
         return '<option value="' + esc(v) + '"' + (v === m.viloyat ? ' selected' : '') + '>' + esc(v) + '</option>';
       }).join('');
-
       function fillTuman(viloyat, selected){
         var tumanSel = mainView.querySelector('#peTuman');
         var list = (meta.tumanlar && meta.tumanlar[viloyat]) || [];
@@ -1774,40 +2436,121 @@
       }
       fillTuman(m.viloyat, m.tuman);
       viloyatSel.addEventListener('change', function(){ fillTuman(viloyatSel.value, null); });
-
       var xBox = mainView.querySelector('#peXizmatlar');
       xBox.innerHTML = (meta.xizmatlar || []).map(function(x){
         return '<button type="button" class="chip-toggle' + (selectedX[x] ? ' active' : '') + '" data-x="' + esc(x) + '">' + esc(x) + '</button>';
       }).join('');
       xBox.querySelectorAll('.chip-toggle').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          haptic('select');
-          btn.classList.toggle('active');
-        });
+        btn.addEventListener('click', function(){ haptic('select'); btn.classList.toggle('active'); });
       });
     });
 
+    // --- Bio ---
+    var bioEl = mainView.querySelector('#peBio'), cntEl = mainView.querySelector('#peCnt');
+    function updCnt(){
+      var n = bioEl.value.length;
+      cntEl.textContent = n + ' / ' + BIO_MAX;
+      cntEl.className = 'pf-cnt' + (n >= 20 ? ' hi' : '') + (n >= BIO_MAX - 20 ? ' max' : '');
+    }
+    bioEl.addEventListener('input', updCnt); updCnt();
+    mainView.querySelector('#peSample').addEventListener('click', function(){
+      haptic('select');
+      if (bioEl.value.trim() && !window.confirm(L('Hozirgi matn almashtirilsinmi?', 'Заменить текущий текст?'))) return;
+      bioEl.value = sample; updCnt(); bioEl.focus();
+    });
+
+    // --- Tajriba ---
+    var numEl = mainView.querySelector('#peExpNum');
+    function renderExp(bump){
+      numEl.textContent = ex.tajriba_yil == null ? L('— yil', '— лет') : pfYears(ex.tajriba_yil);
+      if (bump) { numEl.classList.remove('bump'); void numEl.offsetWidth; numEl.classList.add('bump'); }
+      Array.prototype.forEach.call(mainView.querySelectorAll('#peExpChips .pf-chip'), function(c){
+        c.classList.toggle('on', parseInt(c.getAttribute('data-n'), 10) === ex.tajriba_yil);
+      });
+    }
+    renderExp(false);
+    mainView.querySelector('#peExpMinus').addEventListener('click', function(){ haptic('select'); ex.tajriba_yil = Math.max(0, (ex.tajriba_yil == null ? 1 : ex.tajriba_yil) - 1); renderExp(true); });
+    mainView.querySelector('#peExpPlus').addEventListener('click', function(){ haptic('select'); ex.tajriba_yil = Math.min(60, (ex.tajriba_yil == null ? -1 : ex.tajriba_yil) + 1); renderExp(true); });
+    Array.prototype.forEach.call(mainView.querySelectorAll('#peExpChips .pf-chip'), function(c){
+      c.addEventListener('click', function(){ haptic('select'); ex.tajriba_yil = parseInt(c.getAttribute('data-n'), 10); renderExp(true); });
+    });
+
+    // --- Ish vaqti ---
+    var t1 = mainView.querySelector('#peT1'), t2 = mainView.querySelector('#peT2');
+    function markPre(){
+      Array.prototype.forEach.call(mainView.querySelectorAll('#peTPre .pf-chip'), function(c){
+        c.classList.toggle('on', c.getAttribute('data-a') === t1.value && c.getAttribute('data-b') === t2.value);
+      });
+    }
+    markPre();
+    t1.addEventListener('input', markPre); t2.addEventListener('input', markPre);
+    Array.prototype.forEach.call(mainView.querySelectorAll('#peTPre .pf-chip'), function(c){
+      c.addEventListener('click', function(){ haptic('select'); t1.value = c.getAttribute('data-a'); t2.value = c.getAttribute('data-b'); markPre(); });
+    });
+    Array.prototype.forEach.call(mainView.querySelectorAll('#peDays .pf-day'), function(b){
+      b.addEventListener('click', function(){
+        haptic('select');
+        var n = parseInt(b.getAttribute('data-n'), 10), i = ex.ish_kunlari.indexOf(n);
+        if (i >= 0) ex.ish_kunlari.splice(i, 1); else ex.ish_kunlari.push(n);
+        b.classList.toggle('on', i < 0);
+      });
+    });
+
+    // --- Qulayliklar ---
+    Array.prototype.forEach.call(mainView.querySelectorAll('#peAmen .pf-amen'), function(b){
+      b.addEventListener('click', function(){
+        haptic('select');
+        var k = b.getAttribute('data-k'), i = ex.qulayliklar.indexOf(k);
+        if (i >= 0) ex.qulayliklar.splice(i, 1); else ex.qulayliklar.push(k);
+        b.classList.toggle('on', i < 0);
+      });
+    });
+
+    // --- Kafolat ---
+    Array.prototype.forEach.call(mainView.querySelectorAll('#peWarr .pf-chip'), function(c){
+      c.addEventListener('click', function(){
+        haptic('select');
+        ex.kafolat_kun = parseInt(c.getAttribute('data-d'), 10);
+        Array.prototype.forEach.call(mainView.querySelectorAll('#peWarr .pf-chip'), function(o){ o.classList.toggle('on', o === c); });
+      });
+    });
+
+    // --- Kerakli bo'limga o'tish ---
+    if (entry.focus) {
+      var secEl = mainView.querySelector('[data-sec="' + entry.focus + '"]');
+      if (secEl) setTimeout(function(){
+        secEl.scrollIntoView({ behavior:'smooth', block:'start' });
+        secEl.classList.add('flash');
+        if (entry.focus === 'bio') { try { bioEl.focus({ preventScroll:true }); } catch(e){} }
+      }, 650);
+    }
+
+    // --- Saqlash ---
     mainView.querySelector('#peSave').addEventListener('click', function(){
       var ism = mainView.querySelector('#peIsm').value.trim();
       var telefon = mainView.querySelector('#peTel').value.trim();
       var viloyat = mainView.querySelector('#peViloyat').value;
       var tuman = mainView.querySelector('#peTuman').value;
       var xizmatlar = Array.prototype.slice.call(mainView.querySelectorAll('.chip-toggle.active')).map(function(b){ return b.getAttribute('data-x'); });
-
-      if (!ism || !telefon || xizmatlar.length === 0) {
-        alert(t().orderErrRequired);
-        return;
-      }
+      if (!ism || !telefon || xizmatlar.length === 0) { alert(t().orderErrRequired); return; }
+      var a = t1.value, b = t2.value;
+      if ((a && !b) || (!a && b)) { pfToast(L('Ish vaqtining boshlanishi va tugashini ikkalasini ham kiriting', 'Укажите и начало, и конец рабочего времени')); return; }
+      var payload = {
+        bio: bioEl.value.trim(), tajriba_yil: ex.tajriba_yil, ish_boshlash: a, ish_tugash: b,
+        ish_kunlari: ex.ish_kunlari.slice().sort(), qulayliklar: ex.qulayliklar, kafolat_kun: ex.kafolat_kun, moljal: ex.moljal
+      };
       var saveBtn = mainView.querySelector('#peSave');
       saveBtn.disabled = true; saveBtn.textContent = t().profileEditSaving;
-
       apiPost('/api/public/profile/master/edit', {
-        init_data: getInitData(), ism: ism, telefon: telefon, viloyat: viloyat, tuman: tuman, xizmatlar: xizmatlar
+        init_data: getInitData(), ism: ism, telefon: telefon, viloyat: viloyat, tuman: tuman, xizmatlar: xizmatlar, extra: payload
       }).then(function(r){
         if (r.data && r.data.ok) {
           haptic('ok');
-          mainView.querySelector('#peMsg').innerHTML = '<p class="note" style="color:var(--green)">' + t().profileEditSuccess + '</p>';
+          mainView.querySelector('#peMsg').innerHTML = '<p class="note" style="color:var(--green);text-align:center;margin-top:14px">' + t().profileEditSuccess + '</p>';
           m.ism = ism; m.telefon = telefon; m.viloyat = viloyat; m.tuman = tuman; m.xizmatlar = xizmatlar.join(', ');
+          m.extra = m.extra || {};
+          m.extra.bio = payload.bio; m.extra.tajriba_yil = payload.tajriba_yil; m.extra.ish_boshlash = a; m.extra.ish_tugash = b;
+          m.extra.ish_kunlari = payload.ish_kunlari; m.extra.qulayliklar = payload.qulayliklar; m.extra.kafolat_kun = payload.kafolat_kun;
           setTimeout(function(){ pop(); }, 700);
         } else {
           alert((r.data && r.data.error) || t().orderErrGeneric);
@@ -1818,6 +2561,27 @@
         saveBtn.disabled = false; saveBtn.textContent = t().profileEditSaveBtn;
       });
     });
+  }
+
+  // ---------- Mijoz kartalaridagi qulaylik belgilari ----------
+  function pfCardExtras(m){
+    var x = m && m.extra;
+    if (!x) return '';
+    pfInjectCss();
+    var rows = [];
+    if (x.ochiq_hozir === true) rows.push('<span class="pfc-b open"><i></i>' + L('Hozir ochiq', 'Сейчас открыто') + (x.ish_tugash && (x.qulayliklar || []).indexOf('soat24') < 0 ? ' · ' + (state.lang === 'uz' ? mapEsc(x.ish_tugash) + ' gacha' : 'до ' + mapEsc(x.ish_tugash)) : '') + '</span>');
+    else if (x.ochiq_hozir === false) rows.push('<span class="pfc-b">🌙 ' + L('Hozir yopiq', 'Сейчас закрыто') + (x.ish_boshlash ? ' · ' + mapEsc(x.ish_boshlash) + '–' + mapEsc(x.ish_tugash) : '') + '</span>');
+    if (x.tajriba_yil != null && x.tajriba_yil >= 1) rows.push('<span class="pfc-b exp">🏅 ' + mapEsc(pfYears(x.tajriba_yil)) + ' ' + L('tajriba', 'опыта') + '</span>');
+    if ((x.kafolat_kun || 0) > 0) rows.push('<span class="pfc-b warr">🛡️ ' + L('Kafolat', 'Гарантия') + ' ' + mapEsc(pfWarrLabel(x.kafolat_kun)) + '</span>');
+    (x.qulayliklar || []).forEach(function(k){
+      var d = pfAmenDef(k);
+      if (d) rows.push('<span class="pfc-b">' + d.ic + ' ' + mapEsc(L(d.uz, d.ru)) + '</span>');
+    });
+    var html = '';
+    if (x.bio) html += '<div class="pfc-bio">' + mapEsc(x.bio) + '</div>';
+    if (rows.length) html += '<div class="pfc-row">' + rows.join('') + '</div>';
+    if (x.moljal) html += '<div class="pfc-loc">📌 ' + mapEsc(x.moljal) + '</div>';
+    return html ? '<div class="pfc">' + html + '</div>' : '';
   }
 
   function renderProfileUser(entry){
@@ -4226,6 +4990,7 @@
   }
 
   function mapCleanup(){
+    try { pfCleanup(); } catch(e){}
     if (!mapRt) return;
     try { clearTimeout(mapRt.qTimer); } catch(e){}
     try { window.removeEventListener('resize', mapRt.onResize); } catch(e){}
@@ -4270,6 +5035,7 @@
       '<div class="mc-stats"><span class="mc-stat mc-rating">⭐ ' + ratingHtml + '</span>' +
       (m.masofa_km != null ? '<span class="mc-stat">📏 ' + mapEsc(m.masofa_km) + ' km</span>' : '') + '</div></div></div>' +
       '<div class="mc-chips">' + chips + avail + '</div>' +
+      pfCardExtras(m) +
       '<div class="mc-actions">' +
       '<a class="tel" href="tel:' + mapEsc(m.telefon) + '">📞 ' + mapEsc(m.telefon) + '</a>' +
       '<a class="tg" href="' + mapEsc(link) + '" target="_blank">✈️ ' + t().topishWrite + '</a></div>' +
@@ -5067,6 +5833,7 @@
     else if (entry.view === 'profileMasterOrderAccepted') renderProfileMasterOrderAccepted(entry);
     else if (entry.view === 'profileMasterStats') renderProfileMasterStats(entry);
     else if (entry.view === 'profileEditMaster') renderProfileEditMaster(entry);
+    else if (entry.view === 'profileMasterLocation') renderProfileMasterLocation(entry);
     else if (entry.view === 'profileUser') renderProfileUser(entry);
     else if (entry.view === 'profileUserOrders') renderProfileUserOrders(entry);
     else if (entry.view === 'anketaGate') renderAnketaGate();
