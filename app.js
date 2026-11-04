@@ -779,6 +779,10 @@
     if (entry.view === 'anketaForm') return entry.viloyat;
     if (entry.view === 'anketaContract') return t().anketaContractTitle;
     if (entry.view === 'anketaSuccess') return t().menuAnketa;
+    if (entry.view === 'market') return 'Market';
+    if (entry.view === 'marketCats') return L('Ehtiyot qismlar','Запчасти');
+    if (entry.view === 'marketParts') { var mc = catById(entry.cat); return mc ? pick(mc, 'name') : ''; }
+    if (entry.view === 'marketPart') return null;
     return null;
   }
 
@@ -3894,6 +3898,8 @@
     var items = [
       { pal:'g-sun', wide:true, tall:true, icon:'🛠️', title:cl(t().menuTechs), sub:t().menuTechsSub, badge:'🎬 ' + L('ANIMATSIYA','АНИМАЦИЯ'),
         count:t().itemsCount(totalIssues()), brand:L('Texnika','Техника'), action:function(){ push({ view:'home' }); } },
+      { pal:'g-market', wide:true, icon:'🛒', title:'Market', sub:L('Ehtiyot qismlar, eski va B/U texnika','Запчасти, старая и Б/У техника'), badge:'🔥 ' + L('YANGI','НОВОЕ'),
+        cta:'🛒 ' + L('Marketga kirish','В маркет') + ' ›', brand:'Market', action:function(el){ mkOpenPortal(el); } },
       { pal:'g-night', wide:true, icon:'🔍', title:cl(t().menuTopish), sub:t().menuTopishSub, cta:'🔎 ' + L('Qidirish','Искать') + ' ›',
         brand:L('Ustaxona','Мастерская'), action:function(){ push({ view:'topishViloyat' }); } },
       { pal:'g-teal', wide:true, icon:'🗺️', title:L('Xarita','Карта'), sub:L('Yaqin atrofdagi ustalarni xaritada toping','Найдите мастеров рядом на карте'),
@@ -3909,7 +3915,7 @@
       '<p>' + L('Barcha bo\'limlar shu yerda — tanlang','Все разделы здесь — выбирайте') + '</p></div>' +
       '<div class="tiles">' + items.map(tileHTML).join('') + '</div></div>';
     mainView.querySelectorAll('[data-ti]').forEach(function(btn){
-      btn.addEventListener('click', function(){ haptic('select'); items[parseInt(btn.getAttribute('data-ti'), 10)].action(); });
+      btn.addEventListener('click', function(){ haptic('select'); items[parseInt(btn.getAttribute('data-ti'), 10)].action(btn); });
     });
   }
 
@@ -4537,11 +4543,435 @@
   }
 
   // ---------- Master render dispatcher ----------
+  // ================= MARKET =================
+  // Market bo'limi: Ehtiyot qismlar (faol), Eski texnika va B/U texnika (tez orada).
+  // Ma'lumotlar jonli API'dan (/api/public/market/*) olinadi — admin_panel.py orqali kiritiladi.
+  state.mk = { overview:null, ovAt:0, parts:{}, partsAt:{}, q:{}, holat:{}, stock:{}, scroll:{} };
+  var MK_TTL = 60000;
+  var mkBusy = false;
+
+  function mkGlyph(name){
+    var h = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">';
+    if (name === 'gear') {
+      for (var i = 0; i < 8; i++) h += '<rect x="21" y="3.5" width="6" height="9" rx="1.6" transform="rotate(' + (i*45) + ' 24 24)"/>';
+      h += '<circle cx="24" cy="24" r="12.5"/><circle cx="24" cy="24" r="4.5"/>';
+    } else if (name === 'chip') {
+      h += '<rect x="12" y="12" width="24" height="24" rx="4"/><rect x="19" y="19" width="10" height="10" rx="2"/>' +
+        '<path d="M18 5v7M24 5v7M30 5v7M18 36v7M24 36v7M30 36v7M5 18h7M5 24h7M5 30h7M36 18h7M36 24h7M36 30h7"/>';
+    } else if (name === 'cap') {
+      h += '<rect x="14" y="8" width="20" height="28" rx="5"/><path d="M14 17h20M20 36v8M28 36v8"/>';
+    } else if (name === 'fan') {
+      h += '<circle cx="24" cy="24" r="3"/><circle cx="24" cy="24" r="20"/>';
+      for (var k = 0; k < 3; k++) h += '<path d="M24 21c-1.5-7 1-12 7-13 3 5 .5 11-5.5 13.5" transform="rotate(' + (k*120) + ' 24 24)"/>';
+    } else if (name === 'bolt') {
+      h += '<path d="M27 4 12 27h11l-3 17 16-24H25z"/>';
+    } else if (name === 'board') {
+      h += '<rect x="6" y="10" width="36" height="28" rx="4"/><circle cx="14" cy="18" r="2"/><path d="M18 18h13l4 4v7M14 30h10l4 4"/>';
+    } else if (name === 'res') {
+      h += '<path d="M3 24h9l3-8 6 16 6-16 6 16 3-8h9"/>';
+    } else {
+      h += '<circle cx="22" cy="24" r="13"/><circle cx="22" cy="24" r="4"/><path d="M35 24h9M22 11V6M22 42v-4"/>';
+    }
+    return h + '</svg>';
+  }
+
+  function mkFmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function mkPriceHTML(p, cls){
+    if (p.narx > 0) return '<span class="' + cls + '">' + mkFmt(p.narx) + ' <small style="font-size:.6em;font-weight:700;opacity:.8">' + L("so'm","сум") + '</small></span>';
+    return '<span class="' + cls + ' neg">' + L('Narx kelishiladi','Цена договорная') + '</span>';
+  }
+  function mkHolat(h){
+    return h === 'bu' ? 'B/U' : (h === 'demontaj' ? L('Demontaj','Демонтаж') : L('Yangi','Новое'));
+  }
+  function mkPhotoUrl(p){ return API_BASE + '/api/public/market/photo?id=' + p.id + '&v=' + (p.rasm_v || 0); }
+
+  function mkToast(msg){
+    var old = document.querySelector('.mk-toast'); if (old) old.remove();
+    var el = document.createElement('div'); el.className = 'mk-toast'; el.textContent = msg;
+    document.body.appendChild(el);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add('in'); }); });
+    setTimeout(function(){ el.classList.remove('in'); setTimeout(function(){ el.remove(); }, 350); }, 2000);
+  }
+
+  function mkCountUp(el, to){
+    if (!el) return;
+    if (!to) { el.textContent = '0'; return; }
+    var t0 = null, dur = 900;
+    function step(ts){
+      if (!t0) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = String(Math.round(to * e));
+      if (p < 1 && document.body.contains(el)) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // ---------- fon (aurora + suzuvchi detallar) ----------
+  function mkBuildBg(){
+    if (document.getElementById('mkBg')) return;
+    var d = document.createElement('div'); d.id = 'mkBg';
+    var names = ['gear','chip','cap','fan','bolt','board','res','motor'];
+    var h = '<div class="au a1"></div><div class="au a2"></div><div class="au a3"></div>';
+    for (var i = 0; i < 12; i++) {
+      var sz = 22 + Math.round(Math.random() * 26);
+      h += '<div class="pt' + (i % 3 === 0 ? ' gd' : '') + '" style="left:' + (Math.random()*96).toFixed(1) + '%;width:' + sz + 'px;height:' + sz + 'px;' +
+        'animation-duration:' + (22 + Math.random()*26).toFixed(1) + 's;animation-delay:-' + (Math.random()*30).toFixed(1) + 's;' +
+        '--dx:' + Math.round(-60 + Math.random()*120) + 'px;--rot:' + Math.round(-300 + Math.random()*600) + 'deg">' + mkGlyph(names[i % names.length]) + '</div>';
+    }
+    d.innerHTML = h;
+    document.body.insertBefore(d, document.body.firstChild);
+  }
+  mkBuildBg();
+
+  // ---------- kirish animatsiyasi (portal) ----------
+  function mkLogoSVG(){
+    var teeth = '';
+    for (var i = 0; i < 10; i++) teeth += '<rect x="56" y="12" width="8" height="12" rx="2" transform="rotate(' + (i*36) + ' 60 60)"/>';
+    return '<svg class="logo" viewBox="0 0 120 120" fill="none" stroke="#19e6a0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
+      '<g class="gearwrap">' + teeth + '<circle class="dr" style="--len:290" cx="60" cy="60" r="36"/></g>' +
+      '<path class="dr d2" style="--len:140;stroke:#ffc83d" d="M44 54h32l-3 24H47z"/>' +
+      '<path class="dr d2" style="--len:60;stroke:#ffc83d" d="M52 54v-5a8 8 0 0 1 16 0v5"/></svg>';
+  }
+
+  function mkOpenPortal(srcEl){
+    if (mkBusy) return;
+    mkBusy = true;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { push({ view:'market' }); mkBusy = false; return; }
+    var r = srcEl ? srcEl.getBoundingClientRect() : { left: innerWidth/2, top: innerHeight/2, width: 0, height: 0 };
+    var o = document.createElement('div'); o.id = 'mkPortal';
+    o.style.setProperty('--px', Math.round(r.left + r.width/2) + 'px');
+    o.style.setProperty('--py', Math.round(r.top + r.height/2) + 'px');
+    var word = 'MARKET'.split('').map(function(ch, k){ return '<i style="--k:' + k + '">' + ch + '</i>'; }).join('');
+    o.innerHTML = '<span class="ring"></span><span class="ring r2"></span>' + mkLogoSVG() +
+      '<div class="word">' + word + '</div><div class="tag">' + L('EHTIYOT QISMLAR · ESKI · B/U','ЗАПЧАСТИ · СТАРАЯ · Б/У') + '</div><div class="bar"><b></b></div>';
+    document.body.appendChild(o);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ o.classList.add('in'); }); });
+    setTimeout(function(){ push({ view:'market' }); }, 720);
+    setTimeout(function(){ o.classList.add('out'); }, 1750);
+    setTimeout(function(){ o.remove(); mkBusy = false; }, 2300);
+  }
+
+  // ---------- ma'lumot yuklash ----------
+  function mkLoadOverview(cb){
+    var m = state.mk;
+    if (m.overview && (Date.now() - m.ovAt) < MK_TTL) { cb(m.overview); return; }
+    if (!API_BASE) { cb(m.overview); return; }
+    apiGet('/api/public/market/overview').then(function(d){
+      if (d && d.ok) { m.overview = d; m.ovAt = Date.now(); }
+      cb(m.overview);
+    }).catch(function(){ cb(m.overview); });
+  }
+  function mkLoadParts(cat, cb){
+    var m = state.mk;
+    var fresh = m.parts[cat] && (Date.now() - (m.partsAt[cat] || 0)) < MK_TTL;
+    if (fresh) { cb(m.parts[cat], null); return; }
+    if (!API_BASE) { cb(null, 'NO_API'); return; }
+    apiGet('/api/public/market/parts?cat=' + encodeURIComponent(cat)).then(function(d){
+      if (d && d.ok) { m.parts[cat] = d.items || []; m.partsAt[cat] = Date.now(); cb(m.parts[cat], null); }
+      else cb(m.parts[cat] || null, 'ERR');
+    }).catch(function(){ cb(m.parts[cat] || null, 'ERR'); });
+  }
+  function mkCountFor(cat){
+    var ov = state.mk.overview; return ov && ov.counts && ov.counts[cat] ? ov.counts[cat] : 0;
+  }
+
+  // ---------- Market bosh sahifa ----------
+  function renderMarket(){
+    var names = ['gear','chip','cap','fan','bolt','board','res','motor'], belt = '';
+    for (var rep = 0; rep < 2; rep++) names.forEach(function(n){ belt += '<div class="gl">' + mkGlyph(n) + '</div>'; });
+    mainView.innerHTML =
+      '<div class="view mk-view">' +
+        '<div class="mk-hero"><span class="mk-kicker">ONLINE USTAXONA · MARKET</span><h1>Market</h1>' +
+        '<p>' + L("Texnika turini tanlang, model yoki qism raqami bo'yicha ehtiyot qismni toping.","Выберите тип техники и найдите запчасть по модели или номеру детали.") + '</p></div>' +
+        '<div class="mk-belt"><div class="mk-belt-track">' + belt + '</div></div>' +
+        '<button class="mk-main" id="mkOpenParts">' +
+          '<span class="gear g1">' + mkGlyph('gear') + '</span><span class="gear g2">' + mkGlyph('gear') + '</span>' +
+          '<span class="lvl">' + L('FAOL','АКТИВНО') + '</span>' +
+          '<span class="ttl">' + L('Ehtiyot qismlar','Запчасти') + '</span>' +
+          '<span class="sub">' + L("Televizor, konditsioner, xolodilnik va boshqa texnikalar uchun","Для телевизоров, кондиционеров, холодильников и другой техники") + '</span>' +
+          '<span class="meta"><span><b id="mkTotal">0</b> ' + L('ta qism','дет.') + '</span><span><b id="mkCatN">0</b> ' + L('texnika turi','типов техники') + '</span></span>' +
+          '<span class="go">→</span>' +
+        '</button>' +
+        '<div class="mk-soon-row">' +
+          '<button class="mk-soon" data-soon="1" style="--i:0"><span class="ico">🧰</span><span class="chip">' + L('TEZ ORADA','СКОРО') + '</span><b>' + L('Eski texnika','Старая техника') + '</b><span class="d">' + L("Ehtiyot qism uchun texnika","Техника на запчасти") + '</span></button>' +
+          '<button class="mk-soon" data-soon="2" style="--i:1"><span class="ico">♻️</span><span class="chip">' + L('TEZ ORADA','СКОРО') + '</span><b>' + L('B/U texnika','Б/У техника') + '</b><span class="d">' + L("Ishlatilgan texnikalar","Бывшая в употреблении") + '</span></button>' +
+        '</div>' +
+      '</div>';
+    document.getElementById('mkOpenParts').addEventListener('click', function(){ haptic('select'); push({ view:'marketCats' }); });
+    mainView.querySelectorAll('[data-soon]').forEach(function(b){
+      b.addEventListener('click', function(){ haptic('tap'); mkToast(L("Tez orada ochiladi 🚀","Скоро откроется 🚀")); });
+    });
+    mkLoadOverview(function(ov){
+      if (!ov || state.stack[state.stack.length-1].view !== 'market') return;
+      var total = 0, n = 0;
+      Object.keys(ov.counts || {}).forEach(function(k){ total += ov.counts[k]; if (ov.counts[k] > 0) n++; });
+      setTimeout(function(){ mkCountUp(document.getElementById('mkTotal'), total); mkCountUp(document.getElementById('mkCatN'), n); }, 900);
+    });
+  }
+
+  // ---------- Texnika turlari ----------
+  function renderMarketCats(){
+    mainView.innerHTML = '<div class="view mk-view"><div class="mk-title">' + L('Ehtiyot qismlar','Запчасти') + '</div>' +
+      '<div class="mk-sub">' + L("Qaysi texnika uchun ehtiyot qism kerak?","Для какой техники нужна запчасть?") + '</div><div class="mk-grid" id="mkGrid"></div></div>';
+    function draw(){
+      var order = CATS.map(function(c, i){ return { c:c, n:mkCountFor(c.id), i:i }; });
+      order.sort(function(a, b){ return (b.n > 0) - (a.n > 0) || a.i - b.i; });
+      var grid = document.getElementById('mkGrid'); if (!grid) return;
+      grid.innerHTML = order.map(function(o, i){
+        return '<button class="mk-cat ' + palOf(o.c.id) + (o.n ? '' : ' zero') + '" data-cat="' + o.c.id + '" style="--i:' + i + '">' +
+          '<span class="emo">' + o.c.icon + '</span><span class="nm">' + esc(pick(o.c,'name')) + '</span>' +
+          '<span class="ct">' + (o.n ? o.n + ' ' + L('ta qism','дет.') : L('Tez orada','Скоро')) + '</span></button>';
+      }).join('');
+      grid.querySelectorAll('[data-cat]').forEach(function(b){
+        b.addEventListener('click', function(){ haptic('select'); push({ view:'marketParts', cat:b.getAttribute('data-cat') }); });
+      });
+    }
+    draw();
+    var before = JSON.stringify(state.mk.overview && state.mk.overview.counts);
+    mkLoadOverview(function(ov){
+      if (state.stack[state.stack.length-1].view !== 'marketCats') return;
+      if (JSON.stringify(ov && ov.counts) !== before) {
+        // raqamlar kelganda kartochkalarni qayta chizamiz (animatsiyasiz miltillamasligi uchun)
+        draw();
+        mainView.querySelectorAll('.mk-cat').forEach(function(el){ el.style.animation = 'none'; el.style.opacity = '1'; });
+      }
+    });
+  }
+
+  // ---------- Ehtiyot qismlar ro'yxati (yuqorida qidiruv) ----------
+  function mkNorm(s){ return String(s || '').toLowerCase().replace(/[ʻʼ’‘`´']/g, ''); }
+  function mkCompact(s){ return mkNorm(s).replace(/[\s\-_\/.,()]+/g, ''); }
+  function mkHay(p){
+    if (p._hay === undefined) {
+      var parts = [p.nomi, p.nomi_ru, p.brend, p.model, p.part_no, p.mos_modellar, p.tavsif];
+      (p.chars || []).forEach(function(kv){ parts.push(kv[0], kv[1]); });
+      var raw = parts.join(' ');
+      p._hay = mkNorm(raw); p._hayc = mkCompact(raw);
+    }
+    return p;
+  }
+  function mkMatch(p, tokens){
+    mkHay(p);
+    for (var i = 0; i < tokens.length; i++) {
+      var tk = tokens[i];
+      if (p._hay.indexOf(tk) < 0) { var c = mkCompact(tk); if (!c || p._hayc.indexOf(c) < 0) return false; }
+    }
+    return true;
+  }
+  function mkReEsc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function mkHi(text, re){
+    text = String(text || '');
+    if (!re) return esc(text);
+    return esc(text.replace(re, function(m){ return '\u0001' + m + '\u0002'; })).replace(/\u0001/g, '<mark class="mk-m">').replace(/\u0002/g, '</mark>');
+  }
+
+  function renderMarketParts(entry){
+    var cat = entry.cat, c = catById(cat);
+    if (!c) { state.stack.pop(); render(); return; }
+    var m = state.mk;
+    var q0 = m.q[cat] || '';
+    var chips = [['all', L('Barchasi','Все')], ['yangi', L('Yangi','Новые')], ['bu', 'B/U'], ['demontaj', L('Demontaj','Демонтаж')], ['stock', L('Mavjud','В наличии')]];
+    mainView.innerHTML =
+      '<div class="view mk-view">' +
+        '<div class="mk-sticky"><div class="mk-search">' +
+          '<span class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></span>' +
+          '<input id="mkQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + esc(L("Nomi, model yoki qism raqami...","Название, модель или номер детали...")) + '">' +
+          '<button class="mk-clear" id="mkClear" aria-label="clear">✕</button></div>' +
+          '<div class="mk-chips" id="mkChips">' + chips.map(function(ch){ return '<button class="mk-chip" data-h="' + ch[0] + '">' + ch[1] + '</button>'; }).join('') + '</div></div>' +
+        '<div class="mk-head"><div class="tt"><span>' + c.icon + '</span>' + esc(pick(c,'name')) + '</div><div class="cn" id="mkCnt"></div></div>' +
+        '<div class="mk-list fx" id="mkList"><div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div></div>' +
+      '</div>';
+
+    var input = document.getElementById('mkQ'), clearBtn = document.getElementById('mkClear');
+    var listEl = document.getElementById('mkList'), cntEl = document.getElementById('mkCnt');
+    input.value = q0;
+    var firstPaint = true, loadError = null;
+
+    function setChips(){
+      var cur = m.stock[cat] ? 'stock' : (m.holat[cat] || 'all');
+      mainView.querySelectorAll('.mk-chip').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-h') === cur); });
+      clearBtn.classList.toggle('show', !!input.value);
+    }
+
+    function paint(){
+      var items = m.parts[cat];
+      if (!items) {
+        if (loadError) {
+          listEl.innerHTML = '<div class="mk-empty"><span class="big">📡</span><b>' + L("Ulanib bo'lmadi","Не удалось подключиться") + '</b>' + L("Internetni tekshirib, qayta urinib ko'ring.","Проверьте интернет и повторите.") + '<br><span class="act" id="mkRetry">' + L('Qayta urinish','Повторить') + '</span></div>';
+          var rb = document.getElementById('mkRetry'); if (rb) rb.addEventListener('click', function(){ loadError = null; load(true); });
+        }
+        return;
+      }
+      var tokens = mkNorm(input.value).split(/\s+/).filter(Boolean);
+      var hol = m.holat[cat] || 'all', st = !!m.stock[cat];
+      var res = items.filter(function(p){
+        if (hol !== 'all' && p.holat !== hol) return false;
+        if (st && !(p.qoldiq > 0)) return false;
+        return tokens.length ? mkMatch(p, tokens) : true;
+      });
+      var re = tokens.length ? new RegExp('(' + tokens.map(mkReEsc).join('|') + ')', 'gi') : null;
+
+      var label = res.length + ' ' + (tokens.length || hol !== 'all' || st ? L('ta natija','рез.') : L('ta qism','дет.'));
+      if (cntEl.textContent !== label) { cntEl.textContent = label; cntEl.classList.remove('pop'); void cntEl.offsetWidth; cntEl.classList.add('pop'); }
+
+      if (!items.length) {
+        listEl.innerHTML = '<div class="mk-empty"><span class="big">📦</span><b>' + L("Hozircha ehtiyot qism yo'q","Пока нет запчастей") + '</b>' +
+          L("Bu texnika uchun qismlar tez orada qo'shiladi.","Запчасти для этой техники скоро появятся.") + '<br><span class="act" id="mkBackCats">' + L('Boshqa texnika','Другая техника') + '</span></div>';
+        var bc = document.getElementById('mkBackCats'); if (bc) bc.addEventListener('click', function(){ pop(); });
+        return;
+      }
+      if (!res.length) {
+        listEl.innerHTML = '<div class="mk-empty"><span class="big">🔍</span><b>' + t().notFound + '</b>' +
+          L("Model yoki qism raqamining bir qismini yozib ko'ring.","Попробуйте часть модели или номера детали.") + '<br><span class="act" id="mkReset">' + L('Tozalash','Сбросить') + '</span></div>';
+        var rs = document.getElementById('mkReset');
+        if (rs) rs.addEventListener('click', function(){ input.value = ''; m.q[cat] = ''; m.holat[cat] = 'all'; m.stock[cat] = false; setChips(); paint(); });
+        return;
+      }
+      listEl.className = 'mk-list' + (firstPaint ? ' fx' : '');
+      listEl.innerHTML = res.map(function(p, i){
+        var chars = (p.chars || []).slice(0, 3).map(function(kv){ return '<span>' + mkHi(kv[0] + ': ' + kv[1], re) + '</span>'; }).join('');
+        var sub = [p.brend, p.model].filter(Boolean).join(' · ');
+        return '<button class="mk-card ' + palOf(cat) + (p.qoldiq > 0 ? '' : ' out') + '" data-id="' + p.id + '" style="--i:' + Math.min(i, 12) + '">' +
+          '<span class="mk-thumb"><span>' + c.icon + '</span>' +
+            (p.photo ? '<img loading="lazy" alt="" src="' + mkPhotoUrl(p) + '">' : '') +
+            '<span class="mk-hl hl-' + p.holat + '">' + mkHolat(p.holat) + '</span></span>' +
+          '<span class="mk-info">' +
+            '<span class="mk-name">' + mkHi(pick(p,'nomi'), re) + '</span>' +
+            (sub ? '<span class="mk-meta">' + mkHi(sub, re) + '</span>' : '') +
+            (p.part_no ? '<span class="mk-pn"># ' + mkHi(p.part_no, re) + '</span>' : '') +
+            (chars ? '<span class="mk-chars">' + chars + '</span>' : '') +
+            '<span class="mk-foot">' + mkPriceHTML(p, 'mk-price') +
+              '<span class="mk-stock' + (p.qoldiq > 0 ? '' : ' no') + '">' + (p.qoldiq > 0 ? L('Mavjud','В наличии') : L('Tugagan','Нет')) + '</span></span>' +
+          '</span></button>';
+      }).join('');
+      listEl.querySelectorAll('img').forEach(function(im){
+        im.addEventListener('load', function(){ im.classList.add('ok'); });
+        im.addEventListener('error', function(){ im.remove(); });
+        if (im.complete && im.naturalWidth) im.classList.add('ok');
+      });
+      listEl.querySelectorAll('[data-id]').forEach(function(b){
+        b.addEventListener('click', function(){
+          haptic('select'); m.scroll[cat] = window.scrollY;
+          push({ view:'marketPart', cat:cat, id:parseInt(b.getAttribute('data-id'), 10) });
+        });
+      });
+      firstPaint = false;
+    }
+
+    function load(force){
+      if (force) m.partsAt[cat] = 0;
+      mkLoadParts(cat, function(items, err){
+        if (state.stack[state.stack.length-1].view !== 'marketParts' || state.stack[state.stack.length-1].cat !== cat) return;
+        loadError = err && !items ? err : null;
+        paint();
+        if (m.scroll[cat] && items) { var y = m.scroll[cat]; m.scroll[cat] = 0; setTimeout(function(){ window.scrollTo(0, y); }, 30); }
+      });
+    }
+
+    input.addEventListener('input', function(){ m.q[cat] = input.value; setChips(); paint(); });
+    input.addEventListener('keydown', function(e){ if (e.key === 'Enter') input.blur(); });
+    clearBtn.addEventListener('click', function(){ haptic('tap'); input.value = ''; m.q[cat] = ''; setChips(); paint(); input.focus(); });
+    mainView.querySelectorAll('.mk-chip').forEach(function(b){
+      b.addEventListener('click', function(){
+        haptic('select');
+        var h = b.getAttribute('data-h');
+        if (h === 'stock') { m.stock[cat] = !m.stock[cat]; if (m.stock[cat]) m.holat[cat] = 'all'; }
+        else { m.holat[cat] = h; m.stock[cat] = false; }
+        setChips(); paint();
+      });
+    });
+    setChips();
+    if (m.parts[cat]) paint();
+    load(false);
+  }
+
+  // ---------- Qism sahifasi ----------
+  function mkOpenLightbox(src){
+    var lb = document.createElement('div'); lb.id = 'mkLightbox';
+    lb.innerHTML = '<img alt="" src="' + src + '">';
+    lb.addEventListener('click', function(){ lb.classList.remove('in'); setTimeout(function(){ lb.remove(); }, 260); });
+    document.body.appendChild(lb);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ lb.classList.add('in'); }); });
+  }
+
+  function renderMarketPart(entry){
+    var cat = entry.cat, c = catById(cat), m = state.mk;
+    var list = m.parts[cat] || [];
+    var p = list.find(function(x){ return x.id === entry.id; });
+    if (!p) {
+      mainView.innerHTML = '<div class="view mk-view"><div class="mk-skel" style="height:260px"></div></div>';
+      mkLoadParts(cat, function(items){
+        var top = state.stack[state.stack.length-1];
+        if (top.view !== 'marketPart' || top.id !== entry.id) return;
+        if (items && items.find(function(x){ return x.id === entry.id; })) renderMarketPart(entry);
+        else mainView.innerHTML = '<div class="view mk-view"><div class="mk-empty"><span class="big">🤷</span><b>' + L("Qism topilmadi","Деталь не найдена") + '</b>' + L("U sotuvdan olingan bo'lishi mumkin.","Возможно, она снята с продажи.") + '</div></div>';
+      });
+      return;
+    }
+    var chars = p.chars || [];
+    var mos = String(p.mos_modellar || '').split(/[,;\n]+/).map(function(s){ return s.trim(); }).filter(Boolean);
+    var sub = [p.brend, p.model].filter(Boolean).join(' · ');
+    var desc = pick(p, 'tavsif');
+    mainView.innerHTML =
+      '<div class="view mk-view">' +
+        '<div class="mk-img ' + palOf(cat) + '" id="mkImg"><span class="emo">' + c.icon + '</span>' +
+          (p.photo ? '<img alt="" src="' + mkPhotoUrl(p) + '"><span class="zoom">⤢</span>' : '') +
+          '<span class="mk-hl hl-' + p.holat + '">' + mkHolat(p.holat) + '</span></div>' +
+        '<div class="mk-d-top"><div class="mk-d-title">' + esc(pick(p,'nomi')) + '</div>' + (sub ? '<div class="mk-d-meta">' + esc(sub) + '</div>' : '') + '</div>' +
+        '<div class="mk-d-row">' + mkPriceHTML(p, 'mk-d-price') + '<span class="mk-stock' + (p.qoldiq > 0 ? '' : ' no') + '">' +
+          (p.qoldiq > 0 ? L('Mavjud','В наличии') + (p.qoldiq > 1 ? ' · ' + p.qoldiq + ' ' + L('dona','шт.') : '') : L('Tugagan','Нет в наличии')) + '</span></div>' +
+        (p.part_no ? '<div class="mk-pnbox"><span class="k">' + L('Qism raqami','Номер детали') + '</span><span class="v">' + esc(p.part_no) + '</span><button id="mkCopy">' + L('Nusxa','Копия') + '</button></div>' : '') +
+        (chars.length ? '<div class="mk-sec"><h3>' + L('Xarakteristikalari','Характеристики') + '</h3><div class="mk-box">' +
+          chars.map(function(kv, i){ return '<div class="mk-tr" style="--i:' + Math.min(i, 14) + '"><span class="k">' + esc(kv[0]) + '</span><span class="v">' + esc(kv[1]) + '</span></div>'; }).join('') + '</div></div>' : '') +
+        (mos.length ? '<div class="mk-sec"><h3>' + L('Mos modellar','Совместимые модели') + '</h3><div class="mk-tags">' + mos.map(function(s){ return '<span>' + esc(s) + '</span>'; }).join('') + '</div></div>' : '') +
+        (desc ? '<div class="mk-sec"><h3>' + L('Tavsif','Описание') + '</h3><div class="mk-box"><div class="mk-desc">' + esc(desc) + '</div></div></div>' : '') +
+        '<div class="mk-actions" id="mkActions"></div>' +
+      '</div>';
+
+    var img = mainView.querySelector('.mk-img img');
+    if (img) {
+      img.addEventListener('load', function(){ img.classList.add('ok'); });
+      img.addEventListener('error', function(){ img.remove(); var z = mainView.querySelector('.mk-img .zoom'); if (z) z.remove(); });
+      if (img.complete && img.naturalWidth) img.classList.add('ok');
+      document.getElementById('mkImg').addEventListener('click', function(){ if (img.parentNode) { haptic('tap'); mkOpenLightbox(img.src); } });
+    }
+    var copyBtn = document.getElementById('mkCopy');
+    if (copyBtn) copyBtn.addEventListener('click', function(){
+      haptic('ok');
+      var done = function(){ mkToast(L('Nusxa olindi ✓','Скопировано ✓')); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(p.part_no).then(done, done); else done();
+    });
+
+    function drawActions(ov){
+      var phone = String((ov && ov.phone) || t().contactPhone).replace(/[^\d+]/g, '');
+      var tgUser = String((ov && ov.tg) || 'online_ustaxona').replace(/^@/, '');
+      var msg = L("Assalomu alaykum! Ehtiyot qism bo'yicha so'rayman:\n","Здравствуйте! Интересует запчасть:\n") + pick(p,'nomi') +
+        (p.brend ? '\n' + L('Brend','Бренд') + ': ' + p.brend : '') + (p.model ? '\n' + L('Model','Модель') + ': ' + p.model : '') +
+        (p.part_no ? '\n' + L('Qism raqami','Номер детали') + ': ' + p.part_no : '') +
+        '\n' + (p.narx > 0 ? L('Narx','Цена') + ': ' + mkFmt(p.narx) + ' ' + L("so'm","сум") : '');
+      var tgUrl = 'https://t.me/' + tgUser + '?text=' + encodeURIComponent(msg);
+      var box = document.getElementById('mkActions'); if (!box) return;
+      box.innerHTML = '<a class="mk-btn ghost" href="tel:' + esc(phone) + '">📞 ' + L("Qo'ng'iroq","Позвонить") + '</a>' +
+        '<a class="mk-btn pri" id="mkTg" href="' + esc(tgUrl) + '">✈️ ' + L("Telegramda so'rash","Спросить в Telegram") + '</a>';
+      document.getElementById('mkTg').addEventListener('click', function(e){
+        if (tg && tg.openTelegramLink) { e.preventDefault(); haptic('select'); tg.openTelegramLink(tgUrl); }
+      });
+    }
+    drawActions(m.overview);
+    if (!m.overview) mkLoadOverview(function(ov){ if (ov) drawActions(ov); });
+  }
+
   function render(){
     var entry = state.stack[state.stack.length - 1];
     mapCleanup();
     backBtn.classList.toggle('show', state.stack.length > 1);
     renderCrumb();
+    var inMk = /^market/.test(entry.view);
+    document.body.classList.toggle('in-market', inMk);
+    document.getElementById('brandSub').textContent = inMk ? 'MARKET · ' + L('EHTIYOT QISMLAR','ЗАПЧАСТИ') : t().subtitle;
+    var tbEl = document.querySelector('.topbar');
+    if (tbEl) document.documentElement.style.setProperty('--tb', tbEl.offsetHeight + 'px');
     window.scrollTo(0,0);
     mainView.className = entry.catId ? palOf(entry.catId) : '';
 
@@ -4584,6 +5014,10 @@
     else if (entry.view === 'anketaForm') renderAnketaForm(entry);
     else if (entry.view === 'anketaContract') renderAnketaContract(entry);
     else if (entry.view === 'anketaSuccess') renderAnketaSuccess();
+    else if (entry.view === 'market') renderMarket();
+    else if (entry.view === 'marketCats') renderMarketCats();
+    else if (entry.view === 'marketParts') renderMarketParts(entry);
+    else if (entry.view === 'marketPart') renderMarketPart(entry);
   }
 
   // init lang buttons to reflect stored pref
