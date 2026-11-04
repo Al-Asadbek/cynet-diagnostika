@@ -3897,18 +3897,18 @@
     var cl = function(s){ return s.replace(/^\S+\s?/, ''); };
     var items = [
       { pal:'g-sun', wide:true, tall:true, icon:'🛠️', title:cl(t().menuTechs), sub:t().menuTechsSub, badge:'🎬 ' + L('ANIMATSIYA','АНИМАЦИЯ'),
-        count:t().itemsCount(totalIssues()), brand:L('Texnika','Техника'), action:function(){ push({ view:'home' }); } },
+        count:t().itemsCount(totalIssues()), brand:L('Texnika','Техника'), action:function(el){ pzOpen('tech', el, function(){ push({ view:'home' }); }); } },
       { pal:'g-market', wide:true, icon:'🛒', title:'Market', sub:L('Ehtiyot qismlar, eski va B/U texnika','Запчасти, старая и Б/У техника'), badge:'🔥 ' + L('YANGI','НОВОЕ'),
         cta:'🛒 ' + L('Marketga kirish','В маркет') + ' ›', brand:'Market', action:function(el){ mkOpenPortal(el); } },
       { pal:'g-night', wide:true, icon:'🔍', title:cl(t().menuTopish), sub:t().menuTopishSub, cta:'🔎 ' + L('Qidirish','Искать') + ' ›',
-        brand:L('Ustaxona','Мастерская'), action:function(){ push({ view:'topishViloyat' }); } },
+        brand:L('Ustaxona','Мастерская'), action:function(el){ pzOpen('find', el, function(){ push({ view:'topishViloyat' }); }); } },
       { pal:'g-teal', wide:true, icon:'🗺️', title:L('Xarita','Карта'), sub:L('Yaqin atrofdagi ustalarni xaritada toping','Найдите мастеров рядом на карте'),
-        cta:'🗺 ' + L('Xaritani ochish','Открыть карту') + ' ›', brand:L('Xarita','Карта'), action:function(){ push({ view:'map' }); } },
-      { pal:'g-pink', icon:'📋', title:cl(t().menuOrder), sub:t().menuOrderSub, brand:L('Buyurtma','Заказ'), action:function(){ push({ view:'orderGate' }); } },
-      { pal:'g-sky', icon:'👤', title:cl(t().menuProfile), sub:t().menuProfileSub, brand:L('Profil','Профиль'), action:function(){ push({ view:'profileGate' }); } },
-      { pal:'g-lime', icon:'📝', title:cl(t().menuAnketa), sub:t().menuAnketaSub, brand:L('Usta bo\'l','Стать мастером'), action:function(){ push({ view:'anketaGate' }); } },
-      { pal:'g-fire', icon:'🏆', title:cl(t().menuAbout), sub:t().menuAboutSub, brand:L('Biz','Мы'), action:function(){ push({ view:'about' }); } },
-      { pal:'g-violet', wide:true, icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, cta:'+998 99 009 90 37', brand:L('Aloqa','Связь'), action:function(){ push({ view:'contact' }); } }
+        cta:'🗺 ' + L('Xaritani ochish','Открыть карту') + ' ›', brand:L('Xarita','Карта'), action:function(el){ pzOpen('map', el, function(){ push({ view:'map' }); }); } },
+      { pal:'g-pink', icon:'📋', title:cl(t().menuOrder), sub:t().menuOrderSub, brand:L('Buyurtma','Заказ'), action:function(el){ pzOpen('order', el, function(){ push({ view:'orderGate' }); }); } },
+      { pal:'g-sky', icon:'👤', title:cl(t().menuProfile), sub:t().menuProfileSub, brand:L('Profil','Профиль'), action:function(el){ pzOpen('prof', el, function(){ push({ view:'profileGate' }); }); } },
+      { pal:'g-lime', icon:'📝', title:cl(t().menuAnketa), sub:t().menuAnketaSub, brand:L('Usta bo\'l','Стать мастером'), action:function(el){ pzOpen('anketa', el, function(){ push({ view:'anketaGate' }); }); } },
+      { pal:'g-fire', icon:'🏆', title:cl(t().menuAbout), sub:t().menuAboutSub, brand:L('Biz','Мы'), action:function(el){ pzOpen('about', el, function(){ push({ view:'about' }); }); } },
+      { pal:'g-violet', wide:true, icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, cta:'+998 99 009 90 37', brand:L('Aloqa','Связь'), action:function(el){ pzOpen('call', el, function(){ push({ view:'contact' }); }); } }
     ];
     mainView.innerHTML =
       '<div class="view"><div class="hello"><h1>' + L('Salom','Привет') + ', <span class="gr">' + userName() + '</span> <span class="wave">👋</span></h1>' +
@@ -4650,6 +4650,67 @@
     setTimeout(function(){ push({ view:'market' }); }, 720);
     setTimeout(function(){ o.classList.add('out'); }, 1750);
     setTimeout(function(){ o.remove(); mkBusy = false; }, 2300);
+  }
+
+
+  // ---------- har bir bo'lim uchun alohida kirish animatsiyasi (pz) ----------
+  function pzConfetti(){
+    var cs = ['#ffd24a','#ff6a2b','#fff','#ff4d8d','#4fd8f0'], h = '';
+    for (var i = 0; i < 18; i++) {
+      var an = Math.random()*Math.PI*2, d = 90 + Math.random()*150;
+      h += '<s style="--dx:' + Math.round(Math.cos(an)*d) + 'px;--dy:' + Math.round(Math.sin(an)*d - 40) + 'px;--rt:' + Math.round(-540 + Math.random()*1080) + 'deg;--c:' + cs[i % cs.length] + '"></s>';
+    }
+    return h;
+  }
+  var PZ = {
+    tech:{ a:'#ffb02e', b:'#ff6a2b', p1:'#7a3a06', p2:'#2a1204', ln:'pz-lu', r0:'inset(0 0 100% 0)', r1:'inset(0 0 0 0)',
+      uz:'TEXNIKA', ru:'ТЕХНИКА', tu:'DIAGNOSTIKA · 137+ HOLAT', tr:'ДИАГНОСТИКА · 137+ СЛУЧАЕВ', fx:'',
+      svg:'<rect class="dr" pathLength="1" x="16" y="24" width="88" height="58" rx="9"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M26 54h15l7-17 12 34 8-22 5 5h21"/><path class="dr" pathLength="1" d="M46 98h28M60 82v16"/>' },
+    find:{ a:'#3be1ff', b:'#9dff6a', p1:'#0b4a66', p2:'#04101f', ln:'pz-lb',
+      uz:'QIDIRUV', ru:'ПОИСК', tu:'USTAXONA TOPISH', tr:'ПОИСК МАСТЕРСКОЙ',
+      fx:'<b style="left:28%;top:30%;--d:.5s"></b><b style="left:70%;top:58%;--d:.9s"></b><b style="left:40%;top:72%;--d:1.2s"></b>',
+      svg:'<circle class="dr" pathLength="1" cx="52" cy="52" r="30"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M75 75l26 26"/><path class="dr d2" pathLength="1" d="M38 52h8l5-10 7 20 5-10h5"/>' },
+    map:{ a:'#27e0c0', b:'#ffd24a', p1:'#0b6a62', p2:'#031614', ln:'pz-lf', r0:'inset(0 50% 0 50%)', r1:'inset(0 0 0 0)',
+      uz:'XARITA', ru:'КАРТА', tu:'YAQIN ATROFDAGI USTALAR', tr:'МАСТЕРА РЯДОМ', fx:'',
+      svg:'<path class="dr" pathLength="1" d="M14 34l30-12 32 12 30-12v64l-30 12-32-12-30 12z"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M44 22v64M76 34v64"/><ellipse class="rip" cx="60" cy="66" rx="8" ry="3"/><g class="pin"><path d="M60 64c-9-11-14-18-14-25a14 14 0 0 1 28 0c0 7-5 14-14 25z" fill="var(--b)" stroke="none"/><circle cx="60" cy="39" r="5" fill="#fff" stroke="none"/></g>' },
+    order:{ a:'#ff5fa8', b:'#ffe14a', p1:'#7a1646', p2:'#240614', ln:'pz-ld', r0:'inset(100% 0 0 0)', r1:'inset(0 0 0 0)',
+      uz:'BUYURTMA', ru:'ЗАКАЗ', tu:'USTA CHAQIRISH', tr:'ВЫЗВАТЬ МАСТЕРА', fx:'',
+      svg:'<rect class="dr" pathLength="1" x="26" y="18" width="68" height="88" rx="9"/><path class="dr d2" pathLength="1" d="M48 18v-5h24v5M40 48h40M40 64h40M40 80h22"/><g class="stamp"><circle cx="86" cy="88" r="19" fill="rgba(0,0,0,.4)" stroke="var(--b)"/><path d="M77 88l7 8 12-15" stroke="var(--b)"/></g>' },
+    prof:{ a:'#4fb4ff', b:'#b6f2ff', p1:'#12427a', p2:'#050f24', ln:'pz-lb', r0:'inset(50% 50% 50% 50% round 50%)', r1:'inset(0% 0% 0% 0% round 0%)',
+      uz:'PROFIL', ru:'ПРОФИЛЬ', tu:'SHAXSIY KABINET', tr:'ЛИЧНЫЙ КАБИНЕТ', fx:'',
+      svg:'<circle class="dr" pathLength="1" cx="60" cy="42" r="20"/><path class="dr d2" pathLength="1" d="M20 104c0-22 18-34 40-34s40 12 40 34"/>' },
+    anketa:{ a:'#9be83a', b:'#fff27a', p1:'#3d6a0c', p2:'#0d1a04', ln:'pz-lu', r0:'polygon(0 0,0 0,-30% 100%,-30% 100%)', r1:'polygon(0 0,130% 0,100% 100%,-30% 100%)',
+      uz:'USTA', ru:'МАСТЕР', tu:"USTA BO'LING · ANKETA", tr:'СТАНЬ МАСТЕРОМ · АНКЕТА', fx:'',
+      svg:'<circle class="dr" pathLength="1" cx="60" cy="44" r="26"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M60 29l4.6 9.6 10.4 1.4-7.6 7.3 1.9 10.4-9.3-5-9.3 5 1.9-10.4-7.6-7.3 10.4-1.4z"/><path class="dr d2" pathLength="1" d="M44 66l-8 30 24-11 24 11-8-30"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M20 110c10-8 14 4 22-4s10 6 20-2 14 4 38-4"/>' },
+    about:{ a:'#ffb52e', b:'#ffe9a6', p1:'#8a2a08', p2:'#2a0b04', ln:'pz-ld',
+      uz:'BIZ', ru:'МЫ', tu:'BIZ HAQIMIZDA', tr:'О НАС', fx:'',
+      svg:'<path class="dr" pathLength="1" d="M36 22h48v26a24 24 0 0 1-48 0z"/><path class="dr d2" pathLength="1" d="M36 30H20c0 14 6 22 18 24M84 30h16c0 14-6 22-18 24"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M60 72v16M42 100h36M48 88h24"/><path class="spark" d="M60 28l3.5 9 9 3.5-9 3.5-3.5 9-3.5-9-9-3.5 9-3.5z"/>' },
+    call:{ a:'#b98bff', b:'#6ff0c4', p1:'#43207f', p2:'#0d0620', ln:'pz-lf',
+      uz:'ALOQA', ru:'СВЯЗЬ', tu:'+998 99 009 90 37', tr:'+998 99 009 90 37',
+      fx:'<i style="--d:.5s"></i><i style="--d:.9s"></i><i style="--d:1.3s"></i>',
+      svg:'<path class="dr" pathLength="1" d="M30 26c-8 6-8 18 2 36s24 32 40 40c10 4 20 0 24-10l-14-12-10 6c-8-4-16-12-20-20l6-10-12-14z"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M66 24a30 30 0 0 1 30 30M66 40a14 14 0 0 1 14 14"/>' }
+  };
+  PZ.about.fx = pzConfetti();
+
+  function pzOpen(key, srcEl, go){
+    var c = PZ[key];
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!c || reduce) { go(); return; }
+    if (mkBusy) return;
+    mkBusy = true;
+    var r = srcEl ? srcEl.getBoundingClientRect() : { left: innerWidth/2, top: innerHeight/2, width: 0, height: 0 };
+    var o = document.createElement('div'); o.className = 'pz pz-' + key;
+    o.style.cssText = '--a:' + c.a + ';--b:' + c.b + ';--p1:' + c.p1 + ';--p2:' + c.p2 + ';--ln:' + c.ln +
+      ';--px:' + Math.round(r.left + r.width/2) + 'px;--py:' + Math.round(r.top + r.height/2) + 'px' +
+      (c.r0 ? ';--r0:' + c.r0 + ';--r1:' + c.r1 : '');
+    var word = L(c.uz, c.ru).split('').map(function(ch, k){ return '<i style="--k:' + k + '">' + ch + '</i>'; }).join('');
+    o.innerHTML = '<div class="fx">' + c.fx + '</div><svg class="logo" viewBox="0 0 120 120">' + c.svg + '</svg>' +
+      '<div class="word">' + word + '</div><div class="tag">' + L(c.tu, c.tr) + '</div><div class="bar"><b></b></div>';
+    document.body.appendChild(o);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ o.classList.add('in'); }); });
+    setTimeout(go, 720);
+    setTimeout(function(){ o.classList.add('out'); }, 1850);
+    setTimeout(function(){ o.remove(); mkBusy = false; }, 2400);
   }
 
   // ---------- ma'lumot yuklash ----------
