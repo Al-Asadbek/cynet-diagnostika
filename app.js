@@ -797,6 +797,10 @@
     if (entry.view === 'marketCats') return L('Ehtiyot qismlar','Запчасти');
     if (entry.view === 'marketParts') { var mc = catById(entry.cat); return mc ? pick(mc, 'name') : ''; }
     if (entry.view === 'marketPart') return null;
+    if (entry.view === 'marketCart') return L('Savatcha','Корзина');
+    if (entry.view === 'marketCheckout') return L('Yetkazib berish','Доставка');
+    if (entry.view === 'marketPay') return L("To'lov",'Оплата');
+    if (entry.view === 'marketDone') return L('Buyurtma','Заказ');
     return null;
   }
 
@@ -5390,6 +5394,11 @@
   // Ma'lumotlar jonli API'dan (/api/public/market/*) olinadi — admin_panel.py orqali kiritiladi.
   state.mk = { overview:null, ovAt:0, parts:{}, partsAt:{}, q:{}, holat:{}, stock:{}, scroll:{} };
   var MK_TTL = 60000;
+  var MK_CART_KEY = 'cynet_mk_cart', MK_PROFILE_KEY = 'cynet_mk_profile';
+  function mkStoreGet(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }
+  function mkStoreSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  state.mk.cart = (mkStoreGet(MK_CART_KEY) || []).filter(function(x){ return x && x.id > 0 && x.qty > 0 && x.narx > 0; });
+  state.mk.form = null; state.mk.pay = null; state.mk.payTimer = null;
   var mkBusy = false;
 
   function mkGlyph(name){
@@ -5735,11 +5744,12 @@
       listEl.innerHTML = res.map(function(p, i){
         var chars = (p.chars || []).slice(0, 3).map(function(kv){ return '<span>' + mkHi(kv[0] + ': ' + kv[1], re) + '</span>'; }).join('');
         var sub = [p.brend, p.model].filter(Boolean).join(' · ');
-        return '<button class="mk-card ' + palOf(cat) + (p.qoldiq > 0 ? '' : ' out') + '" data-id="' + p.id + '" style="--i:' + Math.min(i, 12) + '">' +
+        return '<button class="mk-card ' + palOf(cat) + (p.qoldiq > 0 ? '' : ' out') + (mkBuyable(p) ? ' buy' : '') + '" data-id="' + p.id + '" style="--i:' + Math.min(i, 12) + '">' +
           '<span class="mk-thumb"><span>' + c.icon + '</span>' +
             (p.photo ? '<img loading="lazy" alt="" src="' + mkPhotoUrl(p) + '">' : '') +
             '<span class="mk-hl hl-' + p.holat + '">' + mkHolat(p.holat) + '</span></span>' +
           '<span class="mk-info">' +
+            (mkBuyable(p) ? mkAddBtnHTML(p.id) : '') +
             '<span class="mk-name">' + mkHi(pick(p,'nomi'), re) + '</span>' +
             (sub ? '<span class="mk-meta">' + mkHi(sub, re) + '</span>' : '') +
             (p.part_no ? '<span class="mk-pn"># ' + mkHi(p.part_no, re) + '</span>' : '') +
@@ -5754,11 +5764,21 @@
         if (im.complete && im.naturalWidth) im.classList.add('ok');
       });
       listEl.querySelectorAll('[data-id]').forEach(function(b){
-        b.addEventListener('click', function(){
+        b.addEventListener('click', function(e){
+          var pid = parseInt(b.getAttribute('data-id'), 10);
+          var addEl = e.target && e.target.closest ? e.target.closest('.mk-add') : null;
+          if (addEl) {
+            e.preventDefault(); e.stopPropagation();
+            var part = items.find(function(x){ return x.id === pid; });
+            if (part && mkCartAdd(part, cat)) { haptic('ok'); mkToast(L("Savatchaga qo'shildi ✓","Добавлено в корзину ✓")); }
+            mkRefreshAddBtns(listEl);
+            return;
+          }
           haptic('select'); m.scroll[cat] = window.scrollY;
-          push({ view:'marketPart', cat:cat, id:parseInt(b.getAttribute('data-id'), 10) });
+          push({ view:'marketPart', cat:cat, id:pid });
         });
       });
+      mkRefreshAddBtns(listEl);
       firstPaint = false;
     }
 
@@ -5829,6 +5849,7 @@
           chars.map(function(kv, i){ return '<div class="mk-tr" style="--i:' + Math.min(i, 14) + '"><span class="k">' + esc(kv[0]) + '</span><span class="v">' + esc(kv[1]) + '</span></div>'; }).join('') + '</div></div>' : '') +
         (mos.length ? '<div class="mk-sec"><h3>' + L('Mos modellar','Совместимые модели') + '</h3><div class="mk-tags">' + mos.map(function(s){ return '<span>' + esc(s) + '</span>'; }).join('') + '</div></div>' : '') +
         (desc ? '<div class="mk-sec"><h3>' + L('Tavsif','Описание') + '</h3><div class="mk-box"><div class="mk-desc">' + esc(desc) + '</div></div></div>' : '') +
+        '<div class="mk-contact" id="mkContact"></div>' +
         '<div class="mk-actions" id="mkActions"></div>' +
       '</div>';
 
@@ -5854,24 +5875,382 @@
         (p.part_no ? '\n' + L('Qism raqami','Номер детали') + ': ' + p.part_no : '') +
         '\n' + (p.narx > 0 ? L('Narx','Цена') + ': ' + mkFmt(p.narx) + ' ' + L("so'm","сум") : '');
       var tgUrl = 'https://t.me/' + tgUser + '?text=' + encodeURIComponent(msg);
-      var box = document.getElementById('mkActions'); if (!box) return;
+      var buyable = mkBuyable(p);
+      var box = document.getElementById(buyable ? 'mkContact' : 'mkActions'); if (!box) return;
       box.innerHTML = '<a class="mk-btn ghost" href="tel:' + esc(phone) + '">📞 ' + L("Qo'ng'iroq","Позвонить") + '</a>' +
-        '<a class="mk-btn pri" id="mkTg" href="' + esc(tgUrl) + '">✈️ ' + L("Telegramda so'rash","Спросить в Telegram") + '</a>';
+        '<a class="mk-btn ' + (buyable ? 'ghost' : 'pri') + '" id="mkTg" href="' + esc(tgUrl) + '">✈️ ' + L("Telegramda so'rash","Спросить в Telegram") + '</a>';
       document.getElementById('mkTg').addEventListener('click', function(e){
         if (tg && tg.openTelegramLink) { e.preventDefault(); haptic('select'); tg.openTelegramLink(tgUrl); }
       });
     }
+    function drawBuy(){
+      var box = document.getElementById('mkActions'); if (!box || !mkBuyable(p)) return;
+      var inCart = mkCartFind(p.id);
+      box.innerHTML = (inCart ? '<button class="mk-btn ghost" id="mkOpenCart">🛒 ' + L('Savatchada','В корзине') + ': ' + inCart.qty + '</button>' : '') +
+        '<button class="mk-btn pri" id="mkAddCart">🛒 ' + L("Savatchaga qo'shish","В корзину") + '</button>';
+      document.getElementById('mkAddCart').addEventListener('click', function(){
+        if (mkCartAdd(p, cat)) { haptic('ok'); mkToast(L("Savatchaga qo'shildi ✓","Добавлено в корзину ✓")); }
+        drawBuy();
+      });
+      var oc = document.getElementById('mkOpenCart');
+      if (oc) oc.addEventListener('click', function(){ haptic('select'); push({ view:'marketCart' }); });
+    }
+    drawBuy();
     drawActions(m.overview);
     if (!m.overview) mkLoadOverview(function(ov){ if (ov) drawActions(ov); });
+  }
+
+  // ================= MARKET: SAVATCHA, YETKAZIB BERISH, TO'LOV =================
+  // Tanlangan qismlar savatchada (telefon xotirasida) turadi. "To'lov" bosilganda yetkazib berish
+  // ma'lumotlari so'raladi (keyingi xaridlar uchun serverda saqlanadi), so'ng Payme/Click orqali to'lanadi.
+  // To'lov o'tgach server tanlangan qismlar + yetkazib berish + to'lovni Telegram bot adminiga yuboradi.
+  function mkBuyable(p){ return p && p.narx > 0 && p.qoldiq > 0; }
+  function mkCartFind(id){ return state.mk.cart.find(function(x){ return x.id === id; }); }
+  function mkCartSave(){
+    mkStoreSet(MK_CART_KEY, state.mk.cart.map(function(x){
+      return { id:x.id, cat:x.cat, nomi:x.nomi, nomi_ru:x.nomi_ru, brend:x.brend, model:x.model, narx:x.narx,
+               qoldiq:x.qoldiq, photo:x.photo, rasm_v:x.rasm_v, qty:x.qty };
+    }));
+  }
+  function mkCartCount(){ return state.mk.cart.reduce(function(a, x){ return a + (x.bad ? 0 : x.qty); }, 0); }
+  function mkCartTotal(){ return state.mk.cart.reduce(function(a, x){ return a + (x.bad ? 0 : x.narx * x.qty); }, 0); }
+  function mkCartAdd(p, cat){
+    if (!mkBuyable(p)) return false;
+    var it = mkCartFind(p.id), max = Math.min(p.qoldiq, 99);
+    if (it) {
+      if (it.qty >= max) { mkToast(L('Omborda faqat ' + max + ' dona bor','В наличии только ' + max + ' шт.')); return false; }
+      it.qty += 1; it.narx = p.narx; it.qoldiq = p.qoldiq;
+    } else {
+      state.mk.cart.push({ id:p.id, cat:cat, nomi:p.nomi, nomi_ru:p.nomi_ru, brend:p.brend, model:p.model, narx:p.narx,
+        qoldiq:p.qoldiq, photo:!!p.photo, rasm_v:p.rasm_v || 0, qty:1 });
+    }
+    mkCartSave(); mkUpdateCartBar();
+    return true;
+  }
+  function mkCartSetQty(id, q){
+    var it = mkCartFind(id); if (!it) return;
+    if (q <= 0) state.mk.cart = state.mk.cart.filter(function(x){ return x.id !== id; });
+    else it.qty = Math.min(q, Math.max(1, Math.min(it.qoldiq || 99, 99)));
+    mkCartSave(); mkUpdateCartBar();
+  }
+  function mkAddBtnHTML(id){ return '<span class="mk-add" role="button" data-add="' + id + '">🛒<b></b></span>'; }
+  function mkRefreshAddBtns(root){
+    root.querySelectorAll('.mk-add').forEach(function(el){
+      var it = mkCartFind(parseInt(el.getAttribute('data-add'), 10));
+      el.classList.toggle('in', !!it);
+      var b = el.querySelector('b'); if (b) b.textContent = it ? '×' + it.qty : '';
+    });
+  }
+  function mkUpdateCartBar(){
+    var entry = state.stack[state.stack.length - 1];
+    var show = entry && (entry.view === 'market' || entry.view === 'marketCats' || entry.view === 'marketParts') && mkCartCount() > 0;
+    var bar = document.getElementById('mkCartBar');
+    if (!show) { if (bar) bar.remove(); document.body.classList.remove('mk-has-cart'); return; }
+    if (!bar) {
+      bar = document.createElement('div'); bar.id = 'mkCartBar'; bar.className = 'mk-cartbar';
+      bar.addEventListener('click', function(){ haptic('select'); push({ view:'marketCart' }); });
+      document.body.appendChild(bar);
+    }
+    bar.innerHTML = '<span class="l"><span class="n">' + mkCartCount() + '</span>🛒 ' + L('Savatcha','Корзина') + '</span><span>' + mkFmt(mkCartTotal()) + ' ' + L("so'm","сум") + ' ›</span>';
+    document.body.classList.add('mk-has-cart');
+  }
+  function mkConfirm(msg, cb){
+    if (tg && tg.showConfirm) tg.showConfirm(msg, function(ok){ cb(!!ok); });
+    else cb(window.confirm(msg));
+  }
+  function mkOpenExternal(url){
+    if (tg && tg.openLink) tg.openLink(url); else window.open(url, '_blank');
+  }
+
+  // savatchadagi narx/qoldiqni serverdagi hozirgi ma'lumot bilan tenglaydi
+  function mkSyncCart(done){
+    var cats = {};
+    state.mk.cart.forEach(function(x){ cats[x.cat] = true; });
+    var keys = Object.keys(cats), left = keys.length;
+    if (!left) { done(); return; }
+    keys.forEach(function(cat){
+      mkLoadParts(cat, function(items){
+        if (items) {
+          state.mk.cart.forEach(function(it){
+            if (it.cat !== cat) return;
+            var p = items.find(function(x){ return x.id === it.id; });
+            if (!p) { it.bad = 'gone'; return; }
+            it.nomi = p.nomi; it.nomi_ru = p.nomi_ru; it.narx = p.narx; it.qoldiq = p.qoldiq; it.photo = !!p.photo; it.rasm_v = p.rasm_v || 0;
+            it.bad = !mkBuyable(p) ? 'out' : null;
+            if (!it.bad && it.qty > p.qoldiq) it.qty = p.qoldiq;
+          });
+        }
+        if (--left === 0) { mkCartSave(); done(); }
+      });
+    });
+  }
+
+  // ---------- Savatcha ----------
+  function renderMarketCart(){
+    var m = state.mk;
+    if (!m.cart.length) {
+      mainView.innerHTML = '<div class="view mk-view"><div class="mk-empty"><span class="big">🛒</span><b>' + L("Savatcha bo'sh","Корзина пуста") + '</b>' +
+        L("Ehtiyot qismlarni tanlab, savatchaga qo'shing.","Выберите запчасти и добавьте их в корзину.") + '<br><span class="act" id="mkCartBack">' + L('Ehtiyot qismlar','Запчасти') + '</span></div></div>';
+      document.getElementById('mkCartBack').addEventListener('click', function(){ pop(); });
+      return;
+    }
+    mainView.innerHTML =
+      '<div class="view mk-view">' +
+        '<div class="mk-head"><div class="tt"><span>🛒</span>' + L('Savatcha','Корзина') + '</div><div class="cn" id="mkCCnt"></div></div>' +
+        '<div class="mk-clist" id="mkCList"></div>' +
+        '<div id="mkCTotal"></div>' +
+        '<div class="mk-actions" id="mkCActions"></div>' +
+      '</div>';
+    var listEl = document.getElementById('mkCList');
+
+    function paint(){
+      if (state.stack[state.stack.length - 1].view !== 'marketCart') return;
+      if (!m.cart.length) { renderMarketCart(); return; }
+      var hasBad = m.cart.some(function(x){ return x.bad; });
+      document.getElementById('mkCCnt').textContent = mkCartCount() + ' ' + L('ta','шт.');
+      listEl.innerHTML = m.cart.map(function(it){
+        var c = catById(it.cat) || { icon:'⚙️' };
+        var sub = [it.brend, it.model].filter(Boolean).join(' · ');
+        return '<div class="mk-crow ' + palOf(it.cat) + (it.bad ? ' bad' : '') + '" data-id="' + it.id + '">' +
+          '<span class="mk-cthumb"><span>' + c.icon + '</span>' + (it.photo ? '<img alt="" src="' + mkPhotoUrl(it) + '">' : '') + '</span>' +
+          '<span class="mk-cinfo">' +
+            '<span class="mk-cname">' + esc(pick(it, 'nomi')) + '</span>' +
+            (sub ? '<span class="mk-cmeta">' + esc(sub) + '</span>' : '') +
+            (it.bad ? '<span class="mk-cbad">' + (it.bad === 'gone' ? L('Sotuvdan olingan','Снято с продажи') : L('Tugagan','Нет в наличии')) + '</span>' : '') +
+            '<span class="mk-crow-foot">' +
+              (it.bad ? '<button class="mk-cdel" data-act="del" aria-label="del">🗑️</button>' :
+                '<span class="mk-qty"><button data-act="dec">−</button><span>' + it.qty + '</span><button data-act="inc">+</button></span>' +
+                '<span class="mk-csum">' + mkFmt(it.narx * it.qty) + ' <small style="font-size:.6em;opacity:.8">' + L("so'm","сум") + '</small></span>') +
+            '</span>' +
+          '</span></div>';
+      }).join('');
+      listEl.querySelectorAll('img').forEach(function(im){ im.addEventListener('error', function(){ im.remove(); }); });
+      listEl.querySelectorAll('[data-act]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var id = parseInt(b.closest('.mk-crow').getAttribute('data-id'), 10), it = mkCartFind(id), act = b.getAttribute('data-act');
+          if (!it) return;
+          haptic('tap');
+          if (act === 'inc') {
+            var max = Math.min(it.qoldiq || 99, 99);
+            if (it.qty >= max) { mkToast(L('Omborda faqat ' + max + ' dona bor','В наличии только ' + max + ' шт.')); return; }
+            mkCartSetQty(id, it.qty + 1);
+          } else if (act === 'dec') mkCartSetQty(id, it.qty - 1);
+          else mkCartSetQty(id, 0);
+          paint();
+        });
+      });
+      var total = mkCartTotal();
+      document.getElementById('mkCTotal').innerHTML =
+        '<div class="mk-totalbox"><span class="k">' + L('Jami','Итого') + '</span><span class="v">' + mkFmt(total) + ' ' + L("so'm","сум") + '</span></div>' +
+        (hasBad ? '<div class="mk-hint err">' + L("Sotuvda yo'q qismlarni savatchadan olib tashlang.","Удалите из корзины товары, которых нет в наличии.") + '</div>'
+                : '<div class="mk-hint">' + L("Narx va qoldiq to'lov paytida yana bir bor tekshiriladi.","Цена и наличие будут проверены ещё раз при оплате.") + '</div>');
+      var act = document.getElementById('mkCActions');
+      act.innerHTML = '<button class="mk-btn pri" id="mkGoPay"' + (hasBad || total <= 0 ? ' disabled style="opacity:.5"' : '') + '>💳 ' + L("To'lov","Оплатить") + ' · ' + mkFmt(total) + ' ' + L("so'm","сум") + '</button>';
+      var go = document.getElementById('mkGoPay');
+      if (go && !go.disabled) go.addEventListener('click', function(){ haptic('select'); push({ view:'marketCheckout' }); });
+    }
+    paint();
+    mkSyncCart(paint);
+  }
+
+  // ---------- Yetkazib berish ma'lumotlari ----------
+  function mkReverseGeocode(lat, lon, cb){
+    var called = false, ctrl = window.AbortController ? new AbortController() : null;
+    function fin(v){ if (called) return; called = true; clearTimeout(to); cb(v); }
+    var to = setTimeout(function(){ if (ctrl) ctrl.abort(); fin(null); }, 6000);
+    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=' + (state.lang === 'ru' ? 'ru' : 'uz,ru') +
+      '&lat=' + lat + '&lon=' + lon, ctrl ? { signal: ctrl.signal } : undefined)
+      .then(function(r){ return r.json(); })
+      .then(function(d){ fin(d && d.display_name ? String(d.display_name) : null); })
+      .catch(function(){ fin(null); });
+  }
+
+  function renderMarketCheckout(){
+    var m = state.mk;
+    if (!m.cart.length) { state.stack.pop(); render(); return; }
+    if (!m.form) m.form = mkStoreGet(MK_PROFILE_KEY) || {};
+    var f = m.form;
+    mainView.innerHTML =
+      '<div class="view mk-view">' +
+        '<div class="mk-head"><div class="tt"><span>🚚</span>' + L('Yetkazib berish','Доставка') + '</div><div class="cn">' + mkCartCount() + ' ' + L('ta','шт.') + '</div></div>' +
+        '<div class="mk-box" style="padding:14px 16px;margin-bottom:14px"><div class="mk-totalbox" style="margin:0;border:none;background:none;padding:0"><span class="k">' + L("To'lov summasi","Сумма к оплате") + '</span><span class="v">' + mkFmt(mkCartTotal()) + ' ' + L("so'm","сум") + '</span></div></div>' +
+        '<div class="form-card mk-form">' +
+          '<div class="field"><label>👤 ' + L('Ism','Имя') + '</label><input id="mkfIsm" autocomplete="given-name" value="' + esc(f.ism || '') + '" placeholder="' + esc(L('Ismingiz','Ваше имя')) + '"></div>' +
+          '<div class="field"><label>👤 ' + L('Familya','Фамилия') + '</label><input id="mkfFam" autocomplete="family-name" value="' + esc(f.familya || '') + '" placeholder="' + esc(L('Familyangiz','Ваша фамилия')) + '"></div>' +
+          '<div class="field"><label>📱 ' + L('Telefon raqam','Номер телефона') + '</label><input id="mkfTel" type="tel" autocomplete="tel" value="' + esc(f.telefon || '') + '" placeholder="+998 90 123 45 67"></div>' +
+          '<div class="field"><label>📍 ' + L('Yetkazib berish manzili','Адрес доставки') + '</label><textarea id="mkfAdr" placeholder="' + esc(L("Viloyat, tuman, ko'cha, uy, mo'ljal","Область, район, улица, дом, ориентир")) + '">' + esc(f.manzil || '') + '</textarea></div>' +
+        '</div>' +
+        '<button class="mk-locbtn' + (f.lat ? ' got' : '') + '" id="mkLocBtn">' + (f.lat ? L('✅ Lokatsiya aniqlandi (qayta aniqlash)','✅ Локация определена (обновить)') : L('📍 Lokatsiyamni aniqlash','📍 Определить мою локацию')) + '</button>' +
+        '<div class="mk-hint" id="mkLocHint">' + L("Lokatsiya orqali manzil aniqroq bo'ladi va kuryer sizni tez topadi.","По локации адрес будет точнее, и курьер быстрее вас найдёт.") + '</div>' +
+        '<div class="mk-hint">' + L("🔒 Ma'lumotlaringiz keyingi xaridlar uchun saqlab qolinadi.","🔒 Ваши данные сохранятся для следующих покупок.") + '</div>' +
+        '<div class="mk-hint err" id="mkFormErr"></div>' +
+        '<div class="mk-actions"><button class="mk-btn pri" id="mkSubmit">💳 ' + L("To'lovga o'tish","Перейти к оплате") + '</button></div>' +
+      '</div>';
+
+    var $ = function(id){ return document.getElementById(id); };
+    function readForm(){
+      f.ism = $('mkfIsm').value.trim(); f.familya = $('mkfFam').value.trim();
+      f.telefon = $('mkfTel').value.trim(); f.manzil = $('mkfAdr').value.trim();
+    }
+    ['mkfIsm','mkfFam','mkfTel','mkfAdr'].forEach(function(id){ $(id).addEventListener('input', readForm); });
+
+    // avval saqlangan ma'lumot serverda bo'lsa — bo'sh maydonlarni to'ldiramiz
+    if (!m.profileLoaded && getInitData()) {
+      m.profileLoaded = true;
+      apiGet('/api/public/market/profile?init_data=' + encodeURIComponent(getInitData())).then(function(d){
+        var pr = d && d.ok ? d.profile : null;
+        if (!pr || state.stack[state.stack.length - 1].view !== 'marketCheckout') return;
+        [['ism','mkfIsm'],['familya','mkfFam'],['telefon','mkfTel'],['manzil','mkfAdr']].forEach(function(pair){
+          if (!$(pair[1]).value.trim() && pr[pair[0]]) { $(pair[1]).value = pr[pair[0]]; f[pair[0]] = pr[pair[0]]; }
+        });
+        if (f.lat == null && pr.lat != null) { f.lat = pr.lat; f.lon = pr.lon; $('mkLocBtn').classList.add('got'); $('mkLocBtn').textContent = L('✅ Lokatsiya aniqlandi (qayta aniqlash)','✅ Локация определена (обновить)'); }
+      }).catch(function(){});
+    }
+
+    $('mkLocBtn').addEventListener('click', function(){
+      var btn = $('mkLocBtn'); haptic('select');
+      btn.textContent = L('⏳ Aniqlanmoqda...','⏳ Определяем...');
+      requestLocation().then(function(loc){
+        if (!loc) {
+          btn.textContent = L('📍 Lokatsiyamni aniqlash','📍 Определить мою локацию');
+          $('mkLocHint').textContent = L("Lokatsiyani aniqlab bo'lmadi. Telefon sozlamalarida Telegram uchun joylashuvga ruxsat bering va qayta urinib ko'ring.","Не удалось определить локацию. Разрешите Telegram доступ к геопозиции в настройках телефона и повторите.");
+          return;
+        }
+        f.lat = loc.lat; f.lon = loc.lon;
+        btn.classList.add('got'); btn.textContent = L('✅ Lokatsiya aniqlandi (qayta aniqlash)','✅ Локация определена (обновить)');
+        haptic('ok');
+        $('mkLocHint').textContent = L("Lokatsiya saqlandi. Manzil bo'yicha aniqlik kiritilmoqda...","Локация сохранена. Уточняем адрес...");
+        mkReverseGeocode(loc.lat, loc.lon, function(addr){
+          if (state.stack[state.stack.length - 1].view !== 'marketCheckout') return;
+          if (addr && !$('mkfAdr').value.trim()) {
+            $('mkfAdr').value = addr; readForm();
+            $('mkLocHint').textContent = L("Manzil lokatsiya bo'yicha to'ldirildi — uy/xonadon raqamini qo'shib, tekshirib chiqing.","Адрес заполнен по локации — проверьте и добавьте номер дома/квартиры.");
+          } else {
+            $('mkLocHint').textContent = L("Lokatsiya saqlandi. Manzilni o'zingiz yozing.","Локация сохранена. Укажите адрес вручную.");
+          }
+        });
+      });
+    });
+
+    function submit(){
+      readForm();
+      var err = $('mkFormErr'); err.textContent = '';
+      if (!f.ism || !f.familya || !f.manzil) { err.textContent = L("Ism, familya va manzilni to'ldiring.","Заполните имя, фамилию и адрес."); return; }
+      if (f.telefon.replace(/\D/g, '').length < 9) { err.textContent = L("Telefon raqamni to'liq kiriting.","Введите номер телефона полностью."); return; }
+      var btn = $('mkSubmit'); btn.disabled = true; btn.textContent = L('⏳ Yuborilmoqda...','⏳ Отправка...');
+      apiPost('/api/public/market/order/create', {
+        init_data: getInitData(), lang: state.lang,
+        ism: f.ism, familya: f.familya, telefon: f.telefon, manzil: f.manzil, lat: f.lat, lon: f.lon,
+        items: m.cart.map(function(x){ return { id:x.id, qty:x.qty }; })
+      }).then(function(res){
+        var d = res.data || {};
+        if (d.ok) {
+          mkStoreSet(MK_PROFILE_KEY, { ism:f.ism, familya:f.familya, telefon:f.telefon, manzil:f.manzil, lat:f.lat, lon:f.lon });
+          m.pay = { order_id:d.order_id, jami:d.jami, links:d.links || {}, snap:{ ism:f.ism, familya:f.familya, telefon:f.telefon, manzil:f.manzil } };
+          haptic('ok'); push({ view:'marketPay' });
+        } else {
+          btn.disabled = false; btn.textContent = '💳 ' + L("To'lovga o'tish","Перейти к оплате");
+          err.textContent = d.error ? String(d.error) : L("Xatolik yuz berdi. Qayta urinib ko'ring.","Произошла ошибка. Повторите попытку.");
+        }
+      }).catch(function(){
+        btn.disabled = false; btn.textContent = '💳 ' + L("To'lovga o'tish","Перейти к оплате");
+        err.textContent = L("Ulanib bo'lmadi. Internetni tekshiring.","Нет соединения. Проверьте интернет.");
+      });
+    }
+    $('mkSubmit').addEventListener('click', function(){
+      readForm();
+      if (f.lat == null && f.ism && f.familya && f.manzil && f.telefon.replace(/\D/g, '').length >= 9) {
+        mkConfirm(L("Lokatsiya aniqlanmadi. Lokatsiyasiz yetkazib berish sekinroq bo'lishi mumkin. Davom etamizmi?","Локация не определена. Без неё доставка может занять больше времени. Продолжить?"), function(ok){ if (ok) submit(); });
+      } else submit();
+    });
+  }
+
+  // ---------- To'lov ----------
+  function mkPayCleanup(){
+    var m = state.mk;
+    if (m.payTimer) { clearInterval(m.payTimer); m.payTimer = null; }
+    if (m.payVis) { document.removeEventListener('visibilitychange', m.payVis); m.payVis = null; }
+  }
+
+  function mkGoHomeMarket(){
+    state.stack = [{ view:'mainMenu' }, { view:'market' }];
+    render();
+    if (tg && tg.BackButton) tg.BackButton.show();
+  }
+
+  function renderMarketPay(){
+    var m = state.mk, pay = m.pay;
+    if (!pay) { state.stack.pop(); render(); return; }
+    var provs = [['payme','Payme'], ['click','Click']].filter(function(x){ return pay.links[x[0]]; });
+    mainView.innerHTML =
+      '<div class="view mk-view">' +
+        '<div class="mk-head"><div class="tt"><span>💳</span>' + L("To'lov","Оплата") + '</div><div class="cn">№' + pay.order_id + '</div></div>' +
+        '<div class="mk-totalbox" style="margin:0 0 16px"><span class="k">' + L("To'lov summasi","Сумма к оплате") + '</span><span class="v">' + mkFmt(pay.jami) + ' ' + L("so'm","сум") + '</span></div>' +
+        '<div class="mk-hint" style="margin:0 2px 12px">' + L("To'lov usulini tanlang. To'lov tugagach shu oynaga qaytasiz — buyurtma avtomatik tasdiqlanadi.","Выберите способ оплаты. После оплаты вернитесь сюда — заказ подтвердится автоматически.") + '</div>' +
+        '<div class="mk-paybtns">' + provs.map(function(x){ return '<a class="mk-payopt ' + x[0] + '" data-p="' + x[0] + '" href="#">💳 ' + x[1] + ' ' + L('orqali to\'lash','— оплатить') + '</a>'; }).join('') + '</div>' +
+        '<div class="mk-wait" id="mkWait"><i></i><span>' + L("To'lov kutilmoqda...","Ожидаем оплату...") + '</span></div>' +
+        '<div style="text-align:center;margin-top:12px"><span class="mk-empty" style="padding:0"><span class="act" id="mkCheckPay" style="margin-top:0">' + L("🔄 To'lovni tekshirish","🔄 Проверить оплату") + '</span></span></div>' +
+      '</div>';
+
+    mainView.querySelectorAll('.mk-payopt').forEach(function(a){
+      a.addEventListener('click', function(e){ e.preventDefault(); haptic('select'); mkOpenExternal(pay.links[a.getAttribute('data-p')]); });
+    });
+
+    var busy = false, tries = 0;
+    function check(manual){
+      if (busy) return; busy = true;
+      apiGet('/api/public/market/order/status?id=' + pay.order_id + '&init_data=' + encodeURIComponent(getInitData())).then(function(d){
+        busy = false;
+        if (state.stack[state.stack.length - 1].view !== 'marketPay') return;
+        if (d && d.ok && d.paid) { onPaid(); return; }
+        if (d && d.ok && d.status === 'bekor') {
+          mkPayCleanup();
+          var w = document.getElementById('mkWait'); if (w) w.innerHTML = '<span>' + L("Buyurtma bekor qilindi. Savatchadan qayta buyurtma bering.","Заказ отменён. Оформите заказ из корзины заново.") + '</span>';
+          return;
+        }
+        if (manual) mkToast(L("To'lov hali kelmadi","Оплата пока не поступила"));
+      }).catch(function(){ busy = false; if (manual) mkToast(L("Ulanib bo'lmadi","Нет соединения")); });
+    }
+    function onPaid(){
+      mkPayCleanup();
+      var snap = pay.snap, order_id = pay.order_id, jami = pay.jami;
+      m.cart = []; mkCartSave(); m.pay = null;
+      haptic('ok');
+      state.stack = [{ view:'mainMenu' }, { view:'market' }];
+      push({ view:'marketDone', order_id:order_id, jami:jami, snap:snap });
+    }
+    m.payTimer = setInterval(function(){ tries++; if (tries > 300) { mkPayCleanup(); return; } check(false); }, 3000);
+    m.payVis = function(){ if (!document.hidden) check(false); };
+    document.addEventListener('visibilitychange', m.payVis);
+    document.getElementById('mkCheckPay').addEventListener('click', function(){ haptic('tap'); check(true); });
+  }
+
+  function renderMarketDone(entry){
+    var s = entry.snap || {};
+    mainView.innerHTML =
+      '<div class="view mk-view"><div class="mk-done"><span class="big">✅</span>' +
+        '<h2>' + L("To'lov qabul qilindi!","Оплата принята!") + '</h2>' +
+        '<p>' + L('Buyurtma','Заказ') + ' №' + entry.order_id + ' · ' + mkFmt(entry.jami) + ' ' + L("so'm","сум") + '</p>' +
+        '<p>' + L("Siz bilan tez orada bog'lanamiz va ehtiyot qismlarni yetkazib beramiz.","Мы скоро свяжемся с вами и доставим запчасти.") + '</p></div>' +
+        '<div class="mk-sec"><h3>' + L('Yetkazib berish','Доставка') + '</h3><div class="mk-box">' +
+          '<div class="mk-tr"><span class="k">' + L('Ism familya','Имя фамилия') + '</span><span class="v">' + esc((s.familya || '') + ' ' + (s.ism || '')) + '</span></div>' +
+          '<div class="mk-tr"><span class="k">' + L('Telefon','Телефон') + '</span><span class="v">' + esc(s.telefon || '') + '</span></div>' +
+          '<div class="mk-tr"><span class="k">' + L('Manzil','Адрес') + '</span><span class="v">' + esc(s.manzil || '') + '</span></div>' +
+        '</div></div>' +
+        '<div class="mk-actions"><button class="mk-btn pri" id="mkDoneBtn">🛒 ' + L('Marketga qaytish','Вернуться в маркет') + '</button></div>' +
+      '</div>';
+    document.getElementById('mkDoneBtn').addEventListener('click', function(){ haptic('select'); mkGoHomeMarket(); });
   }
 
   function render(){
     var entry = state.stack[state.stack.length - 1];
     mapCleanup();
+    mkPayCleanup();
     backBtn.classList.toggle('show', state.stack.length > 1);
     renderCrumb();
     var inMk = /^market/.test(entry.view);
     document.body.classList.toggle('in-market', inMk);
+    mkUpdateCartBar();
     document.getElementById('brandSub').textContent = inMk ? 'MARKET · ' + L('EHTIYOT QISMLAR','ЗАПЧАСТИ') : t().subtitle;
     var tbEl = document.querySelector('.topbar');
     if (tbEl) document.documentElement.style.setProperty('--tb', tbEl.offsetHeight + 'px');
@@ -5922,6 +6301,10 @@
     else if (entry.view === 'marketCats') renderMarketCats();
     else if (entry.view === 'marketParts') renderMarketParts(entry);
     else if (entry.view === 'marketPart') renderMarketPart(entry);
+    else if (entry.view === 'marketCart') renderMarketCart();
+    else if (entry.view === 'marketCheckout') renderMarketCheckout();
+    else if (entry.view === 'marketPay') renderMarketPay();
+    else if (entry.view === 'marketDone') renderMarketDone(entry);
   }
 
   // init lang buttons to reflect stored pref

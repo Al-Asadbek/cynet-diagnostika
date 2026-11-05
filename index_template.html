@@ -1254,6 +1254,62 @@ mark.mk-m{ background:rgba(255,200,61,.34); color:inherit; border-radius:3px; pa
   background:rgba(10,30,24,.96); border:1px solid var(--mk-line); color:#eafff7; box-shadow:0 14px 34px -10px rgba(0,0,0,.6); transition:.3s cubic-bezier(.2,.9,.3,1.2); white-space:nowrap; }
 .mk-toast.in{ opacity:1; transform:translate(-50%,0); }
 
+/* --- SAVATCHA / YETKAZIB BERISH / TO'LOV --- */
+.mk-add{ position:absolute; right:10px; top:10px; z-index:3; min-width:38px; height:38px; padding:0 9px; border-radius:13px; display:flex; align-items:center; justify-content:center; gap:4px;
+  font-size:17px; color:#02140f; background:linear-gradient(135deg,var(--mk-em),#7df5cf); box-shadow:0 8px 18px -8px rgba(25,230,160,.85); transition:transform .15s; }
+.mk-add:active{ transform:scale(.9); }
+.mk-add b{ display:none; font-family:var(--font-mono); font-size:12px; font-weight:800; }
+.mk-add.in b{ display:inline; }
+.mk-card.buy .mk-name{ padding-right:44px; }
+.mk-contact{ display:flex; gap:10px; margin-top:18px; }
+.mk-contact .mk-btn{ padding:12px; font-size:13px; }
+.mk-cartbar{ position:fixed; left:12px; right:12px; bottom:calc(12px + var(--safe-bottom)); z-index:40; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 16px; border-radius:18px; cursor:pointer;
+  color:#02140f; background:linear-gradient(135deg,var(--mk-em),#7df5cf); box-shadow:0 16px 34px -12px rgba(25,230,160,.9); font-family:var(--f-big); font-weight:800; font-size:14px; animation:mk-slide-in .4s both; }
+.mk-cartbar .l{ display:flex; align-items:center; gap:9px; }
+.mk-cartbar .n{ min-width:24px; height:24px; padding:0 7px; border-radius:999px; background:#02140f; color:var(--mk-em); display:grid; place-items:center; font-size:12px; }
+.mk-cartbar:active{ transform:scale(.98); }
+body.mk-has-cart .mk-view{ padding-bottom:84px; }
+.mk-clist{ display:flex; flex-direction:column; gap:10px; }
+.mk-crow{ display:flex; gap:12px; padding:10px; border-radius:20px; background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.1); }
+.mk-crow.bad{ border-color:rgba(255,98,89,.5); background:rgba(255,98,89,.08); }
+.mk-cthumb{ position:relative; width:64px; height:64px; flex:none; border-radius:14px; overflow:hidden; display:grid; place-items:center; font-size:26px; background:linear-gradient(150deg,var(--c1,#12382d),var(--c2,#0b2119)); }
+.mk-cthumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.mk-cinfo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.mk-cname{ font-weight:700; font-size:13.5px; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.mk-cmeta{ font-size:11.5px; color:#9fb8b0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mk-cbad{ font-size:11.5px; font-weight:700; color:#ff7d74; }
+.mk-crow-foot{ margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.mk-csum{ font-family:var(--f-big); font-weight:800; font-size:15px; }
+.mk-qty{ display:flex; align-items:center; gap:2px; border-radius:12px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); }
+.mk-qty button{ width:32px; height:32px; font-size:18px; font-weight:800; color:#eafff7; border-radius:10px; }
+.mk-qty button:active{ background:rgba(25,230,160,.2); }
+.mk-qty span{ min-width:24px; text-align:center; font-weight:800; font-size:14px; }
+.mk-cdel{ width:32px; height:32px; border-radius:10px; color:#ff9a92; font-size:15px; }
+.mk-totalbox{ margin-top:14px; padding:14px 16px; border-radius:18px; background:rgba(25,230,160,.08); border:1px solid var(--mk-line); display:flex; justify-content:space-between; align-items:center; }
+.mk-totalbox .k{ color:#9fb8b0; font-size:13px; }
+.mk-totalbox .v{ font-family:var(--f-big); font-weight:800; font-size:22px; }
+.mk-hint{ margin:12px 2px 0; font-size:12.5px; line-height:1.5; color:#9fb8b0; }
+.mk-hint.err{ color:#ff8f87; font-weight:600; }
+.mk-form .field label{ color:#bfe9dc; }
+.mk-form .field input, .mk-form .field textarea{ color:#eafff7; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:14px; }
+.mk-form .field input:focus, .mk-form .field textarea:focus{ border-color:var(--mk-em); box-shadow:0 0 0 4px rgba(25,230,160,.14); outline:none; }
+.mk-form .field textarea{ min-height:78px; }
+.mk-locbtn{ width:100%; padding:14px; border-radius:16px; font-weight:800; font-size:14px; color:#eafff7; background:rgba(255,255,255,.06); border:1.5px dashed rgba(25,230,160,.5); transition:transform .15s; }
+.mk-locbtn:active{ transform:scale(.98); }
+.mk-locbtn.got{ border-style:solid; background:rgba(25,230,160,.12); color:#bdf7e3; }
+.mk-paybtns{ display:flex; flex-direction:column; gap:12px; margin-top:6px; }
+.mk-payopt{ display:flex; align-items:center; justify-content:center; gap:10px; padding:17px; border-radius:18px; font-family:var(--f-big); font-weight:800; font-size:16px; color:#fff; text-decoration:none; transition:transform .15s; }
+.mk-payopt:active{ transform:scale(.97); }
+.mk-payopt.payme{ background:linear-gradient(135deg,#1fb8b8,#33cccc); color:#032222; }
+.mk-payopt.click{ background:linear-gradient(135deg,#0090d6,#00aeef); }
+.mk-wait{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top:16px; padding:13px; border-radius:14px; font-size:13px; color:#cfe9e1; background:rgba(255,255,255,.05); }
+.mk-wait i{ width:14px; height:14px; border-radius:50%; border:2px solid var(--mk-em); border-top-color:transparent; animation:mk-spin .9s linear infinite; }
+@keyframes mk-spin{ to{ transform:rotate(360deg); } }
+.mk-done{ text-align:center; padding:30px 10px 10px; }
+.mk-done .big{ font-size:72px; display:block; margin-bottom:8px; }
+.mk-done h2{ font-family:var(--f-big); font-size:22px; margin:0 0 6px; }
+.mk-done p{ color:#9fb8b0; font-size:13.5px; line-height:1.5; margin:0 0 6px; }
+
 @media (prefers-reduced-motion:reduce){
   #mkBg *, .mk-belt-track, .mk-main *, .mk-main, .mk-cat, .mk-cat::after, .mk-cat .emo, .mk-soon, .mk-soon::before, .mk-soon .ico, .mk-card, .mk-img .emo, .mk-empty .big{ animation-duration:.01ms !important; animation-iteration-count:1 !important; animation-delay:0s !important; }
   #mkPortal{ transition-duration:.01ms !important; }
@@ -1370,6 +1426,6 @@ mark.mk-m{ background:rgba(255,200,61,.34); color:inherit; border-radius:3px; pa
 
 <script id="APP_DATA" type="application/json">__DATA_PLACEHOLDER__</script>
 <script id="API_BASE" type="application/json">"__API_BASE_URL__"</script>
-<script src="app.js?v=20261104pf1"></script>
+<script src="app.js?v=20261105mk1"></script>
 </body>
 </html>
