@@ -94,6 +94,7 @@
       codesTitle: "Xatolik kodlari",
       illusTitle: "Ko'rgazmali animatsiya",
       videoTitle: "Video ko'rsatma",
+      videoOpen: "Videoni ochish",
       priceTitle: "Taxminiy ta'mirlash narxi",
       priceBtn: "Narxni ko'rish",
       priceNone: "Narx hali kiritilmagan. Aniq narxni usta tashxisdan keyin aytadi.",
@@ -347,6 +348,7 @@
       codesTitle: "Коды ошибок",
       illusTitle: "Наглядная анимация",
       videoTitle: "Видео инструкция",
+      videoOpen: "Открыть видео",
       priceTitle: "Примерная стоимость ремонта",
       priceBtn: "Узнать цену",
       priceNone: "Цена пока не указана. Точную цену мастер назовёт после диагностики.",
@@ -4784,13 +4786,63 @@
     paint(); schedule(STEP_MS);
   }
 
+  // Havola turini aniqlaydi: YouTube/Vimeo (iframe), to'g'ridan-to'g'ri video fayl,
+  // ochiq Telegram posti (t.me/kanal/123 — iframe), boshqasi — faqat "Ochish" tugmasi.
+  function videoSpec(url){
+    if (!url) return null;
+    url = String(url).trim();
+    if (!/^https?:\/\//i.test(url)) return null;
+    var yt = youtubeEmbedUrl(url);
+    if (yt) return { kind:'iframe', src: yt + '?playsinline=1&rel=0' };
+    var vm = url.match(/vimeo\.com\/(?:video\/)?(\d{5,12})/i);
+    if (vm) return { kind:'iframe', src: 'https://player.vimeo.com/video/' + vm[1] };
+    var clean = url.split('#')[0].split('?')[0].toLowerCase();
+    if (/\.(mp4|webm|mov|m4v|ogv)$/.test(clean)) return { kind:'file', src: url };
+    var tm = url.match(/^https?:\/\/(?:www\.)?(?:t|telegram)\.me\/([A-Za-z0-9_]+)\/(?:\d+\/)?(\d+)(?:[\/?#].*)?$/i);
+    if (tm && tm[1].toLowerCase() !== 'c') return { kind:'tgpost', src: 'https://t.me/' + tm[1] + '/' + tm[2] + '?embed=1&mode=tme' };
+    return { kind:'link' };
+  }
+
+  function openVideoLink(url){
+    try {
+      if (tg && /^https?:\/\/(?:www\.)?(?:t|telegram)\.me\//i.test(url) && tg.openTelegramLink) { tg.openTelegramLink(url); return; }
+      if (tg && tg.openLink) { tg.openLink(url); return; }
+    } catch(e){}
+    window.open(url, '_blank');
+  }
+
   function renderVideoBlock(url){
-    var embed = youtubeEmbedUrl(url);
-    if (!embed) return '';
-    return '<div class="panel">' +
-      '<div class="ph">▶️ ' + t().videoTitle + '</div>' +
-      '<div class="video-embed"><iframe src="' + embed + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>' +
+    var spec = videoSpec(url);
+    if (!spec) return '';
+    var media = '';
+    if (spec.kind === 'iframe') {
+      media = '<div class="video-embed"><iframe src="' + esc(spec.src) + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>';
+    } else if (spec.kind === 'file') {
+      media = '<video class="video-el" controls playsinline preload="metadata" src="' + esc(spec.src) + '"></video>';
+    } else if (spec.kind === 'tgpost') {
+      media = '<div class="video-embed tg"><iframe src="' + esc(spec.src) + '" allowfullscreen loading="lazy"></iframe></div>';
+    }
+    return '<div class="panel" data-video-url="' + esc(url) + '">' +
+      '<div class="ph">▶️ ' + t().videoTitle + '</div>' + media +
+      '<button type="button" class="video-open">🔗 ' + t().videoOpen + '</button>' +
       '</div>';
+  }
+
+  function wireVideoBlock(root){
+    if (!root) return;
+    var box = root.querySelector('[data-video-url]');
+    if (!box) return;
+    var btn = box.querySelector('.video-open');
+    if (btn) btn.addEventListener('click', function(){ haptic('select'); openVideoLink(box.getAttribute('data-video-url')); });
+  }
+
+  var diagLinksCache = null;
+  function loadDiagLinks(){
+    if (diagLinksCache) return Promise.resolve(diagLinksCache);
+    return apiGet('/api/public/diag/links').then(function(res){
+      diagLinksCache = (res && res.ok && res.links) ? res.links : {};
+      return diagLinksCache;
+    }).catch(function(){ return {}; });
   }
 
   var diagPricesCache = null;
@@ -4848,11 +4900,24 @@
       '<div class="view"><div class="detail-head">' +
       '<div class="eyebrow"><span class="ping"></span>' + t().diagnosing + '</div>' +
       '<h2>' + esc(label.replace(/^\S+\s/, function(m){ return ''; }) || label) + '</h2>' +
-      '</div>' + illusHtml + videoHtml + html +
+      '</div>' + illusHtml + '<div id="videoSlot" data-key="' + esc(diagKey) + '">' + videoHtml + '</div>' + html +
       '<div id="priceSlot" style="margin:14px 0"></div>' +
       '<p class="note">ℹ️ ' + t().note + '</p></div>';
 
     wireIllustrationCycle();
+    wireVideoBlock(mainView.querySelector('#videoSlot'));
+
+    // Admin panelda ("Nosozlik havolalari") kiritilgan video havola bo'lsa — u ustuvor
+    loadDiagLinks().then(function(links){
+      var vslot = mainView.querySelector('#videoSlot');
+      if (!vslot || vslot.getAttribute('data-key') !== diagKey) return;
+      var u = links[diagKey];
+      if (!u) return;
+      var h = renderVideoBlock(u);
+      if (!h) return;
+      vslot.innerHTML = h;
+      wireVideoBlock(vslot);
+    });
 
     loadDiagPrices().then(function(all){
       var slot = mainView.querySelector('#priceSlot');
