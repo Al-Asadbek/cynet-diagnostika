@@ -1402,6 +1402,45 @@ body.mk-has-cart .mk-view{ padding-bottom:84px; }
 .pz-call.in svg.logo{animation:pz-ring .5s .9s ease-in-out 2}
 @keyframes pz-ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-16deg)}40%{transform:rotate(14deg)}60%{transform:rotate(-10deg)}80%{transform:rotate(8deg)}}
 @media (prefers-reduced-motion:reduce){.pz{display:none}}
+
+/* ===== Bozor ticker + ob-havo (asosiy sahifa) ===== */
+#wxFx{ position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:40; }
+.mx-ticker{ display:flex; align-items:center; margin:2px -2px 12px; border:1px solid var(--border); background:var(--bg-panel);
+  border-radius:12px; overflow:hidden; min-height:40px; }
+.mx-live{ flex:none; display:flex; align-items:center; gap:6px; padding:0 10px; height:40px; font:700 10px/1 var(--font-mono);
+  letter-spacing:.08em; color:var(--green); background:var(--bg-panel-2); border-right:1px solid var(--border); }
+.mx-live i{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 0 rgba(111,207,151,.6); animation:mxPulse 1.6s infinite; }
+@keyframes mxPulse{ 0%{box-shadow:0 0 0 0 rgba(111,207,151,.55)} 70%{box-shadow:0 0 0 7px rgba(111,207,151,0)} 100%{box-shadow:0 0 0 0 rgba(111,207,151,0)} }
+.mx-rail{ flex:1; overflow:hidden; mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent); -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent); }
+.mx-track{ display:inline-flex; width:max-content; animation:mxScroll 38s linear infinite; will-change:transform; }
+.mx-rail:active .mx-track{ animation-play-state:paused; }
+@keyframes mxScroll{ from{ transform:translateX(0) } to{ transform:translateX(-50%) } }
+.mx-chip{ display:inline-flex; align-items:center; gap:6px; padding:0 16px; height:40px; white-space:nowrap; font:600 12.5px/1 var(--font-body); color:var(--text-1); }
+.mx-chip .mx-nm{ color:var(--text-2); font-weight:500; }
+.mx-chip .mx-val{ font-family:var(--font-mono); font-weight:600; }
+.mx-chip .mx-ch{ font:600 11px/1 var(--font-mono); font-style:normal; color:var(--text-2); }
+.mx-chip.up .mx-ch{ color:var(--green); } .mx-chip.down .mx-ch{ color:var(--red); }
+@media (prefers-reduced-motion: reduce){ .mx-track{ animation-duration:120s; } }
+
+.wx-card{ position:relative; margin:4px 0 14px; padding:14px 16px; border-radius:18px; border:1px solid var(--border); color:#fff; overflow:hidden;
+  background:linear-gradient(135deg,#2a3547,#1a2230); }
+.wx-card[data-kind="clear"]{ background:linear-gradient(135deg,#2d7fd3,#1b4f94); }
+.wx-card[data-kind="clear"][data-day="0"]{ background:linear-gradient(135deg,#1b2447,#0c1128); }
+.wx-card[data-kind="cloud"]{ background:linear-gradient(135deg,#566274,#38414f); }
+.wx-card[data-kind="fog"]{ background:linear-gradient(135deg,#6b7480,#4a525d); }
+.wx-card[data-kind="drizzle"],.wx-card[data-kind="rain"]{ background:linear-gradient(135deg,#34506f,#1f3148); }
+.wx-card[data-kind="storm"]{ background:linear-gradient(135deg,#2c2f48,#14172a); }
+.wx-card[data-kind="snow"]{ background:linear-gradient(135deg,#7fa3c7,#4a6c90); }
+.wx-top{ display:flex; align-items:center; gap:6px; }
+.wx-top select{ appearance:none; -webkit-appearance:none; background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25);
+  border-radius:999px; padding:6px 12px; font:600 13px/1 var(--font-body); max-width:75%; }
+.wx-top select option{ color:#111; }
+.wx-main{ display:flex; align-items:center; gap:12px; margin-top:10px; }
+.wx-ic{ font-size:44px; line-height:1; filter:drop-shadow(0 4px 10px rgba(0,0,0,.3)); }
+.wx-temp{ font:700 46px/1 var(--font-display); } .wx-temp sup{ font-size:18px; font-weight:600; opacity:.85; vertical-align:top; margin-left:2px; }
+.wx-desc{ display:flex; flex-direction:column; gap:4px; margin-left:auto; text-align:right; }
+.wx-desc b{ font:700 15px/1.2 var(--font-body); } .wx-desc span{ font-size:12.5px; opacity:.85; }
+.wx-meta{ display:flex; gap:14px; margin-top:10px; font:500 12.5px/1 var(--font-body); opacity:.9; }
 </style>
 </head>
 <body>
@@ -1426,6 +1465,6 @@ body.mk-has-cart .mk-view{ padding-bottom:84px; }
 
 <script id="APP_DATA" type="application/json">__DATA_PLACEHOLDER__</script>
 <script id="API_BASE" type="application/json">"__API_BASE_URL__"</script>
-<script src="app.js?v=20261105mk1"></script>
+<script src="app.js?v=20261112mx1"></script>
 </body>
 </html>

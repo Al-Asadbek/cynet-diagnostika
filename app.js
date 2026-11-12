@@ -4674,6 +4674,273 @@
 
   function totalIssues(){ var n = 0; CATS.forEach(function(c){ n += countForCategory(c); }); return n; }
 
+  // ============================================================
+  //  BOZOR TICKER (valyuta/oltin/BTC/neft...) + OB-HAVO + EFFEKTLAR
+  // ============================================================
+  var MX_CACHE_KEY = 'mx_market_v1', WX_REGION_KEY = 'wx_region_v1';
+  var WX_REGIONS = [
+    { id:'toshkent_sh', uz:'Toshkent shahri', ru:'г. Ташкент', lat:41.3111, lon:69.2797 },
+    { id:'toshkent_v', uz:'Toshkent viloyati', ru:'Ташкентская обл.', lat:41.0, lon:69.36 },
+    { id:'andijon', uz:'Andijon', ru:'Андижан', lat:40.7821, lon:72.3442 },
+    { id:'buxoro', uz:'Buxoro', ru:'Бухара', lat:39.7747, lon:64.4286 },
+    { id:'fargona', uz:'Farg\u2018ona', ru:'Фергана', lat:40.3864, lon:71.7864 },
+    { id:'jizzax', uz:'Jizzax', ru:'Джизак', lat:40.1158, lon:67.8422 },
+    { id:'xorazm', uz:'Xorazm', ru:'Хорезм', lat:41.5506, lon:60.6317 },
+    { id:'namangan', uz:'Namangan', ru:'Наманган', lat:40.9983, lon:71.6726 },
+    { id:'navoiy', uz:'Navoiy', ru:'Навои', lat:40.1030, lon:65.3739 },
+    { id:'qashqadaryo', uz:'Qashqadaryo', ru:'Кашкадарья', lat:38.8606, lon:65.7890 },
+    { id:'qoraqalpoq', uz:'Qoraqalpog\u2018iston', ru:'Каракалпакстан', lat:42.4531, lon:59.6103 },
+    { id:'samarqand', uz:'Samarqand', ru:'Самарканд', lat:39.6542, lon:66.9597 },
+    { id:'sirdaryo', uz:'Sirdaryo', ru:'Сырдарья', lat:40.4897, lon:68.7842 },
+    { id:'surxondaryo', uz:'Surxondaryo', ru:'Сурхандарья', lat:37.2242, lon:67.2783 }
+  ];
+  var mxState = { data:null, wx:null, region:null, timer:null, wxTimer:null, fx:null, alive:false };
+
+  function mxLoad(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }
+  function mxSave(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  function mxNum(n, d){
+    if (n == null || isNaN(n)) return '—';
+    return Number(n).toLocaleString('en-US', { minimumFractionDigits:d||0, maximumFractionDigits:d||0 }).replace(/,/g, ' ');
+  }
+  function mxJson(url){
+    return fetch(url, { cache:'no-store' }).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  }
+
+  // --- Bozor ma'lumotlari: avval backend (/api/public/market), bo'lmasa to'g'ridan-to'g'ri ochiq API'lar ---
+  function mxFetchMarket(){
+    var viaApi = API_BASE ? mxJson(API_BASE + '/api/public/market').then(function(j){
+      if (!j || !j.ok || !j.items) throw new Error('bad'); return j.items;
+    }) : Promise.reject(new Error('NO_API'));
+    return viaApi.catch(function(){
+      var out = {};
+      var p = [
+        mxJson('https://open.er-api.com/v6/latest/USD').then(function(j){
+          if (j && j.rates){ out.usd = { v:j.rates.UZS }; if (j.rates.EUR) out.eur = { v:j.rates.UZS / j.rates.EUR }; }
+        }).catch(function(){}),
+        mxJson('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true').then(function(j){
+          if (j && j.bitcoin) out.btc = { v:j.bitcoin.usd, ch:j.bitcoin.usd_24h_change };
+        }).catch(function(){}),
+        mxJson('https://api.gold-api.com/price/XAU').then(function(j){ if (j && j.price) out.gold = { v:j.price }; }).catch(function(){}),
+        mxJson('https://api.gold-api.com/price/XAG').then(function(j){ if (j && j.price) out.silver = { v:j.price }; }).catch(function(){})
+      ];
+      return Promise.all(p).then(function(){ if (!Object.keys(out).length) throw new Error('empty'); return out; });
+    });
+  }
+
+  var MX_DEFS = [
+    { k:'usd',    ic:'💵', uz:'Dollar',  ru:'Доллар',  fmt:function(v){ return mxNum(v,0) + ' so\u2018m'; }, fmtRu:function(v){ return mxNum(v,0) + ' сум'; } },
+    { k:'eur',    ic:'💶', uz:'Yevro',   ru:'Евро',    fmt:function(v){ return mxNum(v,0) + ' so\u2018m'; }, fmtRu:function(v){ return mxNum(v,0) + ' сум'; } },
+    { k:'gold',   ic:'🥇', uz:'Tilla',   ru:'Золото',  fmt:function(v){ return '$' + mxNum(v,0) + '/oz'; } },
+    { k:'silver', ic:'🥈', uz:'Kumush',  ru:'Серебро', fmt:function(v){ return '$' + mxNum(v,2) + '/oz'; } },
+    { k:'btc',    ic:'₿',  uz:'Bitcoin', ru:'Биткоин', fmt:function(v){ return '$' + mxNum(v,0); } },
+    { k:'oil',    ic:'🛢️', uz:'Neft',    ru:'Нефть',   fmt:function(v){ return '$' + mxNum(v,2) + '/bbl'; } }
+  ];
+
+  function mxTickerInner(data){
+    var chips = MX_DEFS.map(function(d){
+      var it = data && data[d.k];
+      var val = it && it.v != null ? (state.lang === 'ru' && d.fmtRu ? d.fmtRu(it.v) : d.fmt(it.v)) : '…';
+      var ch = it && it.ch != null && !isNaN(it.ch) ? it.ch : null;
+      var cls = ch == null ? '' : (ch > 0 ? ' up' : (ch < 0 ? ' down' : ''));
+      var chTxt = ch == null ? '' : '<em class="mx-ch">' + (ch > 0 ? '▲' : (ch < 0 ? '▼' : '•')) + ' ' + Math.abs(ch).toFixed(2) + '%</em>';
+      return '<span class="mx-chip' + cls + '"><b class="mx-ic">' + d.ic + '</b><span class="mx-nm">' + (state.lang === 'ru' ? d.ru : d.uz) +
+        '</span><span class="mx-val">' + val + '</span>' + chTxt + '</span>';
+    }).join('');
+    return '<div class="mx-track">' + chips + chips + '</div>';
+  }
+  function mxPaintTicker(){
+    var el = document.getElementById('mxTicker');
+    if (!el) return;
+    el.innerHTML = '<div class="mx-live"><i></i>LIVE</div><div class="mx-rail">' + mxTickerInner(mxState.data) + '</div>';
+  }
+  function mxRefreshMarket(){
+    mxFetchMarket().then(function(items){
+      mxState.data = items; mxSave(MX_CACHE_KEY, items); mxPaintTicker();
+    }).catch(function(){ /* eski ma'lumot qoladi */ });
+  }
+
+  // --- Ob-havo ---
+  var WX_URL = 'https://api.open-meteo.com/v1/forecast?current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day&timezone=auto&forecast_days=1';
+  // kind: clear | cloud | fog | drizzle | rain | snow | storm
+  function wxKind(code){
+    if (code === 0 || code === 1) return 'clear';
+    if (code === 2 || code === 3) return 'cloud';
+    if (code === 45 || code === 48) return 'fog';
+    if (code >= 51 && code <= 57) return 'drizzle';
+    if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return 'rain';
+    if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snow';
+    if (code >= 95) return 'storm';
+    return 'cloud';
+  }
+  var WX_TXT = {
+    clear:   { uz:'Ochiq osmon', ru:'Ясно', ic:'☀️', icN:'🌙' },
+    cloud:   { uz:'Bulutli', ru:'Облачно', ic:'⛅', icN:'☁️' },
+    fog:     { uz:'Tuman', ru:'Туман', ic:'🌫️', icN:'🌫️' },
+    drizzle: { uz:'Mayda yomg\u2018ir', ru:'Морось', ic:'🌦️', icN:'🌧️' },
+    rain:    { uz:'Yomg\u2018ir', ru:'Дождь', ic:'🌧️', icN:'🌧️' },
+    snow:    { uz:'Qor yog\u2018moqda', ru:'Идёт снег', ic:'❄️', icN:'❄️' },
+    storm:   { uz:'Momaqaldiroq', ru:'Гроза', ic:'⛈️', icN:'⛈️' }
+  };
+  function wxRegion(){
+    var id = mxLoad(WX_REGION_KEY);
+    if (id && id.geo) return { id:'geo', uz:'Joylashuvim', ru:'Моё местоположение', lat:id.lat, lon:id.lon };
+    for (var i = 0; i < WX_REGIONS.length; i++) if (id && WX_REGIONS[i].id === id.id) return WX_REGIONS[i];
+    return WX_REGIONS[0];
+  }
+  function wxForced(){
+    var m = /[?&]wx=(clear|cloud|fog|drizzle|rain|snow|storm)/.exec(location.search || '');
+    return m ? m[1] : null;
+  }
+  function wxFetch(){
+    var r = mxState.region = wxRegion();
+    return mxJson(WX_URL + '&latitude=' + r.lat + '&longitude=' + r.lon).then(function(j){
+      var c = j.current || {};
+      var w = { t:c.temperature_2m, feels:c.apparent_temperature, h:c.relative_humidity_2m, wind:c.wind_speed_10m,
+                code:c.weather_code, day:c.is_day !== 0, region:r.id };
+      w.kind = wxForced() || wxKind(w.code);
+      mxSave('wx_cache_v1', w);
+      return w;
+    });
+  }
+  function wxPaint(){
+    var el = document.getElementById('wxCard');
+    if (!el) return;
+    var r = mxState.region || wxRegion(), w = mxState.wx;
+    var opts = WX_REGIONS.map(function(x){
+      return '<option value="' + x.id + '"' + (x.id === r.id ? ' selected' : '') + '>' + esc(state.lang === 'ru' ? x.ru : x.uz) + '</option>';
+    }).join('');
+    var geoOpt = '<option value="__geo"' + (r.id === 'geo' ? ' selected' : '') + '>📍 ' + L('Joylashuvim','Моё местоположение') + '</option>';
+    var body;
+    if (w) {
+      var tx = WX_TXT[w.kind] || WX_TXT.cloud;
+      body = '<div class="wx-main"><div class="wx-ic">' + (w.day ? tx.ic : tx.icN) + '</div>' +
+        '<div class="wx-temp">' + (w.t != null ? Math.round(w.t) : '—') + '<sup>°C</sup></div>' +
+        '<div class="wx-desc"><b>' + (state.lang === 'ru' ? tx.ru : tx.uz) + '</b><span>' +
+        L('His qilinishi','Ощущается') + ' ' + (w.feels != null ? Math.round(w.feels) : '—') + '°</span></div></div>' +
+        '<div class="wx-meta"><span>💧 ' + (w.h != null ? Math.round(w.h) : '—') + '%</span><span>💨 ' +
+        (w.wind != null ? Math.round(w.wind) : '—') + ' km/h</span></div>';
+    } else {
+      body = '<div class="wx-main"><div class="wx-ic">⏳</div><div class="wx-desc"><b>' + L('Ob-havo yuklanmoqda…','Загрузка погоды…') + '</b></div></div>';
+    }
+    el.innerHTML = '<div class="wx-top"><span class="wx-pin">📍</span><select id="wxSel" aria-label="region">' + opts + geoOpt + '</select></div>' + body;
+    el.setAttribute('data-kind', w ? w.kind : 'cloud');
+    el.setAttribute('data-day', w && !w.day ? '0' : '1');
+    var sel = document.getElementById('wxSel');
+    if (sel) sel.addEventListener('change', function(){
+      haptic('select');
+      if (sel.value === '__geo') return wxLocate();
+      mxSave(WX_REGION_KEY, { id: sel.value });
+      wxReload();
+    });
+  }
+  function wxLocate(){
+    if (!navigator.geolocation) { wxPaint(); return; }
+    navigator.geolocation.getCurrentPosition(function(pos){
+      mxSave(WX_REGION_KEY, { geo:true, lat:pos.coords.latitude, lon:pos.coords.longitude });
+      wxReload();
+    }, function(){ wxPaint(); }, { timeout:8000, maximumAge:600000 });
+  }
+  function wxReload(){
+    mxState.region = wxRegion(); mxState.wx = null; wxPaint(); wxFx(null);
+    wxFetch().then(function(w){ if (!mxState.alive) return; mxState.wx = w; wxPaint(); wxFx(w); })
+      .catch(function(){ if (!mxState.alive) return; wxPaint(); });
+  }
+
+  // --- Effektlar (canvas): qor, yomg'ir, momaqaldiroq, tuman, bulut, quyosh, yulduzlar ---
+  function wxFx(w){
+    if (mxState.fx) { mxState.fx.stop(); mxState.fx = null; }
+    var cv = document.getElementById('wxFx');
+    if (!cv || !w) { if (cv) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); return; }
+    var ctx = cv.getContext('2d'), dpr = Math.min(window.devicePixelRatio || 1, 2), W = 0, H = 0, raf = 0, dead = false;
+    function size(){ W = window.innerWidth; H = window.innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    size();
+    var onResize = function(){ size(); }; window.addEventListener('resize', onResize);
+    var kind = w.kind, night = !w.day, P = [], flash = 0, nextBolt = 120;
+    var small = W < 500;
+    function rnd(a, b){ return a + Math.random() * (b - a); }
+    var N = kind === 'snow' ? (small ? 90 : 160) : (kind === 'rain' || kind === 'storm') ? (small ? 110 : 190) :
+            kind === 'drizzle' ? (small ? 60 : 110) : kind === 'fog' ? 6 : kind === 'cloud' ? 5 : (night ? (small ? 45 : 80) : 0);
+    for (var i = 0; i < N; i++) {
+      if (kind === 'snow') P.push({ x:rnd(0,W), y:rnd(0,H), r:rnd(1.2,3.8), vy:rnd(0.7,2.0), vx:rnd(-0.4,0.4), ph:rnd(0,6.28), sw:rnd(0.4,1.2) });
+      else if (kind === 'rain' || kind === 'storm' || kind === 'drizzle') {
+        var d = kind === 'drizzle';
+        P.push({ x:rnd(-50,W), y:rnd(0,H), l:d ? rnd(6,10) : rnd(12,22), vy:d ? rnd(9,13) : rnd(16,26), vx:d ? -1.5 : -3.2 });
+      }
+      else if (kind === 'fog' || kind === 'cloud') P.push({ x:rnd(-200,W), y:rnd(0, kind === 'fog' ? H : H * 0.55), r:rnd(110,230), vx:rnd(0.12,0.4) * (kind === 'fog' ? 1 : 0.8) });
+      else P.push({ x:rnd(0,W), y:rnd(0,H * 0.7), r:rnd(0.5,1.7), ph:rnd(0,6.28), sp:rnd(0.01,0.04) });
+    }
+    var t = 0;
+    function frame(){
+      if (dead) return;
+      raf = requestAnimationFrame(frame);
+      if (document.hidden) return;
+      t++; ctx.clearRect(0, 0, W, H);
+      if (kind === 'snow') {
+        ctx.fillStyle = 'rgba(255,255,255,.88)';
+        P.forEach(function(p){
+          p.ph += 0.02 * p.sw; p.y += p.vy; p.x += p.vx + Math.sin(p.ph) * 0.6;
+          if (p.y > H + 6) { p.y = -6; p.x = rnd(0, W); } if (p.x > W + 6) p.x = -6; if (p.x < -6) p.x = W + 6;
+          ctx.globalAlpha = Math.min(1, 0.35 + p.r / 4.5);
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      } else if (kind === 'rain' || kind === 'storm' || kind === 'drizzle') {
+        ctx.strokeStyle = 'rgba(170,205,255,.55)'; ctx.lineWidth = kind === 'drizzle' ? 1 : 1.3; ctx.beginPath();
+        P.forEach(function(p){
+          p.y += p.vy; p.x += p.vx;
+          if (p.y > H) { p.y = -p.l; p.x = rnd(0, W + 60); }
+          ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + p.vx * 0.6, p.y + p.l);
+        });
+        ctx.stroke();
+        if (kind === 'storm') {
+          if (--nextBolt <= 0) { flash = 1; nextBolt = Math.floor(rnd(150, 420)); }
+          if (flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (flash * 0.38).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); flash -= 0.045; }
+        }
+      } else if (kind === 'fog' || kind === 'cloud') {
+        var col = kind === 'fog' ? '215,222,235' : '200,210,230', a = kind === 'fog' ? 0.10 : 0.07;
+        P.forEach(function(p){
+          p.x += p.vx; if (p.x - p.r > W) { p.x = -p.r; }
+          var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+          g.addColorStop(0, 'rgba(' + col + ',' + a + ')'); g.addColorStop(1, 'rgba(' + col + ',0)');
+          ctx.fillStyle = g; ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+        });
+      } else if (night) {
+        ctx.fillStyle = '#fff';
+        P.forEach(function(p){ p.ph += p.sp; ctx.globalAlpha = 0.25 + 0.6 * Math.abs(Math.sin(p.ph)); ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill(); });
+        ctx.globalAlpha = 1;
+      } else {
+        var pulse = 0.5 + 0.5 * Math.sin(t / 60), g2 = ctx.createRadialGradient(W * 0.92, -20, 0, W * 0.92, -20, W * 0.85);
+        g2.addColorStop(0, 'rgba(255,210,110,' + (0.30 + pulse * 0.08).toFixed(3) + ')'); g2.addColorStop(1, 'rgba(255,210,110,0)');
+        ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
+      }
+    }
+    frame();
+    mxState.fx = { stop:function(){ dead = true; cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); } };
+  }
+
+  function mxStart(){
+    mxStop(); mxState.alive = true;
+    var cv0 = document.createElement('canvas'); cv0.id = 'wxFx'; document.body.appendChild(cv0);
+    mxState.data = mxState.data || mxLoad(MX_CACHE_KEY);
+    var cw = mxLoad('wx_cache_v1'); mxState.region = wxRegion();
+    mxState.wx = (cw && cw.region === mxState.region.id) ? cw : null;
+    if (mxState.wx && wxForced()) mxState.wx.kind = wxForced();
+    mxPaintTicker(); wxPaint(); wxFx(mxState.wx);
+    mxRefreshMarket();
+    wxFetch().then(function(w){ if (!mxState.alive) return; mxState.wx = w; wxPaint(); wxFx(w); }).catch(function(){});
+    mxState.timer = setInterval(mxRefreshMarket, 60000);
+    mxState.wxTimer = setInterval(function(){
+      wxFetch().then(function(w){ if (!mxState.alive) return; var changed = !mxState.wx || mxState.wx.kind !== w.kind; mxState.wx = w; wxPaint(); if (changed) wxFx(w); }).catch(function(){});
+    }, 600000);
+  }
+  function mxStop(){
+    mxState.alive = false;
+    if (mxState.timer) { clearInterval(mxState.timer); mxState.timer = null; }
+    if (mxState.wxTimer) { clearInterval(mxState.wxTimer); mxState.wxTimer = null; }
+    if (mxState.fx) { mxState.fx.stop(); mxState.fx = null; }
+    var cv = document.getElementById('wxFx'); if (cv && cv.parentNode) cv.parentNode.removeChild(cv);
+  }
+
   function renderMainMenu(){
     var cl = function(s){ return s.replace(/^\S+\s?/, ''); };
     var items = [
@@ -4692,12 +4959,14 @@
       { pal:'g-violet', wide:true, icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, cta:'+998 99 009 90 37', brand:L('Aloqa','Связь'), action:function(el){ pzOpen('call', el, function(){ push({ view:'contact' }); }); } }
     ];
     mainView.innerHTML =
-      '<div class="view"><div class="hello"><h1>' + L('Salom','Привет') + ', <span class="gr">' + userName() + '</span> <span class="wave">👋</span></h1>' +
+      '<div class="view"><div class="mx-ticker" id="mxTicker"></div><div class="hello"><h1>' + L('Salom','Привет') + ', <span class="gr">' + userName() + '</span> <span class="wave">👋</span></h1>' +
       '<p>' + L('Barcha bo\'limlar shu yerda — tanlang','Все разделы здесь — выбирайте') + '</p></div>' +
+      '<div class="wx-card" id="wxCard"></div>' +
       '<div class="tiles">' + items.map(tileHTML).join('') + '</div></div>';
     mainView.querySelectorAll('[data-ti]').forEach(function(btn){
       btn.addEventListener('click', function(){ haptic('select'); items[parseInt(btn.getAttribute('data-ti'), 10)].action(btn); });
     });
+  mxStart();
   }
 
   function renderHome(){
@@ -6245,6 +6514,7 @@
   function render(){
     var entry = state.stack[state.stack.length - 1];
     mapCleanup();
+    if (entry.view !== 'mainMenu') mxStop();
     mkPayCleanup();
     backBtn.classList.toggle('show', state.stack.length > 1);
     renderCrumb();
