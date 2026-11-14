@@ -1310,6 +1310,59 @@ body.mk-has-cart .mk-view{ padding-bottom:84px; }
 .mk-done h2{ font-family:var(--f-big); font-size:22px; margin:0 0 6px; }
 .mk-done p{ color:#9fb8b0; font-size:13.5px; line-height:1.5; margin:0 0 6px; }
 
+/* ---- yuqori panel: savatcha va buyurtmalar tugmalari ---- */
+.top-ico{ display:none; position:relative; align-items:center; justify-content:center; gap:6px; height:34px; min-width:34px; padding:0 9px; border-radius:10px;
+  background:var(--bg-panel); border:1px solid var(--border); color:var(--text-2); font-size:16px; flex-shrink:0; transition:.15s; }
+.top-ico.show{ display:flex; animation:mk-pop .35s ease; }
+.top-ico:active{ transform:scale(.94); }
+.top-cart.has{ border-color:rgba(25,230,160,.55); background:rgba(25,230,160,.12); color:#bdf7e3; }
+.top-cart .n{ position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:#19e6a0; color:#02140f; font:800 10.5px/18px var(--font-mono); text-align:center; }
+.top-cart:not(.has) .n, .top-cart:not(.has) .tot{ display:none; }
+.top-cart .tot{ font:700 11px var(--font-mono); letter-spacing:.02em; }
+@media (max-width:420px){ .top-cart .tot{ display:none; } }
+
+/* ---- buyurtmalar tarixi va holati ---- */
+.mk-sech{ display:flex; align-items:center; gap:10px; margin:0 2px 10px; }
+.mk-sech h3{ margin:0; flex:1; }
+.mk-cnt{ font:700 10.5px var(--font-mono); letter-spacing:.04em; color:var(--mk-em); border:1px solid var(--mk-line); padding:2px 8px; border-radius:999px; margin-left:4px; }
+.mk-all{ font-weight:700; font-size:12.5px; color:var(--mk-em); cursor:pointer; white-space:nowrap; }
+.mk-link{ color:var(--mk-em); font-weight:700; cursor:pointer; text-decoration:underline; }
+.mk-olist{ display:flex; flex-direction:column; gap:10px; }
+.mk-ocard{ padding:13px 14px; border-radius:18px; cursor:pointer; background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.1);
+  display:flex; flex-direction:column; gap:7px; animation:mk-slide-in .4s both; transition:transform .15s; }
+.mk-ocard:active{ transform:scale(.98); }
+.mk-ocard .r1{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.mk-ocard .r1 b{ font-family:var(--f-big); font-size:15px; }
+.mk-ocard .r2{ font-size:12.5px; color:#bcd4cc; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.mk-ocard .r3{ display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#9fb8b0; }
+.mk-ocard .r3 b{ color:#eafff7; font-family:var(--f-big); font-size:14px; }
+.mk-st{ font-size:11px; font-weight:800; padding:4px 9px; border-radius:999px; white-space:nowrap; border:1px solid transparent; }
+.mk-st.wait{ color:#ffd77a; background:rgba(255,200,61,.12); border-color:rgba(255,200,61,.35); }
+.mk-st.ok{ color:#7df5cf; background:rgba(25,230,160,.12); border-color:rgba(25,230,160,.35); }
+.mk-st.go{ color:#8fd3ff; background:rgba(79,180,255,.12); border-color:rgba(79,180,255,.35); }
+.mk-st.done{ color:#b7ffd9; background:rgba(25,230,160,.2); border-color:rgba(25,230,160,.5); }
+.mk-st.bad{ color:#ff9a92; background:rgba(255,98,89,.12); border-color:rgba(255,98,89,.35); }
+.mk-obanner{ display:flex; align-items:center; gap:14px; padding:16px; border-radius:20px; border:1px solid var(--mk-line); background:rgba(25,230,160,.08); animation:mk-zoom-in .4s both; }
+.mk-obanner .e{ font-size:34px; flex:none; }
+.mk-obanner b{ display:block; font-family:var(--f-big); font-size:16px; margin-bottom:3px; }
+.mk-obanner span:not(.e){ display:block; font-size:12.5px; line-height:1.45; color:#bcd4cc; }
+.mk-obanner.wait{ background:rgba(255,200,61,.08); border-color:rgba(255,200,61,.3); }
+.mk-obanner.bad{ background:rgba(255,98,89,.08); border-color:rgba(255,98,89,.35); }
+.mk-obanner .sp{ width:26px; height:26px; flex:none; border-radius:50%; border:3px solid var(--mk-gold); border-top-color:transparent; animation:mk-spin .9s linear infinite; }
+.mk-tl{ list-style:none; margin:0; padding:0 0 0 2px; display:flex; flex-direction:column; }
+.mk-tl li{ position:relative; display:flex; gap:12px; padding-bottom:16px; color:#6f8a82; }
+.mk-tl li:last-child{ padding-bottom:0; }
+.mk-tl li::before{ content:""; position:absolute; left:13px; top:28px; bottom:0; width:2px; background:rgba(255,255,255,.1); }
+.mk-tl li:last-child::before{ display:none; }
+.mk-tl li i{ flex:none; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-weight:800; font-size:12px; background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.14); }
+.mk-tl li div b{ display:block; font-size:13.5px; }
+.mk-tl li div span{ display:block; font-size:11.5px; margin-top:2px; }
+.mk-tl li.done{ color:#eafff7; }
+.mk-tl li.done::before{ background:var(--mk-em); }
+.mk-tl li.done i{ background:var(--mk-em); border-color:var(--mk-em); color:#02140f; }
+.mk-tl li.cur{ color:#eafff7; }
+.mk-tl li.cur i{ border-color:var(--mk-em); color:var(--mk-em); box-shadow:0 0 0 4px rgba(25,230,160,.18); }
+
 @media (prefers-reduced-motion:reduce){
   #mkBg *, .mk-belt-track, .mk-main *, .mk-main, .mk-cat, .mk-cat::after, .mk-cat .emo, .mk-soon, .mk-soon::before, .mk-soon .ico, .mk-card, .mk-img .emo, .mk-empty .big{ animation-duration:.01ms !important; animation-iteration-count:1 !important; animation-delay:0s !important; }
   #mkPortal{ transition-duration:.01ms !important; }
@@ -1454,6 +1507,8 @@ body.mk-has-cart .mk-view{ padding-bottom:84px; }
         <span id="brandSub">DIAGNOSTIKA · TOSHKENT</span>
       </div>
     </div>
+    <button class="top-ico" id="topOrders" aria-label="Buyurtmalarim" title="Buyurtmalarim">📦</button>
+    <button class="top-ico top-cart" id="topCart" aria-label="Savatcha" title="Savatcha">🛒<span class="tot" id="topCartTot"></span><b class="n" id="topCartN"></b></button>
     <div class="lang-toggle">
       <button data-lang="uz" class="active">UZ</button>
       <button data-lang="ru">RU</button>
@@ -1465,6 +1520,6 @@ body.mk-has-cart .mk-view{ padding-bottom:84px; }
 
 <script id="APP_DATA" type="application/json">__DATA_PLACEHOLDER__</script>
 <script id="API_BASE" type="application/json">"__API_BASE_URL__"</script>
-<script src="app.js?v=20261112mx1"></script>
+<script src="app.js?v=20261114mx2"></script>
 </body>
 </html>

@@ -800,7 +800,8 @@
     if (entry.view === 'marketCart') return L('Savatcha','Корзина');
     if (entry.view === 'marketCheckout') return L('Yetkazib berish','Доставка');
     if (entry.view === 'marketPay') return L("To'lov",'Оплата');
-    if (entry.view === 'marketDone') return L('Buyurtma','Заказ');
+    if (entry.view === 'marketDone' || entry.view === 'marketOrder') return L('Buyurtma','Заказ');
+    if (entry.view === 'marketOrders') return L('Buyurtmalarim','Мои заказы');
     return null;
   }
 
@@ -5663,11 +5664,11 @@
   // Ma'lumotlar jonli API'dan (/api/public/market/*) olinadi — admin_panel.py orqali kiritiladi.
   state.mk = { overview:null, ovAt:0, parts:{}, partsAt:{}, q:{}, holat:{}, stock:{}, scroll:{} };
   var MK_TTL = 60000;
-  var MK_CART_KEY = 'cynet_mk_cart', MK_PROFILE_KEY = 'cynet_mk_profile';
+  var MK_CART_KEY = 'cynet_mk_cart', MK_PROFILE_KEY = 'cynet_mk_profile', MK_PENDING_KEY = 'cynet_mk_pending';
   function mkStoreGet(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }
   function mkStoreSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
   state.mk.cart = (mkStoreGet(MK_CART_KEY) || []).filter(function(x){ return x && x.id > 0 && x.qty > 0 && x.narx > 0; });
-  state.mk.form = null; state.mk.pay = null; state.mk.payTimer = null;
+  state.mk.form = null; state.mk.pay = null; state.mk.payTimer = null; state.mk.orders = null; state.mk.ordTimer = null;
   var mkBusy = false;
 
   function mkGlyph(name){
@@ -5874,12 +5875,14 @@
           '<span class="meta"><span><b id="mkTotal">0</b> ' + L('ta qism','дет.') + '</span><span><b id="mkCatN">0</b> ' + L('texnika turi','типов техники') + '</span></span>' +
           '<span class="go">→</span>' +
         '</button>' +
+        '<div id="mkHomeOrders"></div>' +
         '<div class="mk-soon-row">' +
           '<button class="mk-soon" data-soon="1" style="--i:0"><span class="ico">🧰</span><span class="chip">' + L('TEZ ORADA','СКОРО') + '</span><b>' + L('Eski texnika','Старая техника') + '</b><span class="d">' + L("Ehtiyot qism uchun texnika","Техника на запчасти") + '</span></button>' +
           '<button class="mk-soon" data-soon="2" style="--i:1"><span class="ico">♻️</span><span class="chip">' + L('TEZ ORADA','СКОРО') + '</span><b>' + L('B/U texnika','Б/У техника') + '</b><span class="d">' + L("Ishlatilgan texnikalar","Бывшая в употреблении") + '</span></button>' +
         '</div>' +
       '</div>';
     document.getElementById('mkOpenParts').addEventListener('click', function(){ haptic('select'); push({ view:'marketCats' }); });
+    mkRenderHomeOrders();
     mainView.querySelectorAll('[data-soon]').forEach(function(b){
       b.addEventListener('click', function(){ haptic('tap'); mkToast(L("Tez orada ochiladi 🚀","Скоро откроется 🚀")); });
     });
@@ -6210,7 +6213,27 @@
       var b = el.querySelector('b'); if (b) b.textContent = it ? '×' + it.qty : '';
     });
   }
+  // ---------- yuqori panel: savatcha va buyurtmalar tugmalari ----------
+  function mkUpdateTopCart(){
+    var c = document.getElementById('topCart'), o = document.getElementById('topOrders');
+    if (!c || !o) return;
+    var entry = state.stack[state.stack.length - 1] || {}, v = entry.view || '';
+    var inMk = /^market/.test(v), n = mkCartCount();
+    var hideCart = (v === 'marketCart' || v === 'marketCheckout' || v === 'marketPay');
+    c.classList.toggle('show', (inMk || n > 0) && !hideCart);
+    o.classList.toggle('show', inMk && v !== 'marketOrders');
+    c.classList.toggle('has', n > 0);
+    var b = document.getElementById('topCartN'); if (b) b.textContent = n > 0 ? String(n) : '';
+    var t = document.getElementById('topCartTot'); if (t) t.textContent = n > 0 ? mkFmt(mkCartTotal()) : '';
+  }
+  (function(){
+    var c = document.getElementById('topCart'), o = document.getElementById('topOrders');
+    if (c) c.addEventListener('click', function(){ haptic('select'); push({ view:'marketCart' }); });
+    if (o) o.addEventListener('click', function(){ haptic('select'); push({ view:'marketOrders' }); });
+  })();
+
   function mkUpdateCartBar(){
+    mkUpdateTopCart();
     var entry = state.stack[state.stack.length - 1];
     var show = entry && (entry.view === 'market' || entry.view === 'marketCats' || entry.view === 'marketParts') && mkCartCount() > 0;
     var bar = document.getElementById('mkCartBar');
@@ -6416,6 +6439,9 @@
         if (d.ok) {
           mkStoreSet(MK_PROFILE_KEY, { ism:f.ism, familya:f.familya, telefon:f.telefon, manzil:f.manzil, lat:f.lat, lon:f.lon });
           m.pay = { order_id:d.order_id, jami:d.jami, links:d.links || {}, snap:{ ism:f.ism, familya:f.familya, telefon:f.telefon, manzil:f.manzil } };
+          m.orders = null;
+          // ilova to'lov paytida yopilib/qayta ochilsa ham buyurtma holatini tiklash uchun
+          mkStoreSet(MK_PENDING_KEY, { order_id:d.order_id, t:Date.now() });
           haptic('ok'); push({ view:'marketPay' });
         } else {
           btn.disabled = false; btn.textContent = '💳 ' + L("To'lovga o'tish","Перейти к оплате");
@@ -6438,6 +6464,7 @@
   function mkPayCleanup(){
     var m = state.mk;
     if (m.payTimer) { clearInterval(m.payTimer); m.payTimer = null; }
+    if (m.ordTimer) { clearInterval(m.ordTimer); m.ordTimer = null; }
     if (m.payVis) { document.removeEventListener('visibilitychange', m.payVis); m.payVis = null; }
   }
 
@@ -6459,6 +6486,7 @@
         '<div class="mk-paybtns">' + provs.map(function(x){ return '<a class="mk-payopt ' + x[0] + '" data-p="' + x[0] + '" href="#">💳 ' + x[1] + ' ' + L('orqali to\'lash','— оплатить') + '</a>'; }).join('') + '</div>' +
         '<div class="mk-wait" id="mkWait"><i></i><span>' + L("To'lov kutilmoqda...","Ожидаем оплату...") + '</span></div>' +
         '<div style="text-align:center;margin-top:12px"><span class="mk-empty" style="padding:0"><span class="act" id="mkCheckPay" style="margin-top:0">' + L("🔄 To'lovni tekshirish","🔄 Проверить оплату") + '</span></span></div>' +
+        '<div class="mk-hint" style="text-align:center">' + L("To'lov qilgan bo'lsangiz va oyna yopilib qolgan bo'lsa — holatni ","Если вы оплатили, а окно закрылось — смотрите статус в разделе ") + '<span class="mk-link" id="mkPayOrders">' + L("Buyurtmalarim","Мои заказы") + '</span>' + L(" bo'limidan ko'ring.",".") + '</div>' +
       '</div>';
 
     mainView.querySelectorAll('.mk-payopt').forEach(function(a){
@@ -6482,16 +6510,247 @@
     }
     function onPaid(){
       mkPayCleanup();
-      var snap = pay.snap, order_id = pay.order_id, jami = pay.jami;
-      m.cart = []; mkCartSave(); m.pay = null;
+      var order_id = pay.order_id;
+      mkOnOrderPaid(order_id);
+      m.cart = []; mkCartSave(); m.pay = null; m.orders = null;
       haptic('ok');
       state.stack = [{ view:'mainMenu' }, { view:'market' }];
-      push({ view:'marketDone', order_id:order_id, jami:jami, snap:snap });
+      push({ view:'marketOrder', order_id:order_id, fresh:true });
     }
     m.payTimer = setInterval(function(){ tries++; if (tries > 300) { mkPayCleanup(); return; } check(false); }, 3000);
     m.payVis = function(){ if (!document.hidden) check(false); };
     document.addEventListener('visibilitychange', m.payVis);
     document.getElementById('mkCheckPay').addEventListener('click', function(){ haptic('tap'); check(true); });
+    var po = document.getElementById('mkPayOrders');
+    if (po) po.addEventListener('click', function(){ haptic('tap'); push({ view:'marketOrders' }); });
+  }
+
+  // ---------- buyurtmalar: holat belgilari, tarix va tafsilot ----------
+  var MK_ST = {
+    kutilmoqda:    { uz:"To'lov kutilmoqda", ru:'Ожидает оплаты', ico:'⏳', cls:'wait' },
+    tolangan:      { uz:"To'langan", ru:'Оплачен', ico:'✅', cls:'ok' },
+    qabul:         { uz:'Qabul qilindi', ru:'Принят', ico:'📥', cls:'ok' },
+    yetkazilmoqda: { uz:'Yetkazilmoqda', ru:'Доставляется', ico:'🚚', cls:'go' },
+    yetkazildi:    { uz:'Yetkazildi', ru:'Доставлен', ico:'🎉', cls:'done' },
+    bekor:         { uz:'Bekor qilindi', ru:'Отменён', ico:'✖️', cls:'bad' }
+  };
+  function mkStat(st){ return MK_ST[st] || MK_ST.kutilmoqda; }
+  function mkStLabel(st){ var x = mkStat(st); return L(x.uz, x.ru); }
+  function mkStBadge(st){ var x = mkStat(st); return '<span class="mk-st ' + x.cls + '">' + x.ico + ' ' + esc(L(x.uz, x.ru)) + '</span>'; }
+  function mkIsFinal(st){ return st === 'yetkazildi' || st === 'bekor'; }
+  function mkQuery(k){ try { return new URLSearchParams(location.search).get(k); } catch(e){ return null; } }
+  function mkOrderApi(oid){ return '/api/public/market/order/status?id=' + oid + '&init_data=' + encodeURIComponent(getInitData()); }
+  function mkClearPending(){ mkStoreSet(MK_PENDING_KEY, null); }
+
+  // to'lov o'tgach: savatchani tozalaymiz va "kutilayotgan to'lov" belgisini o'chiramiz
+  function mkOnOrderPaid(oid){
+    var pend = mkStoreGet(MK_PENDING_KEY);
+    if (pend && pend.order_id === oid) {
+      state.mk.cart = []; mkCartSave(); mkClearPending(); mkUpdateCartBar();
+    }
+  }
+
+  function mkOrderCard(o){
+    var names = (o.items || []).map(function(it){ return it.nomi + (it.qty > 1 ? ' ×' + it.qty : ''); });
+    var summ = names.slice(0, 2).join(', ') + (names.length > 2 ? ' +' + (names.length - 2) : '');
+    return '<div class="mk-ocard" data-oid="' + o.id + '">' +
+      '<div class="r1"><b>№' + o.id + '</b>' + mkStBadge(o.status) + '</div>' +
+      '<div class="r2">' + esc(summ) + '</div>' +
+      '<div class="r3"><span>' + esc(o.created_at || '') + '</span><b>' + mkFmt(o.jami) + ' ' + L("so'm","сум") + '</b></div></div>';
+  }
+  function mkBindOrderCards(root){
+    root.querySelectorAll('.mk-ocard').forEach(function(el){
+      el.addEventListener('click', function(){ haptic('select'); push({ view:'marketOrder', order_id:parseInt(el.getAttribute('data-oid'), 10) }); });
+    });
+  }
+  function mkLoadOrders(cb){
+    if (!getInitData() || !API_BASE) { cb(null); return; }
+    apiGet('/api/public/market/orders?init_data=' + encodeURIComponent(getInitData())).then(function(d){
+      if (d && d.ok) { state.mk.orders = d.items || []; cb(state.mk.orders); } else cb(null);
+    }).catch(function(){ cb(null); });
+  }
+
+  // Market bosh sahifasida: oxirgi buyurtmalar
+  function mkRenderHomeOrders(){
+    function paint(list){
+      var box = document.getElementById('mkHomeOrders');
+      if (!box || state.stack[state.stack.length - 1].view !== 'market') return;
+      if (!list || !list.length) { box.innerHTML = ''; return; }
+      var active = list.filter(function(o){ return !mkIsFinal(o.status); }).length;
+      box.innerHTML = '<div class="mk-sec"><div class="mk-sech"><h3>📦 ' + L('Buyurtmalar tarixi','История заказов') +
+        (active ? ' <span class="mk-cnt">' + active + ' ' + L('faol','активн.') + '</span>' : '') + '</h3>' +
+        '<span class="mk-all" id="mkAllOrd">' + L('Barchasi','Все') + ' ›</span></div>' +
+        '<div class="mk-olist">' + list.slice(0, 3).map(mkOrderCard).join('') + '</div></div>';
+      mkBindOrderCards(box);
+      document.getElementById('mkAllOrd').addEventListener('click', function(){ haptic('select'); push({ view:'marketOrders' }); });
+    }
+    if (state.mk.orders) paint(state.mk.orders);
+    mkLoadOrders(function(list){ if (list) paint(list); });
+  }
+
+  // ---------- Buyurtmalarim (to'liq tarix) ----------
+  function renderMarketOrders(){
+    var m = state.mk;
+    mainView.innerHTML = '<div class="view mk-view"><div class="mk-head"><div class="tt"><span>📦</span>' + L('Buyurtmalarim','Мои заказы') + '</div><div class="cn" id="mkOCnt"></div></div><div id="mkOList"></div></div>';
+    var listEl = document.getElementById('mkOList');
+    if (!getInitData()) {
+      listEl.innerHTML = '<div class="mk-empty"><span class="big">📦</span><b>' + L("Buyurtmalar tarixi","История заказов") + '</b>' + L("Buyurtmalarni ko'rish uchun ilovani Telegram ichida oching.","Откройте приложение внутри Telegram, чтобы увидеть заказы.") + '</div>';
+      return;
+    }
+    function paint(list){
+      if (state.stack[state.stack.length - 1].view !== 'marketOrders') return;
+      document.getElementById('mkOCnt').textContent = list.length + ' ' + L('ta','шт.');
+      if (!list.length) {
+        listEl.innerHTML = '<div class="mk-empty"><span class="big">🛒</span><b>' + L("Hali buyurtma yo'q","Заказов пока нет") + '</b>' + L("Ehtiyot qism buyurtma qilsangiz, shu yerda holati ko'rinadi.","Здесь появятся ваши заказы и их статус.") + '<br><span class="act" id="mkOEmpty">' + L('Ehtiyot qismlar','Запчасти') + '</span></div>';
+        document.getElementById('mkOEmpty').addEventListener('click', function(){ haptic('select'); push({ view:'marketCats' }); });
+        return;
+      }
+      listEl.innerHTML = '<div class="mk-olist">' + list.map(mkOrderCard).join('') + '</div>';
+      mkBindOrderCards(listEl);
+    }
+    if (m.orders) paint(m.orders);
+    else listEl.innerHTML = '<div class="mk-wait"><i></i><span>' + L('Yuklanmoqda...','Загрузка...') + '</span></div>';
+    function load(){
+      mkLoadOrders(function(list){
+        if (list) paint(list);
+        else if (!m.orders && state.stack[state.stack.length - 1].view === 'marketOrders')
+          listEl.innerHTML = '<div class="mk-hint err" style="text-align:center">' + L("Ulanib bo'lmadi. Keyinroq urinib ko'ring.","Не удалось загрузить. Повторите позже.") + '</div>';
+      });
+    }
+    load();
+    m.ordTimer = setInterval(function(){ if (!document.hidden) load(); }, 10000);
+  }
+
+  // ---------- Buyurtma tafsiloti: holat, qismlar, yetkazib berish, to'lov ----------
+  function renderMarketOrder(entry){
+    var m = state.mk, oid = entry.order_id, cur = null, busy = false, ticks = 0, lastSig = '';
+    mainView.innerHTML = '<div class="view mk-view"><div class="mk-head"><div class="tt"><span>🧾</span>' + L('Buyurtma','Заказ') + ' №' + oid + '</div><div class="cn" id="mkODate"></div></div>' +
+      '<div id="mkOBody"><div class="mk-wait"><i></i><span>' + L('Yuklanmoqda...','Загрузка...') + '</span></div></div></div>';
+    var body = document.getElementById('mkOBody');
+
+    function paint(o){
+      var st = o.status;
+      var dEl = document.getElementById('mkODate'); if (dEl) dEl.textContent = o.created_at || '';
+      var title = mkStLabel(st), sub = '', cls = 'ok', ico = mkStat(st).ico;
+      if (st === 'kutilmoqda') {
+        cls = 'wait';
+        sub = L("To'lovni tugatgan bo'lsangiz, holat bir necha soniyada o'zi yangilanadi.","Если вы уже оплатили, статус обновится сам через несколько секунд.");
+      } else if (st === 'bekor') {
+        cls = 'bad'; sub = o.izoh ? esc(o.izoh) : '';
+      } else if (st === 'yetkazildi') {
+        sub = L("Buyurtma yetkazib berildi. Rahmat!","Заказ доставлен. Спасибо!");
+      } else {
+        if (entry.fresh && (st === 'tolangan' || st === 'qabul')) title = L("To'lov qabul qilindi!","Оплата принята!");
+        sub = L("Siz bilan tez orada bog'lanamiz va ehtiyot qismlarni yetkazib beramiz.","Мы скоро свяжемся с вами и доставим запчасти.");
+      }
+      var h = '<div class="mk-obanner ' + cls + '">' + (st === 'kutilmoqda' ? '<i class="sp"></i>' : '<span class="e">' + ico + '</span>') +
+        '<div><b>' + esc(title) + '</b>' + (sub ? '<span>' + sub + '</span>' : '') + '</div></div>';
+
+      if (st !== 'bekor') {
+        var order = ['tolangan','qabul','yetkazilmoqda','yetkazildi'];
+        var names = [L("To'lov qabul qilindi","Оплата принята"), L('Buyurtma qabul qilindi','Заказ принят'), L('Yetkazilmoqda','Доставляется'), L('Yetkazildi','Доставлен')];
+        var idx = st === 'kutilmoqda' ? -1 : order.indexOf(st);
+        h += '<div class="mk-sec"><h3>' + L('Buyurtma holati','Статус заказа') + '</h3><ul class="mk-tl">' + order.map(function(k, i){
+          var c = i < idx ? 'done' : (i === idx ? (st === 'yetkazildi' ? 'done' : 'cur') : '');
+          var when = i === 0 ? o.paid_at : (i === idx ? o.updated_at : '');
+          return '<li class="' + c + '"><i>' + (c === 'done' ? '✓' : (i + 1)) + '</i><div><b>' + esc(names[i]) + '</b>' + (when ? '<span>' + esc(when) + '</span>' : '') + '</div></li>';
+        }).join('') + '</ul></div>';
+      }
+
+      h += '<div class="mk-sec"><h3>' + L('Tanlangan qismlar','Выбранные запчасти') + '</h3><div class="mk-box">' + (o.items || []).map(function(it, i){
+        var sub2 = [it.brend, it.model].filter(Boolean).join(' · ');
+        return '<div class="mk-tr" style="--i:' + i + '"><span class="k" style="color:#eafff7;font-weight:700">' + esc(it.nomi) + (sub2 ? '<br><span style="color:#9fb8b0;font-weight:500;font-size:11.5px">' + esc(sub2) + '</span>' : '') + '</span>' +
+          '<span class="v">' + it.qty + ' × ' + mkFmt(it.narx) + '<br><span style="color:var(--mk-em)">' + mkFmt(it.summa) + '</span></span></div>';
+      }).join('') + '<div class="mk-tr"><span class="k">' + L('Jami','Итого') + '</span><span class="v" style="font-size:15px">' + mkFmt(o.jami) + ' ' + L("so'm","сум") + '</span></div></div></div>';
+
+      h += '<div class="mk-sec"><h3>' + L('Yetkazib berish','Доставка') + '</h3><div class="mk-box">' +
+        '<div class="mk-tr"><span class="k">' + L('Ism familya','Имя фамилия') + '</span><span class="v">' + esc((o.familya || '') + ' ' + (o.ism || '')) + '</span></div>' +
+        '<div class="mk-tr"><span class="k">' + L('Telefon','Телефон') + '</span><span class="v">' + esc(o.telefon || '') + '</span></div>' +
+        '<div class="mk-tr"><span class="k">' + L('Manzil','Адрес') + '</span><span class="v">' + esc(o.manzil || '') + '</span></div></div></div>';
+
+      var prov = { payme:'Payme', click:'Click' }[o.provider] || '';
+      if (o.paid) {
+        h += '<div class="mk-sec"><h3>' + L("To'lov","Оплата") + '</h3><div class="mk-box">' +
+          '<div class="mk-tr"><span class="k">' + L('Usul','Способ') + '</span><span class="v">' + esc(prov || '—') + '</span></div>' +
+          '<div class="mk-tr"><span class="k">' + L('Vaqt','Время') + '</span><span class="v">' + esc(o.paid_at || '—') + '</span></div></div></div>';
+      }
+
+      h += '<div class="mk-actions" id="mkOActs" style="flex-direction:column">';
+      if (st === 'kutilmoqda') {
+        var links = o.links || {};
+        h += '<div class="mk-paybtns" style="width:100%">' + [['payme','Payme'],['click','Click']].filter(function(x){ return links[x[0]]; }).map(function(x){
+          return '<a class="mk-payopt ' + x[0] + '" data-p="' + x[0] + '" href="#">💳 ' + x[1] + ' ' + L("orqali to'lash","— оплатить") + '</a>'; }).join('') + '</div>' +
+          '<button class="mk-btn ghost" id="mkOCheck">🔄 ' + L("To'lovni tekshirish","Проверить оплату") + '</button>';
+      }
+      h += '<button class="mk-btn ' + (st === 'kutilmoqda' ? 'ghost' : 'pri') + '" id="mkOBack">🛒 ' + L('Marketga qaytish','Вернуться в маркет') + '</button></div>';
+      body.innerHTML = h;
+
+      body.querySelectorAll('.mk-payopt').forEach(function(a){
+        a.addEventListener('click', function(e){
+          e.preventDefault(); haptic('select');
+          mkStoreSet(MK_PENDING_KEY, { order_id:oid, t:Date.now() });
+          mkOpenExternal((o.links || {})[a.getAttribute('data-p')]);
+        });
+      });
+      var chk = document.getElementById('mkOCheck'); if (chk) chk.addEventListener('click', function(){ haptic('tap'); load(true); });
+      document.getElementById('mkOBack').addEventListener('click', function(){ haptic('select'); mkGoHomeMarket(); });
+    }
+
+    function load(manual){
+      if (busy) return; busy = true;
+      apiGet(mkOrderApi(oid)).then(function(d){
+        busy = false;
+        var top = state.stack[state.stack.length - 1];
+        if (!top || top.view !== 'marketOrder' || top.order_id !== oid) return;
+        if (!d || !d.ok || !d.order) {
+          if (!cur) body.innerHTML = '<div class="mk-hint err" style="text-align:center">' + esc((d && d.error) || L("Buyurtmani yuklab bo'lmadi.","Не удалось загрузить заказ.")) + '</div>';
+          return;
+        }
+        var o = d.order, was = cur && cur.status;
+        if (o.paid) mkOnOrderPaid(oid);
+        else if (o.status === 'bekor') { var pd = mkStoreGet(MK_PENDING_KEY); if (pd && pd.order_id === oid) mkClearPending(); }
+        if (was === 'kutilmoqda' && o.paid) { entry.fresh = true; haptic('ok'); state.mk.orders = null; }
+        if (manual && o.status === 'kutilmoqda') mkToast(L("To'lov hali kelmadi","Оплата пока не поступила"));
+        cur = o;
+        var sig = JSON.stringify([o.status, o.updated_at, o.paid_at, !!entry.fresh, Object.keys(o.links || {}).length]);
+        if (sig === lastSig) return;
+        lastSig = sig; paint(o);
+      }).catch(function(){ busy = false; if (manual) mkToast(L("Ulanib bo'lmadi","Нет соединения")); });
+    }
+    load(false);
+    m.ordTimer = setInterval(function(){
+      ticks++;
+      if (ticks > 450 || (cur && mkIsFinal(cur.status))) { clearInterval(m.ordTimer); m.ordTimer = null; return; }
+      if (!document.hidden) load(false);
+    }, 4000);
+    m.payVis = function(){ if (!document.hidden) load(false); };
+    document.addEventListener('visibilitychange', m.payVis);
+  }
+
+  // ilova to'lov paytida yopilgan/qayta ochilgan bo'lsa — buyurtma holatiga qaytaramiz
+  function mkResumePending(onlyPaid){
+    if (!getInitData() || !API_BASE) return;
+    var top = state.stack[state.stack.length - 1] || {};
+    if (top.view === 'oferta' || top.view === 'marketPay' || top.view === 'marketOrder') return;
+    var deep = parseInt(mkQuery('mk') || '', 10) || 0, oid = deep;
+    var pend = mkStoreGet(MK_PENDING_KEY);
+    if (!oid && pend && pend.order_id) {
+      if (Date.now() - (pend.t || 0) > 30 * 60000) { mkClearPending(); return; }
+      oid = pend.order_id;
+    }
+    if (!oid) return;
+    apiGet(mkOrderApi(oid)).then(function(d){
+      if (!d || !d.ok || !d.order) { if (!deep && d && d.error) mkClearPending(); return; }
+      var o = d.order;
+      if (o.paid) mkOnOrderPaid(oid);
+      if (o.status === 'bekor' && !deep) { mkClearPending(); return; }
+      if (onlyPaid && !o.paid) return;
+      var t2 = state.stack[state.stack.length - 1] || {};
+      if (t2.view === 'oferta' || t2.view === 'marketPay' || (t2.view === 'marketOrder' && t2.order_id === oid)) return;
+      if (deep) { try { history.replaceState(null, '', location.pathname); } catch(e){} }
+      state.stack = [{ view:'mainMenu' }, { view:'market' }];
+      push({ view:'marketOrder', order_id:oid, fresh:!!(o.paid && (o.status === 'tolangan' || o.status === 'qabul')) });
+    }).catch(function(){});
   }
 
   function renderMarketDone(entry){
@@ -6575,6 +6834,8 @@
     else if (entry.view === 'marketCheckout') renderMarketCheckout();
     else if (entry.view === 'marketPay') renderMarketPay();
     else if (entry.view === 'marketDone') renderMarketDone(entry);
+    else if (entry.view === 'marketOrders') renderMarketOrders();
+    else if (entry.view === 'marketOrder') renderMarketOrder(entry);
   }
 
   // init lang buttons to reflect stored pref
@@ -6584,4 +6845,6 @@
   document.getElementById('brandSub').textContent = t().subtitle;
 
   render();
+  mkResumePending(false);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) mkResumePending(true); });
 })();
