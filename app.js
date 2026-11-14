@@ -793,6 +793,11 @@
     if (entry.view === 'anketaForm') return entry.viloyat;
     if (entry.view === 'anketaContract') return t().anketaContractTitle;
     if (entry.view === 'anketaSuccess') return t().menuAnketa;
+    if (entry.view === 'devices') return L('Uskunalarim','Моя техника');
+    if (entry.view === 'deviceForm') return entry.id ? L('Tahrirlash','Изменить') : L("Qo'shish","Добавить");
+    if (entry.view === 'device') return null;
+    if (entry.view === 'deviceHistoryForm') return L('Yozuv','Запись');
+    if (entry.view === 'deviceReminderForm') return L('Eslatma','Напоминание');
     if (entry.view === 'market') return 'Market';
     if (entry.view === 'marketCats') return L('Ehtiyot qismlar','Запчасти');
     if (entry.view === 'marketParts') { var mc = catById(entry.cat); return mc ? pick(mc, 'name') : ''; }
@@ -4949,6 +4954,8 @@
         count:t().itemsCount(totalIssues()), brand:L('Texnika','Техника'), action:function(el){ pzOpen('tech', el, function(){ push({ view:'home' }); }); } },
       { pal:'g-market', wide:true, icon:'🛒', title:'Market', sub:L('Ehtiyot qismlar, eski va B/U texnika','Запчасти, старая и Б/У техника'), badge:'🔥 ' + L('YANGI','НОВОЕ'),
         cta:'🛒 ' + L('Marketga kirish','В маркет') + ' ›', brand:'Market', action:function(el){ mkOpenPortal(el); } },
+      { pal:'g-lime', wide:true, icon:'🏠', title:L('Mening uskunalarim','Моя техника'), sub:L('Kafolat, ta\'mirlash tarixi va eslatmalar','Гарантия, история ремонта и напоминания'), badge:'✨ ' + L('YANGI','НОВОЕ'),
+        cta:'🏠 ' + L('Uskunalarimni ochish','Открыть мою технику') + ' ›', brand:L('Uy pasporti','Паспорт дома'), action:function(el){ state.dv.items = null; push({ view:'devices' }); } },
       { pal:'g-night', wide:true, icon:'🔍', title:cl(t().menuTopish), sub:t().menuTopishSub, cta:'🔎 ' + L('Qidirish','Искать') + ' ›',
         brand:L('Ustaxona','Мастерская'), action:function(el){ pzOpen('find', el, function(){ push({ view:'topishViloyat' }); }); } },
       { pal:'g-teal', wide:true, icon:'🗺️', title:L('Xarita','Карта'), sub:L('Yaqin atrofdagi ustalarni xaritada toping','Найдите мастеров рядом на карте'),
@@ -6770,6 +6777,306 @@
     document.getElementById('mkDoneBtn').addEventListener('click', function(){ haptic('select'); mkGoHomeMarket(); });
   }
 
+  // ============================================================
+  //  🏠 MENING USKUNALARIM (uy pasporti)
+  // ============================================================
+  var DV_TYPES = CATS.map(function(c){ return { id:c.id, icon:c.icon, name_uz:c.name_uz, name_ru:c.name_ru }; })
+    .concat([{ id:'boshqa', icon:'🏠', name_uz:'Boshqa', name_ru:'Другое' }]);
+  function dvType(id){ for (var i = 0; i < DV_TYPES.length; i++) if (DV_TYPES[i].id === id) return DV_TYPES[i]; return DV_TYPES[DV_TYPES.length - 1]; }
+  function dvTitle(d){ return d.nom || [d.brend, d.model].filter(Boolean).join(' ') || pick(dvType(d.tur), 'name'); }
+  function dvFmtDate(iso){ if (!iso) return '—'; var p = String(iso).split('-'); return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : iso; }
+  function dvToday(){ var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function dvDaysTo(iso){ var a = new Date(dvToday() + 'T00:00:00'), b = new Date(iso + 'T00:00:00'); return Math.round((b - a) / 86400000); }
+  function dvWarranty(d){
+    if (d.kafolat_kun == null || !d.kafolat_tugash) return { cls:'off', txt:L('Kafolat kiritilmagan','Гарантия не указана') };
+    if (d.kafolat_kun < 0) return { cls:'bad', txt:L('Kafolat tugagan','Гарантия закончилась') };
+    if (d.kafolat_kun <= 30) return { cls:'warn', txt:L('Kafolat: ' + d.kafolat_kun + ' kun qoldi','Гарантия: осталось ' + d.kafolat_kun + ' дн.') };
+    return { cls:'ok', txt:L('Kafolat: ' + dvFmtDate(d.kafolat_tugash) + 'gacha','Гарантия до ' + dvFmtDate(d.kafolat_tugash)) };
+  }
+  var DV_HIST = {
+    tamir:  { ico:'🔧', uz:"Ta'mirlash", ru:'Ремонт' },
+    xizmat: { ico:'🧽', uz:'Xizmat ko\'rsatish', ru:'Обслуживание' },
+    qism:   { ico:'🧩', uz:'Qism almashtirish', ru:'Замена детали' },
+    boshqa: { ico:'📝', uz:'Boshqa', ru:'Другое' }
+  };
+
+  (function dvInjectCss(){
+    var st = document.createElement('style');
+    st.textContent =
+      '.dv-view{padding-bottom:40px}' +
+      '.dv-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 2px 12px}' +
+      '.dv-head .tt{font-family:var(--font-display);font-weight:800;font-size:20px;display:flex;align-items:center;gap:8px}' +
+      '.dv-head .cn{font-family:var(--font-mono);font-size:10.5px;color:var(--cyan);border:1px solid var(--cyan-dim);padding:4px 9px;border-radius:999px}' +
+      '.dv-hint{font-size:12.5px;line-height:1.5;color:var(--text-2);margin:8px 2px}' +
+      '.dv-hint.err{color:var(--red);font-weight:600}' +
+      '.dv-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px;margin-bottom:10px;border-radius:18px;background:var(--bg-panel);border:1px solid var(--border);color:var(--text-1);cursor:pointer;transition:transform .15s,background .15s}' +
+      '.dv-card:active{transform:scale(.98);background:var(--bg-panel-hover)}' +
+      '.dv-ico{flex:none;width:48px;height:48px;border-radius:14px;background:var(--bg-panel-2);display:flex;align-items:center;justify-content:center;font-size:26px}' +
+      '.dv-card .mid{flex:1;min-width:0}' +
+      '.dv-card .nm{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.dv-card .sb{font-size:12px;color:var(--text-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.dv-pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:6px;border:1px solid transparent}' +
+      '.dv-pill.ok{color:var(--green);background:rgba(111,207,151,.12);border-color:rgba(111,207,151,.35)}' +
+      '.dv-pill.warn{color:var(--amber);background:rgba(255,145,66,.12);border-color:rgba(255,145,66,.4)}' +
+      '.dv-pill.bad{color:var(--red);background:rgba(255,98,89,.12);border-color:rgba(255,98,89,.4)}' +
+      '.dv-pill.off{color:var(--text-3);background:var(--bg-panel-2);border-color:var(--border)}' +
+      '.dv-add{width:100%;padding:15px;border-radius:16px;font-weight:800;font-size:14px;border:1.5px dashed var(--cyan-dim);color:var(--cyan);background:transparent;margin:6px 0 14px;cursor:pointer}' +
+      '.dv-add:active{transform:scale(.98)}' +
+      '.dv-empty{text-align:center;padding:36px 18px;color:var(--text-2);line-height:1.55}' +
+      '.dv-empty .big{font-size:60px;display:block;margin-bottom:10px}' +
+      '.dv-empty b{display:block;color:var(--text-1);font-size:18px;margin-bottom:6px}' +
+      '.dv-sec{margin:20px 2px 8px;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}' +
+      '.dv-sec small{font-weight:600;color:var(--text-2);font-size:12px}' +
+      '.dv-box{background:var(--bg-panel);border:1px solid var(--border);border-radius:18px;padding:4px 14px}' +
+      '.dv-row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-soft);font-size:13.5px}' +
+      '.dv-row:last-child{border-bottom:none}' +
+      '.dv-row .k{color:var(--text-2)}.dv-row .v{font-weight:600;text-align:right;word-break:break-word}' +
+      '.dv-item{padding:12px 0;border-bottom:1px solid var(--border-soft)}.dv-item:last-child{border-bottom:none}' +
+      '.dv-item .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}' +
+      '.dv-item .tx{font-size:13.5px;line-height:1.45;font-weight:600}' +
+      '.dv-item .meta{font-size:12px;color:var(--text-2);margin-top:3px}' +
+      '.dv-item .meta.late{color:var(--red);font-weight:700}' +
+      '.dv-acts{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}' +
+      '.dv-mini{padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;background:var(--bg-panel-2);border:1px solid var(--border);color:var(--text-1);cursor:pointer}' +
+      '.dv-mini.go{color:var(--green);border-color:rgba(111,207,151,.4)}.dv-mini.del{color:var(--red)}' +
+      '.dv-actions{display:flex;gap:10px;margin:14px 0 4px;flex-wrap:wrap}' +
+      '.dv-actions .btn{flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 12px;border-radius:14px;font-weight:700;font-size:14px;border:none;cursor:pointer}' +
+      '.dv-actions .btn.btn-ghost{border:1px solid var(--border)}' +
+      '.dv-types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}' +
+      '.dv-t{padding:10px 4px;border-radius:14px;background:var(--bg-panel);border:1.5px solid var(--border);color:var(--text-1);font-size:11.5px;font-weight:600;text-align:center;cursor:pointer;line-height:1.25}' +
+      '.dv-t .e{display:block;font-size:24px;margin-bottom:3px}' +
+      '.dv-t.on{border-color:var(--cyan);background:rgba(79,216,201,.12)}' +
+      '.dv-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}' +
+      '.dv-chips .c{padding:8px 12px;border-radius:999px;background:var(--bg-panel);border:1.5px solid var(--border);font-size:12.5px;font-weight:600;color:var(--text-1);cursor:pointer}' +
+      '.dv-chips .c.on{border-color:var(--cyan);background:rgba(79,216,201,.12)}' +
+      '.dv-form select,.dv-form input[type=date]{width:100%;padding:13px 14px;border-radius:14px;background:var(--bg-panel);border:1px solid var(--border);color:var(--text-1);font-size:15px;font-family:inherit}' +
+      '.dv-total{display:flex;justify-content:space-between;padding:12px 14px;margin-bottom:10px;border-radius:14px;background:var(--bg-panel-2);font-size:13px}' +
+      '.dv-total b{color:var(--amber)}';
+    document.head.appendChild(st);
+  })();
+
+  state.dv = { items:null, loading:false };
+
+  function dvAuthOk(){ return !!getInitData() && !!API_BASE; }
+  function dvNoAuthHTML(){
+    return '<div class="view dv-view"><div class="dv-empty"><span class="big">🔒</span><b>' + L('Telegram ichida oching','Откройте внутри Telegram') + '</b>' +
+      L("Uskunalaringiz shaxsiy — ularni ko'rish uchun ilovani Telegram bot orqali oching.","Ваша техника личная — откройте приложение через Telegram-бот.") + '</div></div>';
+  }
+  function dvApiErr(d){ return (d && d.error) ? String(d.error) : L('Xatolik yuz berdi. Qayta urinib ko\'ring.','Произошла ошибка. Повторите попытку.'); }
+  function dvPost(path, body){
+    body = body || {}; body.init_data = getInitData(); body.lang = state.lang;
+    return apiPost(path, body).then(function(r){ return r.data; });
+  }
+  function dvBack(){ state.dv.items = null; state.stack.pop(); render(); }
+
+  // ---------- Ro'yxat ----------
+  function renderDevices(){
+    if (!dvAuthOk()) { mainView.innerHTML = dvNoAuthHTML(); return; }
+    var dv = state.dv;
+    function paint(){
+      var items = dv.items || [];
+      var html = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>🏠</span>' + L('Mening uskunalarim','Моя техника') + '</div><div class="cn">' + items.length + ' ' + L('ta','шт.') + '</div></div>';
+      if (!items.length) {
+        html += '<div class="dv-empty"><span class="big">📦</span><b>' + L("Hali uskuna qo'shilmagan","Пока нет техники") + '</b>' +
+          L("Uskunangizni qo'shing — kafolat, ta'mirlash tarixi va vaqtida eslatmalar bir joyda bo'ladi.","Добавьте технику — гарантия, история ремонта и напоминания в одном месте.") + '</div>';
+      }
+      html += '<button class="dv-add" id="dvAdd">➕ ' + L("Uskuna qo'shish","Добавить технику") + '</button>';
+      html += items.map(function(d){
+        var w = dvWarranty(d), ty = dvType(d.tur);
+        var sub = [pick(ty, 'name'), d.brend && d.model ? d.brend + ' ' + d.model : (d.brend || d.model)].filter(Boolean).join(' · ');
+        var rem = d.next_reminder ? ' · ⏰ ' + dvFmtDate(d.next_reminder) : '';
+        return '<button class="dv-card" data-id="' + d.id + '"><span class="dv-ico">' + ty.icon + '</span><span class="mid"><div class="nm">' + esc(dvTitle(d)) + '</div>' +
+          '<div class="sb">' + esc(sub) + '</div><span class="dv-pill ' + w.cls + '">' + esc(w.txt) + '</span><span class="sb">' + rem + '</span></span><span>›</span></button>';
+      }).join('');
+      html += '<div class="dv-hint">' + L("🔔 Bot kafolat tugashi va davriy xizmat (tozalash, filtr) haqida o'zi eslatib turadi.","🔔 Бот сам напомнит об окончании гарантии и плановом обслуживании (чистка, фильтры).") + '</div></div>';
+      mainView.innerHTML = html;
+      document.getElementById('dvAdd').addEventListener('click', function(){ haptic('select'); push({ view:'deviceForm' }); });
+      mainView.querySelectorAll('.dv-card').forEach(function(b){
+        b.addEventListener('click', function(){ haptic('select'); push({ view:'device', id:parseInt(b.getAttribute('data-id'), 10) }); });
+      });
+    }
+    if (dv.items) { paint(); return; }
+    mainView.innerHTML = '<div class="view dv-view"><div class="dv-empty"><span class="big">⏳</span>' + L('Yuklanmoqda...','Загрузка...') + '</div></div>';
+    apiGet('/api/public/devices?init_data=' + encodeURIComponent(getInitData())).then(function(d){
+      if (state.stack[state.stack.length - 1].view !== 'devices') return;
+      if (!d || !d.ok) { mainView.innerHTML = '<div class="view dv-view"><div class="dv-empty"><span class="big">⚠️</span>' + esc(dvApiErr(d)) + '</div></div>'; return; }
+      dv.items = d.items; paint();
+    }).catch(function(){
+      mainView.innerHTML = '<div class="view dv-view"><div class="dv-empty"><span class="big">📡</span>' + L("Ulanib bo'lmadi. Internetni tekshiring.","Нет соединения. Проверьте интернет.") + '</div></div>';
+    });
+  }
+
+  // ---------- Qo'shish / tahrirlash ----------
+  function renderDeviceForm(entry){
+    if (!dvAuthOk()) { mainView.innerHTML = dvNoAuthHTML(); return; }
+    var editing = !!entry.id;
+    function paint(d){
+      d = d || { tur:'', brend:'', model:'', nom:'', sotib_sana:'', kafolat_oy:0, serial:'', izoh:'' };
+      var sel = d.tur || '';
+      var wOpts = [0, 6, 12, 24, 36, 60];
+      mainView.innerHTML = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>' + (editing ? '✏️' : '➕') + '</span>' +
+        (editing ? L('Uskunani tahrirlash','Редактирование') : L("Uskuna qo'shish","Добавить технику")) + '</div></div>' +
+        '<div class="dv-sec" style="margin-top:4px">' + L('Turi','Тип') + '</div>' +
+        '<div class="dv-types">' + DV_TYPES.map(function(t){ return '<button type="button" class="dv-t' + (sel === t.id ? ' on' : '') + '" data-t="' + t.id + '"><span class="e">' + t.icon + '</span>' + esc(pick(t, 'name')) + '</button>'; }).join('') + '</div>' +
+        '<div class="form-card dv-form">' +
+          '<div class="field"><label>🏷 ' + L('Nomi (ixtiyoriy)','Название (необязательно)') + '</label><input id="dvNom" maxlength="60" value="' + esc(d.nom) + '" placeholder="' + esc(L("Masalan: Mehmonxonadagi konditsioner","Например: Кондиционер в гостиной")) + '"></div>' +
+          '<div class="field"><label>🏭 ' + L('Brend','Бренд') + '</label><input id="dvBrend" maxlength="60" value="' + esc(d.brend) + '" placeholder="Samsung, LG, Artel..."></div>' +
+          '<div class="field"><label>🔖 ' + L('Model','Модель') + '</label><input id="dvModel" maxlength="80" value="' + esc(d.model) + '" placeholder="AR12TXHQASINUA"></div>' +
+          '<div class="field"><label>📅 ' + L('Sotib olingan sana','Дата покупки') + '</label><input id="dvDate" type="date" max="' + dvToday() + '" value="' + esc(d.sotib_sana) + '"></div>' +
+          '<div class="field"><label>🛡 ' + L('Kafolat muddati','Срок гарантии') + '</label><div class="dv-chips" id="dvWar" style="margin-bottom:0">' +
+            wOpts.map(function(m){ return '<button type="button" class="c' + ((d.kafolat_oy || 0) === m ? ' on' : '') + '" data-m="' + m + '">' + (m === 0 ? L("Yo'q","Нет") : (m % 12 === 0 ? (m / 12) + ' ' + L('yil','г.') : m + ' ' + L('oy','мес.'))) + '</button>'; }).join('') + '</div></div>' +
+          '<div class="field"><label>🔢 ' + L('Seriya raqami (ixtiyoriy)','Серийный номер (необязательно)') + '</label><input id="dvSerial" maxlength="60" value="' + esc(d.serial) + '"></div>' +
+          '<div class="field"><label>📝 ' + L('Izoh (ixtiyoriy)','Заметка (необязательно)') + '</label><textarea id="dvIzoh" maxlength="500">' + esc(d.izoh) + '</textarea></div>' +
+        '</div>' +
+        '<div class="dv-hint err" id="dvErr"></div>' +
+        '<div class="dv-actions"><button class="btn btn-primary" id="dvSave">💾 ' + L('Saqlash','Сохранить') + '</button></div></div>';
+      var $ = function(id){ return document.getElementById(id); };
+      mainView.querySelectorAll('.dv-t').forEach(function(b){
+        b.addEventListener('click', function(){ haptic('select'); sel = b.getAttribute('data-t'); mainView.querySelectorAll('.dv-t').forEach(function(x){ x.classList.toggle('on', x === b); }); });
+      });
+      var war = d.kafolat_oy || 0;
+      mainView.querySelectorAll('#dvWar .c').forEach(function(b){
+        b.addEventListener('click', function(){ haptic('select'); war = parseInt(b.getAttribute('data-m'), 10); mainView.querySelectorAll('#dvWar .c').forEach(function(x){ x.classList.toggle('on', x === b); }); });
+      });
+      $('dvSave').addEventListener('click', function(){
+        var err = $('dvErr'); err.textContent = '';
+        if (!sel) { err.textContent = L('Uskuna turini tanlang','Выберите тип техники'); return; }
+        var btn = $('dvSave'); btn.disabled = true;
+        dvPost('/api/public/devices/save', { id:entry.id || null, tur:sel, nom:$('dvNom').value, brend:$('dvBrend').value, model:$('dvModel').value,
+          sotib_sana:$('dvDate').value, kafolat_oy:war, serial:$('dvSerial').value, izoh:$('dvIzoh').value }).then(function(r){
+          if (r && r.ok) { haptic('ok'); state.dv.items = null; state.stack.pop(); if (!editing) { push({ view:'device', id:r.id }); } else { render(); } }
+          else { btn.disabled = false; err.textContent = dvApiErr(r); }
+        }).catch(function(){ btn.disabled = false; err.textContent = L("Ulanib bo'lmadi","Нет соединения"); });
+      });
+    }
+    if (!editing) { paint(); return; }
+    apiGet('/api/public/devices/get?id=' + entry.id + '&init_data=' + encodeURIComponent(getInitData())).then(function(r){
+      if (r && r.ok) paint(r.device); else { state.stack.pop(); render(); }
+    }).catch(function(){ state.stack.pop(); render(); });
+  }
+
+  // ---------- Uskuna sahifasi ----------
+  function renderDevice(entry){
+    if (!dvAuthOk()) { mainView.innerHTML = dvNoAuthHTML(); return; }
+    mainView.innerHTML = '<div class="view dv-view"><div class="dv-empty"><span class="big">⏳</span>' + L('Yuklanmoqda...','Загрузка...') + '</div></div>';
+    function load(){
+      apiGet('/api/public/devices/get?id=' + entry.id + '&init_data=' + encodeURIComponent(getInitData())).then(function(r){
+        if (state.stack[state.stack.length - 1].view !== 'device' || state.stack[state.stack.length - 1].id !== entry.id) return;
+        if (!r || !r.ok) { state.stack.pop(); render(); return; }
+        paint(r.device);
+      }).catch(function(){ mainView.innerHTML = '<div class="view dv-view"><div class="dv-empty"><span class="big">📡</span>' + L("Ulanib bo'lmadi","Нет соединения") + '</div></div>'; });
+    }
+    function reload(){ state.dv.items = null; load(); }
+    function paint(d){
+      var ty = dvType(d.tur), w = dvWarranty(d), today = dvToday();
+      var hasCat = d.tur !== 'boshqa';
+      var rows = [[L('Turi','Тип'), pick(ty, 'name')], [L('Brend','Бренд'), d.brend], [L('Model','Модель'), d.model], [L('Seriya raqami','Серийный номер'), d.serial],
+        [L('Sotib olingan','Куплено'), d.sotib_sana ? dvFmtDate(d.sotib_sana) : ''], [L('Izoh','Заметка'), d.izoh]]
+        .filter(function(r){ return r[1]; });
+      var html = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>' + ty.icon + '</span>' + esc(dvTitle(d)) + '</div></div>' +
+        '<div style="margin:0 2px 6px"><span class="dv-pill ' + w.cls + '" style="margin-top:0">🛡 ' + esc(w.txt) + '</span></div>' +
+        '<div class="dv-box">' + rows.map(function(r){ return '<div class="dv-row"><span class="k">' + r[0] + '</span><span class="v">' + esc(r[1]) + '</span></div>'; }).join('') + '</div>' +
+        '<div class="dv-actions">' +
+          (hasCat ? '<button class="btn btn-ghost" id="dvDiag">🔧 ' + L('Diagnostika','Диагностика') + '</button>' : '') +
+          '<button class="btn btn-primary" id="dvMaster">📋 ' + L('Usta chaqirish','Вызвать мастера') + '</button></div>' +
+        // eslatmalar
+        '<div class="dv-sec"><span>⏰ ' + L('Eslatmalar','Напоминания') + '</span></div><div class="dv-box">' +
+        (d.reminders.length ? d.reminders.map(function(r){
+          var late = r.sana <= today, dd = dvDaysTo(r.sana);
+          var meta = (late ? '⚠️ ' + L('Muddati keldi','Срок настал') + ' · ' : '') + dvFmtDate(r.sana) +
+            (r.takror_oy ? ' · 🔁 ' + L('har ' + r.takror_oy + ' oyda','каждые ' + r.takror_oy + ' мес.') : '') + (!late ? ' · ' + L(dd + ' kun qoldi','через ' + dd + ' дн.') : '');
+          return '<div class="dv-item"><div class="tx">' + esc(r.matn) + '</div><div class="meta' + (late ? ' late' : '') + '">' + meta + '</div>' +
+            '<div class="dv-acts"><button class="dv-mini go" data-rdone="' + r.id + '">✅ ' + L('Bajarildi','Выполнено') + '</button>' +
+            '<button class="dv-mini" data-rsnz="' + r.id + '">⏰ +7 ' + L('kun','дн.') + '</button><button class="dv-mini del" data-rdel="' + r.id + '">🗑</button></div></div>';
+        }).join('') : '<div class="dv-hint" style="padding:8px 0">' + L("Faol eslatma yo'q.","Нет активных напоминаний.") + '</div>') +
+        '</div><button class="dv-add" id="dvAddRem" style="margin-top:10px">➕ ' + L("Eslatma qo'shish","Добавить напоминание") + '</button>' +
+        // tarix
+        '<div class="dv-sec"><span>🧾 ' + L("Ta'mirlash tarixi","История обслуживания") + '</span><small>' + d.history.length + ' ' + L('ta','шт.') + '</small></div>' +
+        (d.total_spent > 0 ? '<div class="dv-total"><span>' + L('Jami sarflangan','Всего потрачено') + '</span><b>' + mkFmt(d.total_spent) + ' ' + L("so'm","сум") + '</b></div>' : '') +
+        '<div class="dv-box">' +
+        (d.history.length ? d.history.map(function(h){
+          var ht = DV_HIST[h.turi] || DV_HIST.boshqa;
+          return '<div class="dv-item"><div class="top"><div class="tx">' + ht.ico + ' ' + esc(h.tavsif) + '</div><button class="dv-mini del" data-hdel="' + h.id + '">🗑</button></div>' +
+            '<div class="meta">' + dvFmtDate(h.sana) + ' · ' + esc(state.lang === 'uz' ? ht.uz : ht.ru) + (h.narx ? ' · ' + mkFmt(h.narx) + ' ' + L("so'm","сум") : '') + (h.usta ? ' · ' + esc(h.usta) : '') + '</div></div>';
+        }).join('') : '<div class="dv-hint" style="padding:8px 0">' + L("Hali yozuv yo'q.","Записей пока нет.") + '</div>') +
+        '</div><button class="dv-add" id="dvAddHist" style="margin-top:10px">➕ ' + L("Yozuv qo'shish","Добавить запись") + '</button>' +
+        '<div class="dv-actions"><button class="btn btn-ghost" id="dvEdit">✏️ ' + L('Tahrirlash','Изменить') + '</button>' +
+        '<button class="btn btn-ghost" id="dvDel" style="color:var(--red)">🗑 ' + L("O'chirish","Удалить") + '</button></div></div>';
+      mainView.innerHTML = html;
+      var $ = function(id){ return document.getElementById(id); };
+      if ($('dvDiag')) $('dvDiag').addEventListener('click', function(){ haptic('select'); push({ view:'category', catId:d.tur }); });
+      $('dvMaster').addEventListener('click', function(){ haptic('select'); push({ view:'orderGate' }); });
+      $('dvEdit').addEventListener('click', function(){ haptic('select'); push({ view:'deviceForm', id:d.id }); });
+      $('dvAddRem').addEventListener('click', function(){ haptic('select'); push({ view:'deviceReminderForm', id:d.id }); });
+      $('dvAddHist').addEventListener('click', function(){ haptic('select'); push({ view:'deviceHistoryForm', id:d.id }); });
+      $('dvDel').addEventListener('click', function(){
+        mkConfirm(L("Bu uskuna, uning tarixi va eslatmalari o'chiriladi. Davom etamizmi?","Эта техника, её история и напоминания будут удалены. Продолжить?"), function(ok){
+          if (!ok) return;
+          dvPost('/api/public/devices/delete', { id:d.id }).then(function(r){ if (r && r.ok) { haptic('ok'); dvBack(); } else mkToast(dvApiErr(r)); });
+        });
+      });
+      function act(attr, path, extra){
+        mainView.querySelectorAll('[' + attr + ']').forEach(function(b){
+          b.addEventListener('click', function(){
+            haptic('tap'); b.disabled = true;
+            var body = { id:parseInt(b.getAttribute(attr), 10) }; if (extra) for (var k in extra) body[k] = extra[k];
+            dvPost(path, body).then(function(r){ if (r && r.ok) reload(); else { b.disabled = false; mkToast(dvApiErr(r)); } });
+          });
+        });
+      }
+      act('data-rdone', '/api/public/devices/reminders/done');
+      act('data-rsnz', '/api/public/devices/reminders/done', { snooze:true });
+      act('data-rdel', '/api/public/devices/reminders/delete');
+      act('data-hdel', '/api/public/devices/history/delete');
+    }
+    load();
+  }
+
+  // ---------- Tarixga yozuv ----------
+  function renderDeviceHistoryForm(entry){
+    var turi = 'tamir';
+    mainView.innerHTML = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>🧾</span>' + L("Tarixga yozuv","Запись в историю") + '</div></div>' +
+      '<div class="dv-chips" id="dvHT">' + Object.keys(DV_HIST).map(function(k){ return '<button type="button" class="c' + (k === turi ? ' on' : '') + '" data-k="' + k + '">' + DV_HIST[k].ico + ' ' + (state.lang === 'uz' ? DV_HIST[k].uz : DV_HIST[k].ru) + '</button>'; }).join('') + '</div>' +
+      '<div class="form-card dv-form">' +
+        '<div class="field"><label>📝 ' + L('Nima qilindi?','Что было сделано?') + '</label><textarea id="dvhT" maxlength="400" placeholder="' + esc(L("Masalan: Gaz to'ldirildi, kompressor tekshirildi","Например: Заправлен фреон, проверен компрессор")) + '"></textarea></div>' +
+        '<div class="field"><label>📅 ' + L('Sana','Дата') + '</label><input id="dvhD" type="date" max="' + dvToday() + '" value="' + dvToday() + '"></div>' +
+        '<div class="field"><label>💰 ' + L("Narxi (so'm, ixtiyoriy)","Стоимость (сум, необязательно)") + '</label><input id="dvhN" type="number" inputmode="numeric" min="0" placeholder="0"></div>' +
+        '<div class="field"><label>👷 ' + L('Usta / servis (ixtiyoriy)','Мастер / сервис (необязательно)') + '</label><input id="dvhU" maxlength="80"></div>' +
+      '</div><div class="dv-hint err" id="dvErr"></div>' +
+      '<div class="dv-actions"><button class="btn btn-primary" id="dvSave">💾 ' + L('Saqlash','Сохранить') + '</button></div></div>';
+    var $ = function(id){ return document.getElementById(id); };
+    mainView.querySelectorAll('#dvHT .c').forEach(function(b){ b.addEventListener('click', function(){ haptic('select'); turi = b.getAttribute('data-k'); mainView.querySelectorAll('#dvHT .c').forEach(function(x){ x.classList.toggle('on', x === b); }); }); });
+    $('dvSave').addEventListener('click', function(){
+      var btn = $('dvSave'), err = $('dvErr'); err.textContent = ''; btn.disabled = true;
+      dvPost('/api/public/devices/history/add', { device_id:entry.id, turi:turi, tavsif:$('dvhT').value, sana:$('dvhD').value, narx:$('dvhN').value, usta:$('dvhU').value }).then(function(r){
+        if (r && r.ok) { haptic('ok'); state.dv.items = null; state.stack.pop(); render(); } else { btn.disabled = false; err.textContent = dvApiErr(r); }
+      }).catch(function(){ btn.disabled = false; err.textContent = L("Ulanib bo'lmadi","Нет соединения"); });
+    });
+  }
+
+  // ---------- Eslatma qo'shish ----------
+  function renderDeviceReminderForm(entry){
+    var rep = 0, tom = new Date(); tom.setDate(tom.getDate() + 1);
+    var tomIso = tom.getFullYear() + '-' + ('0' + (tom.getMonth() + 1)).slice(-2) + '-' + ('0' + tom.getDate()).slice(-2);
+    var reps = [[0, L('Bir marta','Один раз')], [1, L('Har oy','Каждый месяц')], [3, L('3 oyda','Раз в 3 мес.')], [6, L('6 oyda','Раз в 6 мес.')], [12, L('Har yili','Каждый год')]];
+    mainView.innerHTML = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>⏰</span>' + L("Eslatma qo'shish","Новое напоминание") + '</div></div>' +
+      '<div class="form-card dv-form">' +
+        '<div class="field"><label>📝 ' + L('Nimani eslatay?','О чём напомнить?') + '</label><textarea id="dvrT" maxlength="200" placeholder="' + esc(L("Masalan: Filtrni almashtirish","Например: Заменить фильтр")) + '"></textarea></div>' +
+        '<div class="field"><label>📅 ' + L('Qachon?','Когда?') + '</label><input id="dvrD" type="date" min="' + dvToday() + '" value="' + tomIso + '"></div>' +
+        '<div class="field"><label>🔁 ' + L('Takrorlash','Повтор') + '</label><div class="dv-chips" id="dvRep" style="margin-bottom:0">' +
+          reps.map(function(x){ return '<button type="button" class="c' + (x[0] === 0 ? ' on' : '') + '" data-m="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
+      '</div><div class="dv-hint">' + L("Muddati kelganda bot sizga Telegramda xabar yuboradi.","Когда придёт срок, бот напишет вам в Telegram.") + '</div><div class="dv-hint err" id="dvErr"></div>' +
+      '<div class="dv-actions"><button class="btn btn-primary" id="dvSave">💾 ' + L('Saqlash','Сохранить') + '</button></div></div>';
+    var $ = function(id){ return document.getElementById(id); };
+    mainView.querySelectorAll('#dvRep .c').forEach(function(b){ b.addEventListener('click', function(){ haptic('select'); rep = parseInt(b.getAttribute('data-m'), 10); mainView.querySelectorAll('#dvRep .c').forEach(function(x){ x.classList.toggle('on', x === b); }); }); });
+    $('dvSave').addEventListener('click', function(){
+      var btn = $('dvSave'), err = $('dvErr'); err.textContent = ''; btn.disabled = true;
+      dvPost('/api/public/devices/reminders/add', { device_id:entry.id, matn:$('dvrT').value, sana:$('dvrD').value, takror_oy:rep }).then(function(r){
+        if (r && r.ok) { haptic('ok'); state.dv.items = null; state.stack.pop(); render(); } else { btn.disabled = false; err.textContent = dvApiErr(r); }
+      }).catch(function(){ btn.disabled = false; err.textContent = L("Ulanib bo'lmadi","Нет соединения"); });
+    });
+  }
+
   function render(){
     var entry = state.stack[state.stack.length - 1];
     mapCleanup();
@@ -6836,6 +7143,11 @@
     else if (entry.view === 'marketDone') renderMarketDone(entry);
     else if (entry.view === 'marketOrders') renderMarketOrders();
     else if (entry.view === 'marketOrder') renderMarketOrder(entry);
+    else if (entry.view === 'devices') renderDevices();
+    else if (entry.view === 'deviceForm') renderDeviceForm(entry);
+    else if (entry.view === 'device') renderDevice(entry);
+    else if (entry.view === 'deviceHistoryForm') renderDeviceHistoryForm(entry);
+    else if (entry.view === 'deviceReminderForm') renderDeviceReminderForm(entry);
   }
 
   // init lang buttons to reflect stored pref
