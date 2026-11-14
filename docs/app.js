@@ -794,6 +794,7 @@
     if (entry.view === 'anketaContract') return t().anketaContractTitle;
     if (entry.view === 'anketaSuccess') return t().menuAnketa;
     if (entry.view === 'calc') return L('Narx kalkulyatori','Калькулятор цен');
+    if (entry.view === 'advisor') return L('Maslahatchi','Советчик');
     if (entry.view === 'devices') return L('Uskunalarim','Моя техника');
     if (entry.view === 'deviceForm') return entry.id ? L('Tahrirlash','Изменить') : L("Qo'shish","Добавить");
     if (entry.view === 'device') return null;
@@ -4957,8 +4958,10 @@
         cta:'🛒 ' + L('Marketga kirish','В маркет') + ' ›', brand:'Market', action:function(el){ mkOpenPortal(el); } },
       { pal:'g-lime', wide:true, icon:'🏠', title:L('Mening uskunalarim','Моя техника'), sub:L('Kafolat, ta\'mirlash tarixi va eslatmalar','Гарантия, история ремонта и напоминания'), badge:'✨ ' + L('YANGI','НОВОЕ'),
         cta:'🏠 ' + L('Uskunalarimni ochish','Открыть мою технику') + ' ›', brand:L('Uy pasporti','Паспорт дома'), action:function(el){ state.dv.items = null; push({ view:'devices' }); } },
-      { pal:'g-fire', wide:true, icon:'💰', title:L('Narx kalkulyatori','Калькулятор цен'), sub:L('Ta\'mirlash qancha turishini oldindan biling','Узнайте стоимость ремонта заранее'), badge:'✨ ' + L('YANGI','НОВОЕ'),
-        cta:'💰 ' + L('Hisoblash','Рассчитать') + ' ›', brand:L('Narxlar','Цены'), action:function(el){ state.calc.tur = ''; state.calc.sel = {}; push({ view:'calc' }); } },
+      { pal:'g-fire', icon:'💰', title:L('Narx kalkulyatori','Калькулятор цен'), sub:L('Ta\'mirlash narxini oldindan biling','Узнайте цену ремонта заранее'), brand:L('Narxlar','Цены'),
+        action:function(el){ state.calc.tur = ''; state.calc.sel = {}; push({ view:'calc' }); } },
+      { pal:'g-sky', icon:'🧭', title:L('Sotib olish maslahatchisi','Советчик по покупке'), sub:L('Qaysi texnika sizga mos?','Какая техника вам подойдёт?'), brand:L('Maslahat','Совет'),
+        action:function(el){ state.adv.tur = ''; state.adv.step = 0; state.adv.ans = {}; push({ view:'advisor' }); } },
       { pal:'g-night', wide:true, icon:'🔍', title:cl(t().menuTopish), sub:t().menuTopishSub, cta:'🔎 ' + L('Qidirish','Искать') + ' ›',
         brand:L('Ustaxona','Мастерская'), action:function(el){ pzOpen('find', el, function(){ push({ view:'topishViloyat' }); }); } },
       { pal:'g-teal', wide:true, icon:'🗺️', title:L('Xarita','Карта'), sub:L('Yaqin atrofdagi ustalarni xaritada toping','Найдите мастеров рядом на карте'),
@@ -6914,7 +6917,7 @@
     if (!dvAuthOk()) { mainView.innerHTML = dvNoAuthHTML(); return; }
     var editing = !!entry.id;
     function paint(d){
-      d = d || { tur:'', brend:'', model:'', nom:'', sotib_sana:'', kafolat_oy:0, serial:'', izoh:'' };
+      d = d || { tur:(entry.tur || ''), brend:'', model:'', nom:'', sotib_sana:'', kafolat_oy:0, serial:'', izoh:'' };
       var sel = d.tur || '';
       var wOpts = [0, 6, 12, 24, 36, 60];
       mainView.innerHTML = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>' + (editing ? '✏️' : '➕') + '</span>' +
@@ -7177,6 +7180,290 @@
     });
   }
 
+  // ============================================================
+  //  🧭 SOTIB OLISHDAN OLDIN MASLAHATCHI
+  // ============================================================
+  state.adv = { tur:'', step:0, ans:{} };
+
+  function advOpts(arr){ return arr.map(function(o){ return { v:o[0], t:L(o[1], o[2]) }; }); }
+  var ADV_TYPES = ['kir','xolod','kond','tv','suv','komp'];
+
+  // Har bir tur uchun: savollar (steps) va natija quruvchi (build). L() chaqiruv paytida baholanadi — til almashsa ham to'g'ri.
+  function advDef(tur){
+    var condStep = { id:'cond', q:L('Yangi sotib olasizmi?','Покупаете новую?'),
+      opts:advOpts([['new','Yangi','Новая'],['bu','B/U (ishlatilgan)','Б/У (подержанная)']]) };
+    var pplStep = { id:'ppl', q:L('Oilada necha kishi?','Сколько человек в семье?'),
+      opts:advOpts([['1','1–2 kishi','1–2 человека'],['2','3–4 kishi','3–4 человека'],['3','5 va undan ko\'p','5 и более']]) };
+    var budgetStep = { id:'bud', q:L('Sizga nima muhimroq?','Что для вас важнее?'),
+      opts:advOpts([['low','Arzonroq narx','Цена пониже'],['mid','Narx va sifat muvozanati','Баланс цены и качества'],['high','Uzoq xizmat va tejamkorlik','Долговечность и экономичность']]) };
+
+    if (tur === 'kir') return { steps:[pplStep,
+      { id:'space', q:L('Mashina qo\'yiladigan joy qanday?','Какое место под машину?'), opts:advOpts([['norm','Joy yetarli','Места достаточно'],['tor','Joy tor (≈40 sm)','Место узкое (≈40 см)']]) },
+      budgetStep, condStep],
+      build:function(a){
+        var cap = { '1':['5–6 kg','5–6 кг'], '2':['7–8 kg','7–8 кг'], '3':['9–10 kg','9–10 кг'] }[a.ppl];
+        var hi = a.bud !== 'low';
+        return {
+          head:L('Sizga mos kir yuvish mashinasi','Вам подойдёт стиральная машина'),
+          specs:[
+            [L('Sig\'im','Загрузка'), L(cap[0], cap[1])],
+            [L('Yuklash turi','Тип загрузки'), a.space === 'tor' ? L('Tor (slim) frontal 40–45 sm chuqurlik yoki tepadan yuklanadigan','Узкая фронтальная 40–45 см или вертикальная загрузка') : L('Frontal (oldidan yuklanadigan)','Фронтальная загрузка')],
+            [L('Motor','Мотор'), hi ? L('Inverter (to\'g\'ridan-to\'g\'ri yuritma) — sokin va chidamli','Инверторный (прямой привод) — тише и долговечнее') : L('Oddiy motor ham bo\'ladi, lekin shovqinliroq','Обычный мотор тоже подойдёт, но шумнее')],
+            [L('Aylanish','Отжим'), L('1000–1200 ayl/min yetarli','1000–1200 об/мин достаточно')],
+            [L('Himoya','Защита'), L('Aquastop (oqishdan himoya), bolalar qulfi','Aquastop (защита от протечек), блокировка от детей')]
+          ],
+          tips:[
+            L('Sig\'im o\'lchami: har bir oila a\'zosiga taxminan 1,5–2 kg hisoblanadi, katta ko\'rpa-to\'shak yuvsangiz bir pog\'ona kattaroq oling.','Ориентир по загрузке: примерно 1,5–2 кг на человека; если стираете одеяла — берите на размер больше.'),
+            L('Quritish funksiyasi kerak bo\'lmasa, pul to\'lamang — ko\'pincha yuvish sifati pasayadi.','Если сушка не нужна — не переплачивайте: у комбинированных моделей стирка часто слабее.'),
+            L('Suv qattiq bo\'lsa nakip TEN va nasosni buzadi — yuvish vositasi/filtr ishlating.','Жёсткая вода образует накипь на ТЭНе и насосе — используйте средства от накипи/фильтр.')
+          ],
+          check:[
+            L('Do\'konda sinov yuvishni so\'rang yoki hech bo\'lmasa baraban qo\'lda erkin aylanishini tekshiring','Попросите пробную стирку или хотя бы проверьте, что барабан вращается свободно'),
+            L('Eshik rezinasi va lyuk yopilishini ko\'zdan kechiring','Осмотрите манжету и закрывание люка'),
+            L('Eng yaqin servis markazi bor brendni tanlang','Выбирайте бренд с сервисным центром в вашем городе')
+          ],
+          stab:true
+        };
+      } };
+
+    if (tur === 'xolod') return { steps:[pplStep, budgetStep, condStep],
+      build:function(a){
+        var vol = { '1':['150–250 l','150–250 л'], '2':['250–350 l','250–350 л'], '3':['350–500 l','350–500 л'] }[a.ppl];
+        var hi = a.bud !== 'low';
+        return {
+          head:L('Sizga mos xolodilnik','Вам подойдёт холодильник'),
+          specs:[
+            [L('Umumiy hajm','Общий объём'), L(vol[0], vol[1])],
+            [L('Eritish tizimi','Разморозка'), L('No Frost — muz hosil bo\'lmaydi, eritish shart emas','No Frost — лёд не образуется, размораживать не нужно')],
+            [L('Kompressor','Компрессор'), hi ? L('Inverter — tejamkor, sokin, kuchlanish o\'zgarishiga chidamliroq','Инвертор — экономичнее, тише, устойчивее к скачкам напряжения') : L('Oddiy kompressor ham mos, lekin ko\'proq shovqin va elektr sarfi','Обычный компрессор подойдёт, но он шумнее и потребляет больше')],
+            [L('Iqlim sinfi','Климатический класс'), L('ST yoki T — issiq iqlim uchun','ST или T — для жаркого климата')],
+            [L('Shovqin','Шум'), L('40 dB dan past bo\'lgani yaxshi','лучше ниже 40 дБ')]
+          ],
+          tips:[
+            L('Hajm: har bir kishiga taxminan 100–150 litr. Muzlatgich kamerasi kerak bo\'lsa, uning hajmiga alohida qarang.','Объём: примерно 100–150 л на человека. Если нужна большая морозилка — смотрите её объём отдельно.'),
+            L('Voltaj tez-tez o\'zgarsa, kompressor eng birinchi zarar ko\'radi — stabilizator tavsiya etiladi.','При частых скачках напряжения первым страдает компрессор — рекомендуем стабилизатор.')
+          ],
+          check:[
+            L('Eshik rezinasi zich yopilishini tekshiring (qog\'oz varag\'ini qisib ko\'ring)','Проверьте плотность уплотнителя (зажмите лист бумаги дверцей)'),
+            L('Yetkazishda qiya olib kelingan bo\'lsa, ulashdan oldin 2–4 soat tik turib dam olsin','Если привезли в наклоне — перед включением дайте постоять вертикально 2–4 часа'),
+            L('Kompressor ulanganda g\'alati shovqin yoki titrash bo\'lmasligi kerak','Компрессор при запуске не должен сильно шуметь или вибрировать')
+          ],
+          stab:true
+        };
+      } };
+
+    if (tur === 'kond') return { steps:[
+      { id:'area', q:L('Xona maydoni qancha?','Какая площадь комнаты?'), opts:advOpts([['0','20 m² gacha','до 20 м²'],['1','20–28 m²','20–28 м²'],['2','28–36 m²','28–36 м²'],['3','36–50 m²','36–50 м²'],['4','50–70 m²','50–70 м²']]) },
+      { id:'sun', q:L('Xona issiqroqmi? (quyoshli tomon, oxirgi qavat, ko\'p odam yoki texnika)','Комната жарче обычного? (солнечная сторона, последний этаж, много людей или техники)'), opts:advOpts([['no','Yo\'q, oddiy','Нет, обычная'],['yes','Ha, issiqroq','Да, жарче']]) },
+      { id:'heat', q:L('Qishda isitish ham kerakmi?','Нужен ли обогрев зимой?'), opts:advOpts([['no','Faqat sovutish','Только охлаждение'],['yes','Ha, isitish ham','Да, и обогрев']]) },
+      condStep],
+      build:function(a){
+        var sizes = [7000, 9000, 12000, 18000, 24000];
+        var i = Math.min(4, parseInt(a.area, 10) + (a.sun === 'yes' ? 1 : 0));
+        var btu = sizes[i];
+        var heat = a.heat === 'yes';
+        return {
+          head:L('Sizga mos konditsioner','Вам подойдёт кондиционер'),
+          specs:[
+            [L('Quvvat','Мощность'), btu + ' BTU' + ' (' + (btu === 7000 ? '2,0' : btu === 9000 ? '2,6' : btu === 12000 ? '3,5' : btu === 18000 ? '5,3' : '7,0') + ' kW)'],
+            [L('Turi','Тип'), L('Inverter — elektrni kam sarflaydi, sokin, harorat barqaror','Инвертор — экономит электричество, тише, держит температуру ровнее')],
+            [L('Rejim','Режим'), heat ? L('Sovutish + isitish (issiqlik nasosi). Juda sovuq kunlarda (−10°C dan past) samarasi tushadi','Охлаждение + обогрев (тепловой насос). В сильные морозы (ниже −10°C) эффективность падает') : L('Faqat sovutish yetarli','Достаточно режима охлаждения')],
+            [L('Freon','Хладагент'), L('R32 (zamonaviy, samaraliroq)','R32 (современный, эффективнее)')],
+            [L('Qo\'shimcha','Дополнительно'), L('Wi‑Fi — ixtiyoriy, majburiy emas','Wi‑Fi — по желанию, не обязателен')]
+          ],
+          tips:[
+            L('Quvvat xona maydoniga qarab tanlanadi (taxminan 100 Vt/m²). Kichik quvvatli konditsioner doim to\'liq ishlab, tez eskiradi.','Мощность подбирается по площади (≈100 Вт/м²). Слабый кондиционер работает на пределе и быстрее изнашивается.'),
+            L('O\'rnatish alohida xizmat: quvur uzunligi, tashqi blok joyi va montaj narxini oldindan so\'rang.','Монтаж — отдельная услуга: заранее уточните длину трассы, место внешнего блока и цену монтажа.')
+          ],
+          check:[
+            L('Tashqi blok uchun xavfsiz va xizmat ko\'rsatish mumkin bo\'lgan joy bormi, tekshiring','Убедитесь, что для внешнего блока есть безопасное и доступное для обслуживания место'),
+            L('Kafolat o\'rnatishni ham qamrab oladimi, aniqlang','Уточните, распространяется ли гарантия на монтаж'),
+            L('Yilda 1–2 marta tozalash kerakligini unutmang — Uskunalarim bo\'limida eslatma qo\'yiladi','Не забывайте про чистку 1–2 раза в год — напоминание можно поставить в «Моей технике»')
+          ],
+          stab:true
+        };
+      } };
+
+    if (tur === 'tv') return { steps:[
+      { id:'dist', q:L('Divandan televizorgacha masofa?','Расстояние от дивана до телевизора?'), opts:advOpts([['0','2 m gacha','до 2 м'],['1','2–3 m','2–3 м'],['2','3–4 m','3–4 м'],['3','4 m dan uzoq','более 4 м']]) },
+      { id:'use', q:L('Asosan nima uchun?','Для чего в основном?'), opts:advOpts([['tv','Kundalik ko\'rish, YouTube','Повседневный просмотр, YouTube'],['kino','Kino va seriallar','Кино и сериалы'],['game','O\'yin (PlayStation/Xbox)','Игры (PlayStation/Xbox)']]) },
+      budgetStep, condStep],
+      build:function(a){
+        var size = [['40–43"','40–43"'],['50–55"','50–55"'],['55–65"','55–65"'],['65–75"','65–75"']][parseInt(a.dist, 10)];
+        var panel = a.bud === 'high' ? L('OLED yoki QLED/Mini‑LED — chuqur qora rang va yorqin tasvir','OLED или QLED/Mini‑LED — глубокий чёрный и яркая картинка') : a.bud === 'mid' ? L('QLED yoki yaxshi VA/IPS LED','QLED или хороший VA/IPS LED') : L('Oddiy LED (VA yoki IPS) yetarli','Обычный LED (VA или IPS) достаточно');
+        var game = a.use === 'game';
+        return {
+          head:L('Sizga mos televizor','Вам подойдёт телевизор'),
+          specs:[
+            [L('Diagonal','Диагональ'), L(size[0], size[1])],
+            [L('Ruxsat','Разрешение'), L('4K (UHD). 8K kerak emas — kontent yo\'q','4K (UHD). 8K не нужен — нет контента')],
+            [L('Ekran turi','Тип матрицы'), panel],
+            [L('Smart tizim','Smart‑платформа'), L('Google TV / Android TV yoki Tizen, webOS — YouTube va kinoteatr ilovalari bo\'lsin','Google TV / Android TV или Tizen, webOS — с YouTube и онлайн‑кинотеатрами')],
+            [L('Tasvir tezligi','Частота'), game ? L('120 Hz, HDMI 2.1, VRR — o\'yin uchun','120 Гц, HDMI 2.1, VRR — для игр') : L('60 Hz yetarli','60 Гц достаточно')]
+          ],
+          tips:[
+            L('Masofa qoidasi: televizor diagonali (dyuym) ≈ masofa (metr) × 20. Juda katta qilib olish ham yaxshi emas.','Правило: диагональ (дюймы) ≈ расстояние (метры) × 20. Слишком большой экран тоже неудобен.'),
+            L('Ekran (matritsa) — eng qimmat qism. Uni ta\'mirlash narxini Narx kalkulyatorida ko\'ring; kuchlanish to\'satdan sakrashidan himoya uchun stabilizator foydali.','Матрица — самая дорогая деталь. Стоимость её ремонта смотрите в калькуляторе цен; от скачков напряжения полезен стабилизатор.')
+          ],
+          check:[
+            L('Do\'konda qora va oq fonli rasmni ko\'ring — o\'lik piksellar, yorug\'lik dog\'lari bo\'lmasin','Включите тёмную и светлую картинку — не должно быть битых пикселей и пятен подсветки'),
+            L('HDMI/USB portlari soni va Wi‑Fi ulanishini tekshiring','Проверьте количество HDMI/USB и работу Wi‑Fi'),
+            L('Kafolat talonidagi seriya raqami qutidagi bilan mos bo\'lsin','Серийный номер в гарантии должен совпадать с номером на коробке')
+          ],
+          stab:true
+        };
+      } };
+
+    if (tur === 'suv') return { steps:[pplStep,
+      { id:'use', q:L('Suv nimaga ishlatiladi?','Для чего нужна горячая вода?'), opts:advOpts([['small','Idish-tovoq, qo\'l yuvish','Посуда, мытьё рук'],['dush','Dush','Душ'],['vanna','Vanna / ko\'p suv','Ванна / много воды']]) },
+      condStep],
+      build:function(a){
+        var base = { '1':[50,80], '2':[80,100], '3':[100,150] }[a.ppl];
+        var extra = a.use === 'vanna' ? 30 : (a.use === 'small' ? -20 : 0);
+        var lo = Math.max(10, base[0] + extra), hi = base[1] + extra;
+        return {
+          head:L('Sizga mos suv isitgich','Вам подойдёт водонагреватель'),
+          specs:[
+            [L('Hajm','Объём'), lo + '–' + hi + ' ' + L('litr','л')],
+            [L('Quvvat','Мощность'), L('1,5–2 kW (ko\'p bo\'lsa — simlar yuki ortadi)','1,5–2 кВт (больше — выше нагрузка на проводку)')],
+            [L('Bak','Бак'), L('Emal yoki titan qoplamali, magniy anodli','С эмалью или титановым покрытием, с магниевым анодом')],
+            [L('TEN','ТЭН'), L('Quruq TEN — nakipdan kam zarar ko\'radi','«Сухой» ТЭН — меньше страдает от накипи')]
+          ],
+          tips:[
+            L('Katta bak ko\'proq issiq suv beradi, lekin sekin qiziydi va ko\'p elektr sarflaydi.','Большой бак даёт больше горячей воды, но дольше греется и тратит больше энергии.'),
+            L('Magniy anodni yiliga 1 marta tekshirib turing — bu bakning umrini uzaytiradi. Eslatmani Uskunalarimga qo\'shing.','Проверяйте магниевый анод раз в год — это продлевает жизнь бака. Напоминание можно добавить в «Мою технику».')
+          ],
+          check:[
+            L('Himoya klapani (qaytarma klapan) va xavfsizlik klapani komplektda bo\'lsin','В комплекте должны быть обратный и предохранительный клапаны'),
+            L('Devor mustahkam ekanini tekshiring — to\'lgan bak og\'ir','Проверьте прочность стены — полный бак тяжёлый'),
+            L('Elektr o\'tkazgich va avtomat quvvatga mosligini ustadan so\'rang','Попросите мастера проверить проводку и автомат под мощность')
+          ],
+          stab:false
+        };
+      } };
+
+    if (tur === 'komp') return { steps:[
+      { id:'use', q:L('Kompyuter nima uchun kerak?','Для чего нужен компьютер?'), opts:advOpts([['office','Ofis, o\'qish, internet','Офис, учёба, интернет'],['dev','Dasturlash, dizayn','Программирование, дизайн'],['game','O\'yinlar','Игры'],['video','Video montaj, 3D','Видеомонтаж, 3D']]) },
+      { id:'form', q:L('Qaysi turi qulay?','Какой формат удобнее?'), opts:advOpts([['lap','Noutbuk','Ноутбук'],['pc','Statsionar kompyuter','Стационарный ПК']]) },
+      condStep],
+      build:function(a){
+        var ram = { office:['8 GB (16 GB afzal)','8 ГБ (лучше 16 ГБ)'], dev:['16 GB','16 ГБ'], game:['16 GB','16 ГБ'], video:['32 GB','32 ГБ'] }[a.use];
+        var cpu = { office:['Core i3 / Ryzen 3 darajasi','уровня Core i3 / Ryzen 3'], dev:['Core i5 / Ryzen 5 va yuqori','Core i5 / Ryzen 5 и выше'], game:['Core i5 / Ryzen 5 va alohida videokarta','Core i5 / Ryzen 5 и дискретная видеокарта'], video:['Core i7 / Ryzen 7 va kuchli videokarta','Core i7 / Ryzen 7 и мощная видеокарта'] }[a.use];
+        var lap = a.form === 'lap';
+        return {
+          head:L('Sizga mos kompyuter','Вам подойдёт компьютер'),
+          specs:[
+            [L('Protsessor','Процессор'), L(cpu[0], cpu[1])],
+            [L('Operativ xotira','Оперативная память'), L(ram[0], ram[1])],
+            [L('Xotira','Накопитель'), L('SSD 512 GB dan kam bo\'lmasin. Faqat HDD li kompyuter olmang','SSD не менее 512 ГБ. Не берите ПК только с HDD')],
+            [lap ? L('Ekran','Экран') : L('Monitor','Монитор'), L('IPS, Full HD (1920×1080)' + (lap ? ', 14–16"' : ', 24–27"'), 'IPS, Full HD (1920×1080)' + (lap ? ', 14–16"' : ', 24–27"'))],
+            lap ? [L('Batareya','Батарея'), L('Ofis uchun 8 soat va undan ko\'p','Для офиса — 8 часов и больше')] : [L('Blok pitaniya','Блок питания'), L('Zaxirali quvvatli, brendli','С запасом мощности, известного производителя')]
+          ],
+          tips:[
+            L('Protsessor modellari tez-tez yangilanadi — aniq model emas, daraja va vazifaga qarang.','Модели процессоров быстро меняются — ориентируйтесь на уровень и задачи, а не на конкретную модель.'),
+            L('RAM va SSD ni keyinroq kengaytirish mumkinmi, oldindan so\'rang (ba\'zi noutbuklarda payvandlangan).','Заранее узнайте, можно ли расширить ОЗУ и SSD (в части ноутбуков они распаяны).')
+          ],
+          check:[
+            L('Ekranni oq va qora fonda tekshiring: o\'lik piksel, dog\' bo\'lmasin','Проверьте экран на белом и чёрном фоне: без битых пикселей и пятен'),
+            L('Barcha portlar, klaviatura va tovushni sinab ko\'ring','Проверьте все порты, клавиатуру и звук'),
+            lap ? L('Zaryadlovchi va batareya holatini so\'rang','Проверьте зарядку и состояние батареи') : L('Sovutish shovqini va harorat me\'yorida ekanini tekshiring','Проверьте шум охлаждения и температуру')
+          ],
+          stab:true
+        };
+      } };
+
+    return null;
+  }
+
+  var ADV_USED = function(){ return [
+    L('B/U buyum: seriya raqami o\'chirilmaganini va ishlab chiqarilgan yilini tekshiring','Б/У: проверьте, что серийный номер не стёрт, и год выпуска'),
+    L('Sotuvchi oldida to\'liq yoqib, 15–20 daqiqa ishlatib ko\'ring','Включите при продавце и проверьте в работе 15–20 минут'),
+    L('Ta\'mirlash izlari (burama izlari, yangi payvand) va hid bo\'lsa — ehtiyot bo\'ling','Следы вскрытия/ремонта и запах гари — повод насторожиться'),
+    L('Imkon bo\'lsa, ustaga ko\'rsatib oling — «Usta chaqirish» orqali','По возможности покажите мастеру — через «Вызвать мастера»'),
+    L('Kafolat yo\'q bo\'lsa, narxni pasaytirishni so\'rang','Если гарантии нет — просите скидку')
+  ]; };
+  var ADV_COMMON = function(){ return [
+    L('Rasmiy kafolat talonini oling va chekni saqlang','Получите гарантийный талон и сохраните чек'),
+    L('Shaharda brend servis markazi borligini aniqlang','Узнайте, есть ли в вашем городе сервис‑центр бренда'),
+    L('Ehtiyot qismlari topilishini tekshiring (Marketimizda qidirib ko\'ring)','Проверьте доступность запчастей (поищите в нашем Маркете)'),
+    L('Sotib olgach, uskunani «Mening uskunalarim»ga qo\'shing — kafolat va eslatmalar avtomatik bo\'ladi','После покупки добавьте технику в «Мою технику» — гарантия и напоминания появятся автоматически')
+  ]; };
+
+  function advList(items){ return '<ul class="ad-ul">' + items.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }
+
+  (function advInjectCss(){
+    var st = document.createElement('style');
+    st.textContent =
+      '.ad-prog{display:flex;gap:6px;margin:2px 0 14px}.ad-prog i{flex:1;height:5px;border-radius:99px;background:var(--bg-panel-2)}.ad-prog i.on{background:var(--cyan)}' +
+      '.ad-q{font-family:var(--font-display);font-weight:800;font-size:19px;line-height:1.3;margin:4px 2px 14px}' +
+      '.ad-res{border-radius:20px;padding:16px;margin-bottom:12px;background:linear-gradient(135deg,rgba(79,216,201,.12),rgba(79,216,201,.03));border:1.5px solid var(--cyan-dim)}' +
+      '.ad-res h3{margin:0 0 6px;font-family:var(--font-display);font-size:18px}' +
+      '.ad-spec{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--border-soft);font-size:13.5px}.ad-spec:last-child{border-bottom:none}' +
+      '.ad-spec .k{color:var(--text-2);flex:none;max-width:38%}.ad-spec .v{font-weight:600;text-align:right}' +
+      '.ad-ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.55;color:var(--text-1)}.ad-ul li{margin:5px 0}' +
+      '.ad-box{background:var(--bg-panel);border:1px solid var(--border);border-radius:18px;padding:12px 14px;margin-bottom:12px}' +
+      '.ad-box .ttl{font-weight:800;font-size:14px;margin-bottom:6px}';
+    document.head.appendChild(st);
+  })();
+
+  function renderAdvisor(entry){
+    var a = state.adv;
+    if (entry && entry.tur && entry.tur !== a.tur) { a.tur = entry.tur; a.step = 0; a.ans = {}; }
+    function go(){ if (!a.tur) paintTypes(); else paintFlow(); }
+    function paintTypes(){
+      var types = DV_TYPES.filter(function(t){ return t.id !== 'boshqa'; });
+      mainView.innerHTML = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>🧭</span>' + L('Sotib olish maslahatchisi','Советчик по покупке') + '</div></div>' +
+        '<div class="dv-hint" style="margin-top:0">' + L("Nima sotib olmoqchisiz? Bir necha savolga javob bering — sizga mos parametrlar va do'konda nimani tekshirish kerakligini aytamiz.","Что хотите купить? Ответьте на несколько вопросов — подскажем подходящие параметры и что проверить в магазине.") + '</div>' +
+        '<div class="dv-types" style="margin-top:12px">' + types.map(function(t){ return '<button type="button" class="dv-t" data-t="' + t.id + '"><span class="e">' + t.icon + '</span>' + esc(pick(t, 'name')) + '</button>'; }).join('') + '</div></div>';
+      mainView.querySelectorAll('.dv-t').forEach(function(b){
+        b.addEventListener('click', function(){ haptic('select'); a.tur = b.getAttribute('data-t'); a.step = 0; a.ans = {}; go(); window.scrollTo(0, 0); });
+      });
+    }
+    function paintFlow(){
+      var ty = dvType(a.tur), def = advDef(a.tur);
+      if (!def) { paintResult(ty, null); return; }
+      if (a.step >= def.steps.length) { paintResult(ty, def); return; }
+      var st = def.steps[a.step];
+      mainView.innerHTML = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>' + ty.icon + '</span>' + esc(pick(ty, 'name')) + '</div><div class="cn">' + (a.step + 1) + '/' + def.steps.length + '</div></div>' +
+        '<div class="ad-prog">' + def.steps.map(function(_, i){ return '<i class="' + (i <= a.step ? 'on' : '') + '"></i>'; }).join('') + '</div>' +
+        '<div class="ad-q">' + esc(st.q) + '</div>' +
+        st.opts.map(function(o){ return '<button class="cc-row" data-v="' + esc(o.v) + '"><span class="nm">' + esc(o.t) + '</span><span>›</span></button>'; }).join('') +
+        '<button class="cc-chip" id="adBack" style="margin-top:6px">← ' + L('Orqaga','Назад') + '</button></div>';
+      mainView.querySelectorAll('.cc-row').forEach(function(b){
+        b.addEventListener('click', function(){ haptic('select'); a.ans[st.id] = b.getAttribute('data-v'); a.step++; go(); window.scrollTo(0, 0); });
+      });
+      document.getElementById('adBack').addEventListener('click', function(){ haptic('tap'); if (a.step > 0) { a.step--; } else { a.tur = ''; } go(); });
+    }
+    function paintResult(ty, def){
+      var r = def ? def.build(a.ans) : null;
+      var used = a.ans.cond === 'bu';
+      var html = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>' + ty.icon + '</span>' + esc(pick(ty, 'name')) + '</div></div>';
+      if (r) {
+        html += '<div class="ad-res"><h3>✅ ' + esc(r.head) + '</h3>' + r.specs.map(function(s){ return '<div class="ad-spec"><span class="k">' + esc(s[0]) + '</span><span class="v">' + esc(s[1]) + '</span></div>'; }).join('') + '</div>' +
+          '<div class="ad-box"><div class="ttl">💡 ' + L('Maslahatlar','Советы') + '</div>' + advList(r.tips) + '</div>' +
+          '<div class="ad-box"><div class="ttl">🔍 ' + L("Do'konda tekshiring","Проверьте в магазине") + '</div>' + advList(r.check) + '</div>';
+      } else {
+        html += '<div class="ad-res"><h3>' + L('Umumiy maslahat','Общие советы') + '</h3><div class="dv-hint" style="margin:0">' + L("Bu tur uchun batafsil maslahatchi hali yo'q. Quyidagi umumiy tavsiyalar hamma texnika uchun mos.","Для этого типа подробного советчика пока нет. Ниже — общие рекомендации для любой техники.") + '</div></div>';
+      }
+      if (used) html += '<div class="ad-box"><div class="ttl">♻️ ' + L('B/U sotib olsangiz','Если берёте Б/У') + '</div>' + advList(ADV_USED()) + '</div>';
+      html += '<div class="ad-box"><div class="ttl">📌 ' + L('Har qanday sotib olishda','При любой покупке') + '</div>' + advList(ADV_COMMON()) + '</div>' +
+        '<div class="dv-actions">' +
+          '<button class="btn btn-primary" id="adAdd">🏠 ' + L("Sotib olgach — uskunalarimga qo'shish","После покупки — в мою технику") + '</button>' +
+          '<button class="btn btn-ghost" id="adPrice">💰 ' + L("Ta'mirlash narxlari","Цены на ремонт") + '</button>' +
+          ((r && r.stab) ? '<button class="btn btn-ghost" id="adStab">⚡ ' + L('Stabilizator (Market)','Стабилизатор (Маркет)') + '</button>' : '') +
+          (used ? '<button class="btn btn-ghost" id="adMaster">📋 ' + L("Ustaga ko'rsatish","Показать мастеру") + '</button>' : '') +
+          '<button class="btn btn-ghost" id="adAgain">↺ ' + L('Boshqa uskuna','Другая техника') + '</button></div></div>';
+      mainView.innerHTML = html;
+      var $ = function(id){ return document.getElementById(id); };
+      $('adAdd').addEventListener('click', function(){ haptic('select'); push({ view:'deviceForm', tur:a.tur }); });
+      $('adPrice').addEventListener('click', function(){ haptic('select'); push({ view:'calc', tur:a.tur }); });
+      if ($('adStab')) $('adStab').addEventListener('click', function(){ haptic('select'); push({ view:'marketParts', cat:'stab' }); });
+      if ($('adMaster')) $('adMaster').addEventListener('click', function(){ haptic('select'); push({ view:'orderGate' }); });
+      $('adAgain').addEventListener('click', function(){ haptic('tap'); a.tur = ''; a.step = 0; a.ans = {}; go(); window.scrollTo(0, 0); });
+    }
+    go();
+  }
+
   function render(){
     var entry = state.stack[state.stack.length - 1];
     mapCleanup();
@@ -7244,6 +7531,7 @@
     else if (entry.view === 'marketOrders') renderMarketOrders();
     else if (entry.view === 'marketOrder') renderMarketOrder(entry);
     else if (entry.view === 'calc') renderCalc(entry);
+    else if (entry.view === 'advisor') renderAdvisor(entry);
     else if (entry.view === 'devices') renderDevices();
     else if (entry.view === 'deviceForm') renderDeviceForm(entry);
     else if (entry.view === 'device') renderDevice(entry);
