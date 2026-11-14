@@ -793,6 +793,7 @@
     if (entry.view === 'anketaForm') return entry.viloyat;
     if (entry.view === 'anketaContract') return t().anketaContractTitle;
     if (entry.view === 'anketaSuccess') return t().menuAnketa;
+    if (entry.view === 'calc') return L('Narx kalkulyatori','Калькулятор цен');
     if (entry.view === 'devices') return L('Uskunalarim','Моя техника');
     if (entry.view === 'deviceForm') return entry.id ? L('Tahrirlash','Изменить') : L("Qo'shish","Добавить");
     if (entry.view === 'device') return null;
@@ -4956,6 +4957,8 @@
         cta:'🛒 ' + L('Marketga kirish','В маркет') + ' ›', brand:'Market', action:function(el){ mkOpenPortal(el); } },
       { pal:'g-lime', wide:true, icon:'🏠', title:L('Mening uskunalarim','Моя техника'), sub:L('Kafolat, ta\'mirlash tarixi va eslatmalar','Гарантия, история ремонта и напоминания'), badge:'✨ ' + L('YANGI','НОВОЕ'),
         cta:'🏠 ' + L('Uskunalarimni ochish','Открыть мою технику') + ' ›', brand:L('Uy pasporti','Паспорт дома'), action:function(el){ state.dv.items = null; push({ view:'devices' }); } },
+      { pal:'g-fire', wide:true, icon:'💰', title:L('Narx kalkulyatori','Калькулятор цен'), sub:L('Ta\'mirlash qancha turishini oldindan biling','Узнайте стоимость ремонта заранее'), badge:'✨ ' + L('YANGI','НОВОЕ'),
+        cta:'💰 ' + L('Hisoblash','Рассчитать') + ' ›', brand:L('Narxlar','Цены'), action:function(el){ state.calc.tur = ''; state.calc.sel = {}; push({ view:'calc' }); } },
       { pal:'g-night', wide:true, icon:'🔍', title:cl(t().menuTopish), sub:t().menuTopishSub, cta:'🔎 ' + L('Qidirish','Искать') + ' ›',
         brand:L('Ustaxona','Мастерская'), action:function(el){ pzOpen('find', el, function(){ push({ view:'topishViloyat' }); }); } },
       { pal:'g-teal', wide:true, icon:'🗺️', title:L('Xarita','Карта'), sub:L('Yaqin atrofdagi ustalarni xaritada toping','Найдите мастеров рядом на карте'),
@@ -6978,6 +6981,7 @@
         '<div class="dv-box">' + rows.map(function(r){ return '<div class="dv-row"><span class="k">' + r[0] + '</span><span class="v">' + esc(r[1]) + '</span></div>'; }).join('') + '</div>' +
         '<div class="dv-actions">' +
           (hasCat ? '<button class="btn btn-ghost" id="dvDiag">🔧 ' + L('Diagnostika','Диагностика') + '</button>' : '') +
+          '<button class="btn btn-ghost" id="dvCalc">💰 ' + L('Narxlar','Цены') + '</button>' +
           '<button class="btn btn-primary" id="dvMaster">📋 ' + L('Usta chaqirish','Вызвать мастера') + '</button></div>' +
         // eslatmalar
         '<div class="dv-sec"><span>⏰ ' + L('Eslatmalar','Напоминания') + '</span></div><div class="dv-box">' +
@@ -7005,6 +7009,7 @@
       mainView.innerHTML = html;
       var $ = function(id){ return document.getElementById(id); };
       if ($('dvDiag')) $('dvDiag').addEventListener('click', function(){ haptic('select'); push({ view:'category', catId:d.tur }); });
+      $('dvCalc').addEventListener('click', function(){ haptic('select'); push({ view:'calc', tur:d.tur }); });
       $('dvMaster').addEventListener('click', function(){ haptic('select'); push({ view:'orderGate' }); });
       $('dvEdit').addEventListener('click', function(){ haptic('select'); push({ view:'deviceForm', id:d.id }); });
       $('dvAddRem').addEventListener('click', function(){ haptic('select'); push({ view:'deviceReminderForm', id:d.id }); });
@@ -7077,6 +7082,101 @@
     });
   }
 
+  // ============================================================
+  //  💰 NARX KALKULYATORI
+  // ============================================================
+  state.calc = { items:null, tur:'', sel:{} };
+
+  (function calcInjectCss(){
+    var st = document.createElement('style');
+    st.textContent =
+      '.cc-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:var(--bg-panel);border:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--text-2);cursor:pointer;margin-bottom:12px}' +
+      '.cc-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 14px;margin-bottom:8px;border-radius:16px;background:var(--bg-panel);border:1.5px solid var(--border);color:var(--text-1);cursor:pointer;transition:transform .12s,border-color .12s}' +
+      '.cc-row:active{transform:scale(.98)}' +
+      '.cc-row.on{border-color:var(--cyan);background:rgba(79,216,201,.09)}' +
+      '.cc-chk{flex:none;width:24px;height:24px;border-radius:8px;border:2px solid var(--text-3);display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent}' +
+      '.cc-row.on .cc-chk{background:var(--cyan);border-color:var(--cyan);color:#06201d}' +
+      '.cc-row .nm{flex:1;font-size:14px;font-weight:600;line-height:1.3}' +
+      '.cc-row .pr{flex:none;text-align:right;font-family:var(--font-mono);font-size:11.5px;color:var(--amber);font-weight:700;line-height:1.35}' +
+      '.cc-total{position:sticky;bottom:10px;z-index:5;margin:16px 0 8px;padding:14px 16px;border-radius:18px;background:linear-gradient(135deg,#1d2b2a,#16212b);border:1.5px solid var(--cyan-dim);box-shadow:0 14px 30px -12px rgba(0,0,0,.7)}' +
+      '.cc-total .k{font-size:11.5px;color:var(--text-2);letter-spacing:.04em;text-transform:uppercase}' +
+      '.cc-total .v{font-family:var(--font-display);font-weight:800;font-size:22px;margin-top:3px;color:var(--text-1)}' +
+      '.cc-total .v small{font-size:13px;font-weight:700;color:var(--text-2)}' +
+      '.cc-total .n{font-size:11.5px;color:var(--text-2);margin-top:4px}';
+    document.head.appendChild(st);
+  })();
+
+  function ccRange(it){
+    if (!it.max && !it.min) return L('kelishiladi','договорная');
+    if (it.min === it.max) return mkFmt(it.max);
+    return mkFmt(it.min) + ' – ' + mkFmt(it.max);
+  }
+
+  function renderCalc(entry){
+    var c = state.calc;
+    if (entry && entry.tur && entry.tur !== c.tur) { c.tur = entry.tur; c.sel = {}; }
+    function go(){
+      if (!c.tur) paintTypes(); else paintItems();
+    }
+    function paintTypes(){
+      mainView.innerHTML = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>💰</span>' + L('Narx kalkulyatori','Калькулятор цен') + '</div></div>' +
+        '<div class="dv-hint" style="margin-top:0">' + L("Uskuna turini tanlang, keyin kerakli ishlarni belgilang — taxminiy ta'mirlash narxini ko'rasiz.","Выберите тип техники, затем отметьте нужные работы — увидите примерную стоимость ремонта.") + '</div>' +
+        '<div class="dv-types" style="margin-top:12px">' + DV_TYPES.map(function(t){ return '<button type="button" class="dv-t" data-t="' + t.id + '"><span class="e">' + t.icon + '</span>' + esc(pick(t, 'name')) + '</button>'; }).join('') + '</div></div>';
+      mainView.querySelectorAll('.dv-t').forEach(function(b){
+        b.addEventListener('click', function(){ haptic('select'); c.tur = b.getAttribute('data-t'); c.sel = {}; go(); window.scrollTo(0, 0); });
+      });
+    }
+    function paintItems(){
+      var ty = dvType(c.tur);
+      var list = c.items.filter(function(x){ return x.tur === c.tur; });
+      var html = '<div class="view dv-view"><div class="dv-head"><div class="tt"><span>' + ty.icon + '</span>' + esc(pick(ty, 'name')) + '</div></div>' +
+        '<button class="cc-chip" id="ccChange">↺ ' + L('Boshqa uskuna turi','Другой тип техники') + '</button>';
+      if (!list.length) {
+        html += '<div class="dv-empty"><span class="big">🧰</span><b>' + L("Bu tur uchun narxlar hali kiritilmagan","Для этого типа цены ещё не добавлены") + '</b>' +
+          L("Aniq narxni usta ko'rikdan keyin aytadi.","Точную цену мастер назовёт после осмотра.") + '</div>';
+      } else {
+        html += '<div class="dv-sec" style="margin-top:2px"><span>' + L('Qanday ish kerak?','Какая работа нужна?') + '</span><small>' + L('bir nechtasini belgilash mumkin','можно выбрать несколько') + '</small></div>' +
+          list.map(function(it){ return '<button class="cc-row' + (c.sel[it.id] ? ' on' : '') + '" data-id="' + it.id + '"><span class="cc-chk">✓</span><span class="nm">' + esc(pick(it, 'nom')) + '</span><span class="pr">' + ccRange(it) + '</span></button>'; }).join('') +
+          '<div class="cc-total" id="ccTotal"></div>' +
+          '<div class="dv-hint">' + L("ℹ️ Narxlar — taxminiy. Aniq narxni usta ko'rikdan keyin aytadi. Ehtiyot qism narxi alohida bo'lishi mumkin.","ℹ️ Цены ориентировочные. Точную стоимость мастер назовёт после осмотра. Запчасти могут оплачиваться отдельно.") + '</div>' +
+          '<div class="dv-actions"><button class="btn btn-primary" id="ccMaster">📋 ' + L('Usta chaqirish','Вызвать мастера') + '</button>' +
+          '<button class="btn btn-ghost" id="ccParts">🛒 ' + L('Ehtiyot qismlar','Запчасти') + '</button></div>';
+      }
+      html += '</div>';
+      mainView.innerHTML = html;
+      document.getElementById('ccChange').addEventListener('click', function(){ haptic('tap'); c.tur = ''; c.sel = {}; go(); });
+      if (!list.length) return;
+      function total(){
+        var mn = 0, mx = 0, n = 0;
+        list.forEach(function(it){ if (c.sel[it.id]) { mn += it.min; mx += it.max; n++; } });
+        var el = document.getElementById('ccTotal');
+        if (!n) { el.innerHTML = '<div class="k">' + L('Taxminiy jami','Примерный итог') + '</div><div class="n" style="font-size:13px;margin-top:6px">' + L('Kerakli ishlarni belgilang','Отметьте нужные работы') + '</div>'; return; }
+        el.innerHTML = '<div class="k">' + L('Taxminiy jami','Примерный итог') + ' · ' + n + ' ' + L('ta ish','раб.') + '</div><div class="v">' +
+          (mn === mx ? mkFmt(mx) : mkFmt(mn) + ' – ' + mkFmt(mx)) + ' <small>' + L("so'm","сум") + '</small></div>';
+      }
+      mainView.querySelectorAll('.cc-row').forEach(function(b){
+        b.addEventListener('click', function(){
+          haptic('select'); var id = b.getAttribute('data-id');
+          if (c.sel[id]) delete c.sel[id]; else c.sel[id] = true;
+          b.classList.toggle('on', !!c.sel[id]); total();
+        });
+      });
+      total();
+      document.getElementById('ccMaster').addEventListener('click', function(){ haptic('select'); push({ view:'orderGate' }); });
+      document.getElementById('ccParts').addEventListener('click', function(){ haptic('select'); push({ view:'market' }); });
+    }
+    if (c.items) { go(); return; }
+    mainView.innerHTML = '<div class="view dv-view"><div class="dv-empty"><span class="big">⏳</span>' + L('Yuklanmoqda...','Загрузка...') + '</div></div>';
+    apiGet('/api/public/prices').then(function(d){
+      if (state.stack[state.stack.length - 1].view !== 'calc') return;
+      if (!d || !d.ok) { mainView.innerHTML = '<div class="view dv-view"><div class="dv-empty"><span class="big">⚠️</span>' + esc(dvApiErr(d)) + '</div></div>'; return; }
+      c.items = d.items.map(function(x){ return { id:x.id, tur:x.tur, nom_uz:x.nom_uz, nom_ru:x.nom_ru, min:x.min, max:x.max }; });
+      go();
+    }).catch(function(){
+      mainView.innerHTML = '<div class="view dv-view"><div class="dv-empty"><span class="big">📡</span>' + L("Ulanib bo'lmadi. Internetni tekshiring.","Нет соединения. Проверьте интернет.") + '</div></div>';
+    });
+  }
+
   function render(){
     var entry = state.stack[state.stack.length - 1];
     mapCleanup();
@@ -7143,6 +7243,7 @@
     else if (entry.view === 'marketDone') renderMarketDone(entry);
     else if (entry.view === 'marketOrders') renderMarketOrders();
     else if (entry.view === 'marketOrder') renderMarketOrder(entry);
+    else if (entry.view === 'calc') renderCalc(entry);
     else if (entry.view === 'devices') renderDevices();
     else if (entry.view === 'deviceForm') renderDeviceForm(entry);
     else if (entry.view === 'device') renderDevice(entry);
