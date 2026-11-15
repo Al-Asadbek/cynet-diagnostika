@@ -46,7 +46,7 @@
   // foydalanuvchiga tushunarli xabar ko'rsatamiz.
   function fixApiError(status, data){
     if (data && (status === 404 || (status === 401 && data.error === "Token noto'g'ri"))) {
-      data.error = (state && state.lang === 'ru')
+      data.error = (state && state.lang !== 'uz')
         ? 'Сервер не обновлён: эта функция пока недоступна. Сообщите администратору.'
         : "Server yangilanmagan: bu funksiya hali ishlamaydi. Administratorga xabar bering.";
     }
@@ -587,10 +587,325 @@
     }
   };
 
+  // ---------- Qo'shimcha tillar: qozoq / tojik / qirg'iz / turkman ----------
+  // Tarjima qilinmagan kalitlar rus tilidagi variantga tushadi (Central Asia lingua franca).
+  var STR_EXTRA = {
+    kk: {
+      subtitle: "ДИАГНОСТИКА · ТАШКЕНТ",
+      heroTitle: "Ақауды таңдаңыз — <em>шешімін</em> көріңіз",
+      heroDesc: "14 түрлі техника бойынша диагностика және жөндеудің толық нұсқаулығы — Online Ustaxona мамандары дайындаған.",
+      searchPh: "Техника түрін іздеу...",
+      chooseIssue: "Ақауды таңдаңыз",
+      chooseBrand: "Брендті таңдаңыз",
+      choosePrinterType: "Принтер түрін таңдаңыз",
+      errorCodes: "🔢 Қате кодтары",
+      backHome: "Басты бет",
+      diagnosing: "ДИАГНОЗ",
+      description: "Сипаттама",
+      solution: "Шешім",
+      codesTitle: "Қате кодтары",
+      illusTitle: "Көрнекі анимация",
+      videoTitle: "Бейне нұсқаулық",
+      videoOpen: "Бейнені ашу",
+      priceTitle: "Жөндеудің шамамен бағасы",
+      priceBtn: "Бағаны көру",
+      priceNone: "Баға әлі енгізілмеген. Нақты бағаны шебер диагностикадан кейін айтады.",
+      contactMaster: "Шеберге жазу",
+      note: "Нақты диагностика үшін құрылғыны қарап шығу ұсынылады. Күрделі жағдайларда Online Ustaxona шеберлеріне жүгініңіз.",
+      notFound: "Ештеңе табылмады",
+      all: "Барлығы",
+      ofertaTitle: "📜 Жария оферта",
+      ofertaAgree: "✅ Қабылдаймын — Жалғастыру",
+      ofertaDecline: "❌ Қабылдамаймын",
+      ofertaDeclinedMsg: "Ботты пайдалану үшін шарттарды қабылдауыңыз керек.",
+      ofertaReview: "📜 Шарттарды қайта қарау",
+      menuTechs: "🔧 Техника",
+      menuTechsSub: "Ақауды өзіңіз табыңыз",
+      menuTopish: "🔍 Шеберхана іздеу",
+      menuTopishSub: "Өңіріңіздегі шеберлерді көріңіз",
+      menuOrder: "📋 Тапсырыс беру",
+      menuOrderSub: "Шебер шақырыңыз — бір басуда",
+      menuAbout: "ℹ️ Біз туралы",
+      menuAboutSub: "Қызметтер мен артықшылықтар",
+      menuContact: "📞 Байланыс",
+      menuContactSub: "Тікелей хабарласу",
+      menuProfile: "👤 Менің профилім",
+      menuProfileSub: "Тапсырыстар, өңдеу, төлем",
+      menuAnketa: "📝 Анкета толтыру",
+      menuAnketaSub: "Шебер ретінде тіркеліңіз",
+      profileLoading: "Жүктелуде...",
+      prevPage: "⬅️ Алдыңғы",
+      nextPage: "Келесі ➡️",
+      topishChooseViloyat: "Өңірді таңдаңыз",
+      topishChooseTuman: "Ауданды таңдаңыз (міндетті емес)",
+      topishSkipTuman: "— Бүкіл облыс —",
+      topishChooseXizmat: "Қандай қызмет керек?",
+      topishSearching: "Ізделуде...",
+      topishWrite: "Жазу",
+      topishBusy: "🔴 Қазір бос емес",
+      topishFree: "🟢 Бос",
+      complainBtn: "⚠️ Шағым",
+      orderChooseViloyat: "Өңірді таңдаңыз",
+      orderChooseXizmat: "Қай техника/сала бойынша шебер керек?",
+      orderFormTitle: "Деректеріңізді енгізіңіз",
+      fIsm: "Аты",
+      fFamilya: "Тегі",
+      fTel: "Телефон нөмірі",
+      fMuammo: "Мәселенің сипаттамасы",
+      fManzil: "Мекенжай",
+      continueBtn: "Жалғастыру →",
+      backToMenu: "🏠 Басты мәзір",
+      viloyat: "Өңір",
+      xizmat: "Қызмет",
+      aboutText: "🏆 Біз кімбіз?\nКәсіби тұрмыстық техниканы жөндеу қызметі\n\n✅ Қызметтеріміз:\n• Теледидар жөндеу\n• Кондиционер қызметі\n• Тоңазытқыш жөндеу\n• Кір жуу машинасы\n• Принтер жөндеу\n• Компьютер және ноутбук\n• Және басқа тұрмыстық техникалар\n\n⚡ Артықшылықтарымыз:\n• Жылдам әрі сапалы қызмет\n• Кепілдік беріледі\n• Үйіңізге барамыз\n• Тәжірибелі шеберлер",
+      contactTitle: "📞 Байланыс",
+      contactHours: "⏰ Жұмыс уақыты:\nДүйсенбі — Сенбі: 9:00 — 20:00\nЖексенбі: 10:00 — 18:00",
+      contactAddress: "📍 Ташкент қаласы",
+      itemsCount: function(n){ return n + " жағдай"; },
+      topishFound: function(n){ return n + " шебер табылды"; },
+    },
+    tg: {
+      subtitle: "ТАШХИС · ТОШКАНД",
+      heroTitle: "Носозиро интихоб кунед — <em>ҳалли</em> онро бинед",
+      heroDesc: "Ташхис ва дастури муфассали таъмир барои 14 намуди техника — аз тарафи устоҳои Online Ustaxona омода шудааст.",
+      searchPh: "Ҷустуҷӯи навъи техника...",
+      chooseIssue: "Носозиро интихоб кунед",
+      chooseBrand: "Брендро интихоб кунед",
+      choosePrinterType: "Навъи принтерро интихоб кунед",
+      errorCodes: "🔢 Рамзҳои хатогӣ",
+      backHome: "Саҳифаи асосӣ",
+      diagnosing: "ТАШХИС",
+      description: "Тавсиф",
+      solution: "Ҳал",
+      codesTitle: "Рамзҳои хатогӣ",
+      illusTitle: "Аниматсияи намоишӣ",
+      videoTitle: "Дастури видеоӣ",
+      videoOpen: "Кушодани видео",
+      priceTitle: "Нархи тақрибии таъмир",
+      priceBtn: "Дидани нарх",
+      priceNone: "Нарх ҳанӯз ворид нашудааст. Нархи аниқро уста пас аз ташхис мегӯяд.",
+      contactMaster: "Ба уста навиштан",
+      note: "Барои ташхиси аниқ тавсия мешавад, ки дастгоҳро аз назар гузаронед. Дар ҳолатҳои мураккаб ба устоҳои Online Ustaxona муроҷиат кунед.",
+      notFound: "Чизе ёфт нашуд",
+      all: "Ҳама",
+      ofertaTitle: "📜 Оферти оммавӣ",
+      ofertaAgree: "✅ Қабул мекунам — Давом додан",
+      ofertaDecline: "❌ Қабул намекунам",
+      ofertaDeclinedMsg: "Барои истифодаи бот шумо бояд шартҳоро қабул кунед.",
+      ofertaReview: "📜 Бознигарии шартҳо",
+      menuTechs: "🔧 Техника",
+      menuTechsSub: "Носозиро худатон ёбед",
+      menuTopish: "🔍 Ҷустуҷӯи устохона",
+      menuTopishSub: "Устоҳои минтақаи худро бинед",
+      menuOrder: "📋 Фармоиш додан",
+      menuOrderSub: "Усто даъват кунед — бо як зеркунӣ",
+      menuAbout: "ℹ️ Дар бораи мо",
+      menuAboutSub: "Хидматҳо ва бартариҳо",
+      menuContact: "📞 Тамос",
+      menuContactSub: "Муроҷиати мустақим",
+      menuProfile: "👤 Профили ман",
+      menuProfileSub: "Фармоишҳо, таҳрир, пардохт",
+      menuAnketa: "📝 Пур кардани анкета",
+      menuAnketaSub: "Ҳамчун усто сабти ном шавед",
+      profileLoading: "Бор шуда истодааст...",
+      prevPage: "⬅️ Қаблӣ",
+      nextPage: "Баъдӣ ➡️",
+      topishChooseViloyat: "Минтақаро интихоб кунед",
+      topishChooseTuman: "Ноҳияро интихоб кунед (ихтиёрӣ)",
+      topishSkipTuman: "— Тамоми вилоят —",
+      topishChooseXizmat: "Кадом хидмат лозим аст?",
+      topishSearching: "Ҷустуҷӯ...",
+      topishWrite: "Навиштан",
+      topishBusy: "🔴 Ҳоло банд аст",
+      topishFree: "🟢 Банд нест",
+      complainBtn: "⚠️ Шикоят",
+      orderChooseViloyat: "Минтақаро интихоб кунед",
+      orderChooseXizmat: "Усто аз рӯи кадом техника/соҳа лозим аст?",
+      orderFormTitle: "Маълумоти худро ворид кунед",
+      fIsm: "Ном",
+      fFamilya: "Насаб",
+      fTel: "Рақами телефон",
+      fMuammo: "Тавсифи мушкил",
+      fManzil: "Суроға",
+      continueBtn: "Давом додан →",
+      backToMenu: "🏠 Менюи асосӣ",
+      viloyat: "Минтақа",
+      xizmat: "Хидмат",
+      aboutText: "🏆 Мо кистем?\nХидмати касбии таъмири техникаи рӯзгор\n\n✅ Хидматҳои мо:\n• Таъмири телевизор\n• Хидмати кондитсионер\n• Таъмири яхдон\n• Мошини кирошӯӣ\n• Таъмири принтер\n• Компютер ва ноутбук\n• Ва дигар техникаи рӯзгор\n\n⚡ Бартариҳои мо:\n• Хидмати тез ва босифат\n• Кафолат дода мешавад\n• Ба хонаи шумо меоем\n• Устоҳои соҳибтаҷриба",
+      contactTitle: "📞 Тамос",
+      contactHours: "⏰ Вақти кор:\nДушанбе — Шанбе: 9:00 — 20:00\nЯкшанбе: 10:00 — 18:00",
+      contactAddress: "📍 Шаҳри Тошканд",
+      itemsCount: function(n){ return n + " ҳолат"; },
+      topishFound: function(n){ return n + " усто ёфт шуд"; },
+    },
+    ky: {
+      subtitle: "ДИАГНОСТИКА · ТАШКЕНТ",
+      heroTitle: "Бузукту тандаңыз — <em>чечимин</em> көрүңүз",
+      heroDesc: "14 түрдөгү техника боюнча диагностика жана оңдоонун толук колдонмосу — Online Ustaxona адистери даярдаган.",
+      searchPh: "Техника түрүн издөө...",
+      chooseIssue: "Бузукту тандаңыз",
+      chooseBrand: "Брендди тандаңыз",
+      choosePrinterType: "Принтердин түрүн тандаңыз",
+      errorCodes: "🔢 Ката коддору",
+      backHome: "Башкы бет",
+      diagnosing: "ДИАГНОЗ",
+      description: "Сүрөттөмө",
+      solution: "Чечим",
+      codesTitle: "Ката коддору",
+      illusTitle: "Көрсөтмөлүү анимация",
+      videoTitle: "Видео колдонмо",
+      videoOpen: "Видеону ачуу",
+      priceTitle: "Оңдоонун болжолдуу баасы",
+      priceBtn: "Баасын көрүү",
+      priceNone: "Баасы азырынча киргизилген эмес. Так баасын уста диагностикадан кийин айтат.",
+      contactMaster: "Устага жазуу",
+      note: "Так диагностика үчүн түзмөктү карап чыгуу сунушталат. Татаал учурларда Online Ustaxona усталарына кайрылыңыз.",
+      notFound: "Эч нерсе табылган жок",
+      all: "Бардыгы",
+      ofertaTitle: "📜 Жалпыга ачык оферта",
+      ofertaAgree: "✅ Кабыл алам — Улантуу",
+      ofertaDecline: "❌ Кабыл албайм",
+      ofertaDeclinedMsg: "Ботту колдонуу үчүн шарттарды кабыл алышыңыз керек.",
+      ofertaReview: "📜 Шарттарды кайра көрүү",
+      menuTechs: "🔧 Техника",
+      menuTechsSub: "Бузукту өзүңүз табыңыз",
+      menuTopish: "🔍 Устакана издөө",
+      menuTopishSub: "Аймагыңыздагы усталарды көрүңүз",
+      menuOrder: "📋 Буйрутма берүү",
+      menuOrderSub: "Уста чакырыңыз — бир басууда",
+      menuAbout: "ℹ️ Биз жөнүндө",
+      menuAboutSub: "Кызматтар жана артыкчылыктар",
+      menuContact: "📞 Байланыш",
+      menuContactSub: "Түз кайрылуу",
+      menuProfile: "👤 Менин профилим",
+      menuProfileSub: "Буйрутмалар, өзгөртүү, төлөм",
+      menuAnketa: "📝 Анкета толтуруу",
+      menuAnketaSub: "Уста катары катталыңыз",
+      profileLoading: "Жүктөлүүдө...",
+      prevPage: "⬅️ Мурунку",
+      nextPage: "Кийинки ➡️",
+      topishChooseViloyat: "Аймакты тандаңыз",
+      topishChooseTuman: "Районду тандаңыз (милдеттүү эмес)",
+      topishSkipTuman: "— Бүт облус —",
+      topishChooseXizmat: "Кандай кызмат керек?",
+      topishSearching: "Издөөдө...",
+      topishWrite: "Жазуу",
+      topishBusy: "🔴 Азыр бош эмес",
+      topishFree: "🟢 Бош",
+      complainBtn: "⚠️ Даттануу",
+      orderChooseViloyat: "Аймакты тандаңыз",
+      orderChooseXizmat: "Кайсы техника/тармак боюнча уста керек?",
+      orderFormTitle: "Маалыматыңызды киргизиңиз",
+      fIsm: "Аты",
+      fFamilya: "Фамилиясы",
+      fTel: "Телефон номери",
+      fMuammo: "Көйгөйдүн сүрөттөмөсү",
+      fManzil: "Дареги",
+      continueBtn: "Улантуу →",
+      backToMenu: "🏠 Башкы меню",
+      viloyat: "Аймак",
+      xizmat: "Кызмат",
+      aboutText: "🏆 Биз кимбиз?\nТүрмүш техникасын кесипкөй оңдоо кызматы\n\n✅ Кызматтарыбыз:\n• Телевизор оңдоо\n• Кондиционер кызматы\n• Муздаткыч оңдоо\n• Кир жуугуч машина\n• Принтер оңдоо\n• Компьютер жана ноутбук\n• Жана башка түрмүш техникалары\n\n⚡ Артыкчылыктарыбыз:\n• Тез жана сапаттуу кызмат\n• Кепилдик берилет\n• Үйүңүзгө барабыз\n• Тажрыйбалуу усталар",
+      contactTitle: "📞 Байланыш",
+      contactHours: "⏰ Иш убактысы:\nДүйшөмбү — Ишемби: 9:00 — 20:00\nЖекшемби: 10:00 — 18:00",
+      contactAddress: "📍 Ташкент шаары",
+      itemsCount: function(n){ return n + " учур"; },
+      topishFound: function(n){ return n + " уста табылды"; },
+    },
+    tk: {
+      subtitle: "DIAGNOSTIKA · DAŞKENT",
+      heroTitle: "Näsazlygy saýlaň — <em>çözgüdini</em> görüň",
+      heroDesc: "14 görnüşli tehnika boýunça diagnostika we jikme-jik abatlamak gollanmasy — Online Ustaxona ussalary tarapyndan taýýarlanyldy.",
+      searchPh: "Tehnika görnüşini gözlemek...",
+      chooseIssue: "Näsazlygy saýlaň",
+      chooseBrand: "Brendi saýlaň",
+      choosePrinterType: "Printeriň görnüşini saýlaň",
+      errorCodes: "🔢 Ýalňyşlyk kodlary",
+      backHome: "Baş sahypa",
+      diagnosing: "DIAGNOZ",
+      description: "Düşündiriş",
+      solution: "Çözgüt",
+      codesTitle: "Ýalňyşlyk kodlary",
+      illusTitle: "Görkezme animasiýasy",
+      videoTitle: "Wideo gollanma",
+      videoOpen: "Wideony açmak",
+      priceTitle: "Abatlamagyň takmynan bahasy",
+      priceBtn: "Bahasyny görmek",
+      priceNone: "Bahasy entek girizilmedik. Takyk bahany ussa diagnostikadan soň aýdar.",
+      contactMaster: "Ussa ýazmak",
+      note: "Takyk diagnostika üçin enjamy gözden geçirmek maslahat berilýär. Çylşyrymly ýagdaýlarda Online Ustaxona ussalaryna ýüz tutuň.",
+      notFound: "Hiç zat tapylmady",
+      all: "Hemmesi",
+      ofertaTitle: "📜 Köpçülikleýin oferta",
+      ofertaAgree: "✅ Kabul edýärin — Dowam etmek",
+      ofertaDecline: "❌ Kabul etmeýärin",
+      ofertaDeclinedMsg: "Boty ulanmak üçin şertleri kabul etmeli.",
+      ofertaReview: "📜 Şertlere täzeden seretmek",
+      menuTechs: "🔧 Tehnikalar",
+      menuTechsSub: "Näsazlygy özüňiz tapyň",
+      menuTopish: "🔍 Ussahana gözlemek",
+      menuTopishSub: "Sebitiňizdäki ussalary görüň",
+      menuOrder: "📋 Sargyt bermek",
+      menuOrderSub: "Ussa çagyryň — bir basmak bilen",
+      menuAbout: "ℹ️ Biz barada",
+      menuAboutSub: "Hyzmatlar we artykmaçlyklar",
+      menuContact: "📞 Aragatnaşyk",
+      menuContactSub: "Göni ýüz tutmak",
+      menuProfile: "👤 Meniň profilim",
+      menuProfileSub: "Sargytlar, üýtgetmek, töleg",
+      menuAnketa: "📝 Anketa doldurmak",
+      menuAnketaSub: "Ussa hökmünde hasaba duruň",
+      profileLoading: "Ýüklenýär...",
+      prevPage: "⬅️ Öňki",
+      nextPage: "Indiki ➡️",
+      topishChooseViloyat: "Sebiti saýlaň",
+      topishChooseTuman: "Etraby saýlaň (hökman däl)",
+      topishSkipTuman: "— Bütin welaýat —",
+      topishChooseXizmat: "Haýsy hyzmat gerek?",
+      topishSearching: "Gözlenilýär...",
+      topishWrite: "Ýazmak",
+      topishBusy: "🔴 Häzir bent",
+      topishFree: "🟢 Bent däl",
+      complainBtn: "⚠️ Şikaýat",
+      orderChooseViloyat: "Sebiti saýlaň",
+      orderChooseXizmat: "Haýsy tehnika/pudak boýunça ussa gerek?",
+      orderFormTitle: "Maglumatlaryňyzy giriziň",
+      fIsm: "Ady",
+      fFamilya: "Familiýasy",
+      fTel: "Telefon belgisi",
+      fMuammo: "Meseläniň beýany",
+      fManzil: "Salgy",
+      continueBtn: "Dowam etmek →",
+      backToMenu: "🏠 Baş menýu",
+      viloyat: "Sebit",
+      xizmat: "Hyzmat",
+      aboutText: "🏆 Biz kim?\nÝaşaýyş tehnikalaryny hünärmenlere mahsus abatlamak hyzmaty\n\n✅ Hyzmatlarymyz:\n• Telewizor abatlamak\n• Kondisioner hyzmaty\n• Sowadyjy abatlamak\n• Eşik ýuwujy maşyn\n• Printer abatlamak\n• Kompýuter we noutbuk\n• We beýleki ýaşaýyş tehnikalary\n\n⚡ Artykmaçlyklarymyz:\n• Çalt we hilli hyzmat\n• Kepillik berilýär\n• Öýüňize gelýäris\n• Tejribeli ussalar",
+      contactTitle: "📞 Aragatnaşyk",
+      contactHours: "⏰ Iş wagty:\nDuşenbe — Şenbe: 9:00 — 20:00\nÝekşenbe: 10:00 — 18:00",
+      contactAddress: "📍 Daşkent şäheri",
+      itemsCount: function(n){ return n + " ýagdaý"; },
+      topishFound: function(n){ return n + " ussa tapyldy"; },
+    },
+  };
+  ['kk','tg','ky','tk'].forEach(function(c){ STR[c] = Object.assign({}, STR.ru, STR_EXTRA[c]); });
+  var LANGS = [
+    { c: 'uz', n: "O'zbekcha", f: '<svg viewBox="0 0 24 16" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="16" fill="#fff"/><rect width="24" height="5.2" fill="#0099B5"/><rect y="5.2" width="24" height=".5" fill="#CE1126"/><rect y="10.3" width="24" height=".5" fill="#CE1126"/><rect y="10.8" width="24" height="5.2" fill="#1EB53A"/><circle cx="4.2" cy="2.7" r="1.7" fill="#fff"/><circle cx="4.9" cy="2.7" r="1.45" fill="#0099B5"/><circle cx="8" cy="1.4" r=".35" fill="#fff"/><circle cx="9.6" cy="1.4" r=".35" fill="#fff"/><circle cx="8.8" cy="2.9" r=".35" fill="#fff"/><circle cx="7.2" cy="2.9" r=".35" fill="#fff"/><circle cx="10.4" cy="2.9" r=".35" fill="#fff"/></svg>' },
+    { c: 'ru', n: "Русский", f: '<svg viewBox="0 0 24 16" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="16" fill="#D52B1E"/><rect width="24" height="10.67" fill="#0039A6"/><rect width="24" height="5.33" fill="#fff"/></svg>' },
+    { c: 'kk', n: "Қазақша", f: '<svg viewBox="0 0 24 16" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="16" fill="#00AFCA"/><circle cx="12" cy="7" r="3" fill="#FEC50C"/><circle cx="12" cy="7" r="4.1" fill="none" stroke="#FEC50C" stroke-width=".9" stroke-dasharray=".7 .6"/><path d="M6.5 12.2 Q12 10.2 17.5 12.2 Q12 13.4 6.5 12.2Z" fill="#FEC50C"/><rect x="1.2" y="1.5" width=".9" height="13" fill="#FEC50C" opacity=".85"/></svg>' },
+    { c: 'tg', n: "Тоҷикӣ", f: '<svg viewBox="0 0 24 16" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="16" fill="#006600"/><rect width="24" height="11.43" fill="#fff"/><rect width="24" height="4.57" fill="#CC0000"/><path d="M10.2 9 Q12 5.8 13.8 9 Z" fill="#F8C300"/><circle cx="12" cy="5.7" r=".5" fill="#F8C300"/></svg>' },
+    { c: 'ky', n: "Кыргызча", f: '<svg viewBox="0 0 24 16" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="16" fill="#E8112D"/><circle cx="12" cy="8" r="3.7" fill="#FFEF00"/><circle cx="12" cy="8" r="2.3" fill="#E8112D"/><circle cx="12" cy="8" r="5" fill="none" stroke="#FFEF00" stroke-width="1.3" stroke-dasharray=".55 .5"/><path d="M10.3 7.2 L13.7 8.8 M10.3 8.8 L13.7 7.2" stroke="#FFEF00" stroke-width=".5"/></svg>' },
+    { c: 'tk', n: "Türkmençe", f: '<svg viewBox="0 0 24 16" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="16" fill="#00843D"/><rect x="3" width="4.2" height="16" fill="#D22630"/><circle cx="5.1" cy="4.2" r=".9" fill="#fff" opacity=".9"/><circle cx="5.1" cy="8" r=".9" fill="#fff" opacity=".9"/><circle cx="5.1" cy="11.8" r=".9" fill="#fff" opacity=".9"/><circle cx="11.4" cy="3.4" r="1.9" fill="#fff"/><circle cx="12.1" cy="3.4" r="1.6" fill="#00843D"/><circle cx="14.2" cy="2.3" r=".35" fill="#fff"/><circle cx="14.2" cy="3.4" r=".35" fill="#fff"/><circle cx="14.2" cy="4.5" r=".35" fill="#fff"/></svg>' },
+  ];
+  function langMeta(c){ for (var i=0;i<LANGS.length;i++) if (LANGS[i].c===c) return LANGS[i]; return LANGS[0]; }
+  // Serverga faqat uz/ru yuboriladi (backend shu ikkitasini biladi); yangi tillar uchun rus tili.
+  function srvLang(){ return state.lang === 'uz' ? 'uz' : 'ru'; }
+  // Ruscha matn -> yangi tillar tarjimasi (asosiy sahifa, kurs lentasi, ob-havo)
+  var XT = {"Техника": {"kk": "Техника", "tg": "Техника", "ky": "Техника", "tk": "Tehnika"}, "Запчасти, старая и Б/У техника": {"kk": "Қосалқы бөлшектер, ескі және Б/У техника", "tg": "Қисмҳои эҳтиётӣ, техникаи кӯҳна ва Б/У", "ky": "Запчасттар, эски жана Б/У техника", "tk": "Ätiýaçlyk bölekler, köne we ulanylan tehnika"}, "НОВОЕ": {"kk": "ЖАҢА", "tg": "НАВ", "ky": "ЖАҢЫ", "tk": "TÄZE"}, "В маркет": {"kk": "Маркетке кіру", "tg": "Ба маркет", "ky": "Маркетке кирүү", "tk": "Markete girmek"}, "Моя техника": {"kk": "Менің жабдықтарым", "tg": "Таҷҳизоти ман", "ky": "Менин шаймандарым", "tk": "Meniň enjamlarym"}, "Гарантия, история ремонта и напоминания": {"kk": "Кепілдік, жөндеу тарихы және еске салғыштар", "tg": "Кафолат, таърихи таъмир ва ёдраскунакҳо", "ky": "Кепилдик, оңдоо тарыхы жана эскертмелер", "tk": "Kepillik, abatlamak taryhy we ýatlatmalar"}, "Открыть мою технику": {"kk": "Жабдықтарымды ашу", "tg": "Кушодани таҷҳизоти ман", "ky": "Шаймандарымды ачуу", "tk": "Enjamlarymy açmak"}, "Паспорт дома": {"kk": "Үй паспорты", "tg": "Шиносномаи хона", "ky": "Үй паспорту", "tk": "Öýüň pasporty"}, "Калькулятор цен": {"kk": "Баға калькуляторы", "tg": "Калкулятори нархҳо", "ky": "Баа калькулятору", "tk": "Bahalar kalkulýatory"}, "Узнайте цену ремонта заранее": {"kk": "Жөндеу бағасын алдын ала біліңіз", "tg": "Нархи таъмирро пешакӣ бидонед", "ky": "Оңдоонун баасын алдын ала билиңиз", "tk": "Abatlamagyň bahasyny öňünden biliň"}, "Цены": {"kk": "Бағалар", "tg": "Нархҳо", "ky": "Баалар", "tk": "Bahalar"}, "Советчик по покупке": {"kk": "Сатып алу кеңесшісі", "tg": "Мушовири харид", "ky": "Сатып алуу боюнча кеңешчи", "tk": "Satyn almak maslahatçysy"}, "Какая техника вам подойдёт?": {"kk": "Қандай техника сізге сәйкес?", "tg": "Кадом техника ба шумо мувофиқ аст?", "ky": "Кайсы техника сизге ылайыктуу?", "tk": "Haýsy tehnika size laýyk?"}, "Совет": {"kk": "Кеңес", "tg": "Маслиҳат", "ky": "Кеңеш", "tk": "Maslahat"}, "Искать": {"kk": "Іздеу", "tg": "Ҷустуҷӯ", "ky": "Издөө", "tk": "Gözle"}, "Мастерская": {"kk": "Шеберхана", "tg": "Устохона", "ky": "Устакана", "tk": "Ussahana"}, "Карта": {"kk": "Карта", "tg": "Харита", "ky": "Карта", "tk": "Karta"}, "Найдите мастеров рядом на карте": {"kk": "Жақын маңдағы шеберлерді картадан табыңыз", "tg": "Устоҳои наздикро дар харита ёбед", "ky": "Жакын жердеги усталарды картадан табыңыз", "tk": "Ýakyndaky ussalary kartadan tapyň"}, "Открыть карту": {"kk": "Картаны ашу", "tg": "Кушодани харита", "ky": "Картаны ачуу", "tk": "Kartany açmak"}, "Заказ": {"kk": "Тапсырыс", "tg": "Фармоиш", "ky": "Буйрутма", "tk": "Sargyt"}, "Профиль": {"kk": "Профиль", "tg": "Профил", "ky": "Профиль", "tk": "Profil"}, "Стать мастером": {"kk": "Шебер болу", "tg": "Усто шудан", "ky": "Уста болуу", "tk": "Ussa bolmak"}, "Мы": {"kk": "Біз", "tg": "Мо", "ky": "Биз", "tk": "Biz"}, "Связь": {"kk": "Байланыс", "tg": "Тамос", "ky": "Байланыш", "tk": "Aragatnaşyk"}, "АНИМАЦИЯ": {"kk": "АНИМАЦИЯ", "tg": "АНИМАТСИЯ", "ky": "АНИМАЦИЯ", "tk": "ANIMASIÝA"}, "Привет": {"kk": "Сәлем", "tg": "Салом", "ky": "Салам", "tk": "Salam"}, "Гость": {"kk": "Қонақ", "tg": "Меҳмон", "ky": "Конок", "tk": "Myhman"}, "Все разделы здесь — выбирайте": {"kk": "Барлық бөлімдер осында — таңдаңыз", "tg": "Ҳамаи бахшҳо дар ин ҷост — интихоб кунед", "ky": "Бардык бөлүмдөр ушул жерде — тандаңыз", "tk": "Ähli bölümler şu ýerde — saýlaň"}, "Моё местоположение": {"kk": "Менің орналасқан жерім", "tg": "Ҷойгиршавии ман", "ky": "Менин жайгашкан жерим", "tk": "Meniň ýerleşýän ýerim"}, "Ощущается": {"kk": "Сезіледі", "tg": "Ҳис мешавад", "ky": "Сезилет", "tk": "Duýulýar"}, "Загрузка погоды…": {"kk": "Ауа райы жүктелуде…", "tg": "Обуҳаво бор шуда истодааст…", "ky": "Аба ырайы жүктөлүүдө…", "tk": "Howa maglumaty ýüklenýär…"}, "Доллар": {"kk": "Доллар", "tg": "Доллар", "ky": "Доллар", "tk": "Dollar"}, "Евро": {"kk": "Еуро", "tg": "Евро", "ky": "Евро", "tk": "Ýewro"}, "Золото": {"kk": "Алтын", "tg": "Тилло", "ky": "Алтын", "tk": "Altyn"}, "Серебро": {"kk": "Күміс", "tg": "Нуқра", "ky": "Күмүш", "tk": "Kümüş"}, "Биткоин": {"kk": "Биткоин", "tg": "Биткоин", "ky": "Биткоин", "tk": "Bitkoin"}, "Нефть": {"kk": "Мұнай", "tg": "Нафт", "ky": "Мунай", "tk": "Nebit"}, "Ясно": {"kk": "Ашық аспан", "tg": "Осмони софо", "ky": "Ачык асман", "tk": "Açyk asman"}, "Облачно": {"kk": "Бұлтты", "tg": "Абрнок", "ky": "Булуттуу", "tk": "Bulutly"}, "Туман": {"kk": "Тұман", "tg": "Туман", "ky": "Туман", "tk": "Duman"}, "Морось": {"kk": "Сіркіреген жаңбыр", "tg": "Борони майда", "ky": "Майда жамгыр", "tk": "Ownuk ýagyş"}, "Дождь": {"kk": "Жаңбыр", "tg": "Борон", "ky": "Жамгыр", "tk": "Ýagyş"}, "Идёт снег": {"kk": "Қар жауып тұр", "tg": "Барф меборад", "ky": "Кар жаап жатат", "tk": "Gar ýagýar"}, "Гроза": {"kk": "Найзағай", "tg": "Раъду барқ", "ky": "Күн күркүрөө", "tk": "Güldürewük"}};
+  function tr(ru){ if (state.lang === 'uz' || state.lang === 'ru') return ru; var e = XT[ru]; return (e && e[state.lang]) || ru; }
   var OFERTA_KEY = 'cynet_oferta_accepted';
 
   var state = {
-    lang: localStorage.getItem('cynet_lang') || 'uz',
+    lang: (function(){ var l = localStorage.getItem('cynet_lang'); return (l && STR[l]) ? l : 'uz'; })(),
     stack: [{ view: (localStorage.getItem(OFERTA_KEY) === '1') ? 'mainMenu' : 'oferta' }],
     orderForm: {},
     anketaForm: {}
@@ -598,8 +913,8 @@
   var illusTimer = null;
 
   function t(){ return STR[state.lang]; }
-  function L(uzKey, ruKey){ return state.lang === 'uz' ? uzKey : ruKey; }
-  function pick(obj, base){ return obj[base + '_' + state.lang] || obj[base]; }
+  function L(uzKey, ruKey){ return state.lang === 'uz' ? uzKey : tr(ruKey); }
+  function pick(obj, base){ return obj[base + '_' + state.lang] || (state.lang !== 'uz' ? obj[base + '_ru'] : '') || obj[base]; }
 
   // ---------- Text parser ----------
   // Converts the bot's markdown-lite diagnostic text into structured blocks
@@ -725,17 +1040,6 @@
   if (tg && tg.BackButton) {
     tg.BackButton.onClick(function(){ pop(); });
   }
-
-  document.querySelectorAll('.lang-toggle button').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      state.lang = btn.getAttribute('data-lang');
-      localStorage.setItem('cynet_lang', state.lang);
-      document.querySelectorAll('.lang-toggle button').forEach(function(b){ b.classList.toggle('active', b===btn); });
-      document.getElementById('brandSub').textContent = t().subtitle;
-      haptic('select');
-      render();
-    });
-  });
 
   // ---------- Renderers per view ----------
   function svgTrace(){
@@ -1283,7 +1587,7 @@
       btn.disabled = true;
       btn.textContent = t().orderSubmitting;
       apiPost('/api/public/order/create', {
-        init_data: getInitData(), lang: state.lang,
+        init_data: getInitData(), lang: srvLang(),
         viloyat: entry.viloyat, xizmat: entry.xizmat,
         ism: f.ism, familya: f.familya, telefon: f.telefon, muammo: f.muammo, manzil: f.manzil,
         lat: f.lat, lon: f.lon, photo_b64: f.photo_b64
@@ -3020,7 +3324,7 @@
       '<div id="anketaSubmitErr"></div>' +
       '</div>';
 
-    apiGet('/api/public/anketa/shartnoma?lang=' + state.lang).then(function(res){
+    apiGet('/api/public/anketa/shartnoma?lang=' + srvLang()).then(function(res){
       var parts = (res && res.parts) || [];
       var box = mainView.querySelector('#shartnomaBox');
       box.innerHTML = parts.map(function(p){ return '<div class="shartnoma-box">' + inline(p) + '</div>'; }).join('');
@@ -3047,7 +3351,7 @@
       btn.textContent = t().anketaSubmitting;
       var f = state.anketaForm;
       apiPost('/api/public/anketa/submit', {
-        init_data: getInitData(), lang: state.lang,
+        init_data: getInitData(), lang: srvLang(),
         viloyat: entry.viloyat, tuman_list: f.tuman_list,
         ism: f.ism, yil: f.yil, telefon: f.telefon, pasport: f.pasport,
         xizmatlar: f.xizmatlar, photo_b64: f.photo_b64,
@@ -4747,11 +5051,11 @@
   function mxTickerInner(data){
     var chips = MX_DEFS.map(function(d){
       var it = data && data[d.k];
-      var val = it && it.v != null ? (state.lang === 'ru' && d.fmtRu ? d.fmtRu(it.v) : d.fmt(it.v)) : '…';
+      var val = it && it.v != null ? (state.lang !== 'uz' && d.fmtRu ? d.fmtRu(it.v) : d.fmt(it.v)) : '…';
       var ch = it && it.ch != null && !isNaN(it.ch) ? it.ch : null;
       var cls = ch == null ? '' : (ch > 0 ? ' up' : (ch < 0 ? ' down' : ''));
       var chTxt = ch == null ? '' : '<em class="mx-ch">' + (ch > 0 ? '▲' : (ch < 0 ? '▼' : '•')) + ' ' + Math.abs(ch).toFixed(2) + '%</em>';
-      return '<span class="mx-chip' + cls + '"><b class="mx-ic">' + d.ic + '</b><span class="mx-nm">' + (state.lang === 'ru' ? d.ru : d.uz) +
+      return '<span class="mx-chip' + cls + '"><b class="mx-ic">' + d.ic + '</b><span class="mx-nm">' + (state.lang === 'uz' ? d.uz : tr(d.ru)) +
         '</span><span class="mx-val">' + val + '</span>' + chTxt + '</span>';
     }).join('');
     return '<div class="mx-track">' + chips + chips + '</div>';
@@ -4815,7 +5119,7 @@
     if (!el) return;
     var r = mxState.region || wxRegion(), w = mxState.wx;
     var opts = WX_REGIONS.map(function(x){
-      return '<option value="' + x.id + '"' + (x.id === r.id ? ' selected' : '') + '>' + esc(state.lang === 'ru' ? x.ru : x.uz) + '</option>';
+      return '<option value="' + x.id + '"' + (x.id === r.id ? ' selected' : '') + '>' + esc(state.lang !== 'uz' ? x.ru : x.uz) + '</option>';
     }).join('');
     var geoOpt = '<option value="__geo"' + (r.id === 'geo' ? ' selected' : '') + '>📍 ' + L('Joylashuvim','Моё местоположение') + '</option>';
     var body;
@@ -4823,7 +5127,7 @@
       var tx = WX_TXT[w.kind] || WX_TXT.cloud;
       body = '<div class="wx-main"><div class="wx-ic">' + (w.day ? tx.ic : tx.icN) + '</div>' +
         '<div class="wx-temp">' + (w.t != null ? Math.round(w.t) : '—') + '<sup>°C</sup></div>' +
-        '<div class="wx-desc"><b>' + (state.lang === 'ru' ? tx.ru : tx.uz) + '</b><span>' +
+        '<div class="wx-desc"><b>' + (state.lang === 'uz' ? tx.uz : tr(tx.ru)) + '</b><span>' +
         L('His qilinishi','Ощущается') + ' ' + (w.feels != null ? Math.round(w.feels) : '—') + '°</span></div></div>' +
         '<div class="wx-meta"><span>💧 ' + (w.h != null ? Math.round(w.h) : '—') + '%</span><span>💨 ' +
         (w.wind != null ? Math.round(w.wind) : '—') + ' km/h</span></div>';
@@ -6363,7 +6667,7 @@
     var called = false, ctrl = window.AbortController ? new AbortController() : null;
     function fin(v){ if (called) return; called = true; clearTimeout(to); cb(v); }
     var to = setTimeout(function(){ if (ctrl) ctrl.abort(); fin(null); }, 6000);
-    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=' + (state.lang === 'ru' ? 'ru' : 'uz,ru') +
+    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=' + (state.lang === 'uz' ? 'uz,ru' : (state.lang + ',ru')) +
       '&lat=' + lat + '&lon=' + lon, ctrl ? { signal: ctrl.signal } : undefined)
       .then(function(r){ return r.json(); })
       .then(function(d){ fin(d && d.display_name ? String(d.display_name) : null); })
@@ -6444,7 +6748,7 @@
       if (f.telefon.replace(/\D/g, '').length < 9) { err.textContent = L("Telefon raqamni to'liq kiriting.","Введите номер телефона полностью."); return; }
       var btn = $('mkSubmit'); btn.disabled = true; btn.textContent = L('⏳ Yuborilmoqda...','⏳ Отправка...');
       apiPost('/api/public/market/order/create', {
-        init_data: getInitData(), lang: state.lang,
+        init_data: getInitData(), lang: srvLang(),
         ism: f.ism, familya: f.familya, telefon: f.telefon, manzil: f.manzil, lat: f.lat, lon: f.lon,
         items: m.cart.map(function(x){ return { id:x.id, qty:x.qty }; })
       }).then(function(res){
@@ -6870,7 +7174,7 @@
   }
   function dvApiErr(d){ return (d && d.error) ? String(d.error) : L('Xatolik yuz berdi. Qayta urinib ko\'ring.','Произошла ошибка. Повторите попытку.'); }
   function dvPost(path, body){
-    body = body || {}; body.init_data = getInitData(); body.lang = state.lang;
+    body = body || {}; body.init_data = getInitData(); body.lang = srvLang();
     return apiPost(path, body).then(function(r){ return r.data; });
   }
   function dvBack(){ state.dv.items = null; state.stack.pop(); render(); }
@@ -7539,11 +7843,44 @@
     else if (entry.view === 'deviceReminderForm') renderDeviceReminderForm(entry);
   }
 
-  // init lang buttons to reflect stored pref
-  document.querySelectorAll('.lang-toggle button').forEach(function(b){
-    b.classList.toggle('active', b.getAttribute('data-lang') === state.lang);
-  });
-  document.getElementById('brandSub').textContent = t().subtitle;
+
+  // ---------- Til tanlagich (bayroqli ochiladigan menyu) ----------
+  (function(){
+    var sw = document.getElementById('langSw');
+    var cur = document.getElementById('langCur');
+    var menu = document.getElementById('langMenu');
+    if (!sw || !cur || !menu) return;
+    function paint(){
+      var m = langMeta(state.lang);
+      cur.innerHTML = '<span class="lang-flag">' + m.f + '</span><span class="car">▼</span>';
+      cur.title = m.n;
+      menu.innerHTML = LANGS.map(function(l){
+        return '<button type="button" role="menuitem" class="lang-opt' + (l.c === state.lang ? ' active' : '') + '" data-lang="' + l.c + '">' +
+          '<span class="lang-flag">' + l.f + '</span><span class="nm">' + l.n + '</span><span class="ck">✓</span></button>';
+      }).join('');
+      document.documentElement.setAttribute('lang', state.lang);
+    }
+    function setOpen(o){ sw.classList.toggle('open', o); cur.setAttribute('aria-expanded', o ? 'true' : 'false'); }
+    cur.addEventListener('click', function(e){ e.stopPropagation(); haptic('tap'); setOpen(!sw.classList.contains('open')); });
+    menu.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('.lang-opt') : null;
+      if (!b) return;
+      e.stopPropagation();
+      var c = b.getAttribute('data-lang');
+      setOpen(false);
+      if (c === state.lang) return;
+      state.lang = c;
+      try { localStorage.setItem('cynet_lang', c); } catch(_){}
+      paint();
+      document.getElementById('brandSub').textContent = t().subtitle;
+      haptic('select');
+      render();
+    });
+    document.addEventListener('click', function(){ setOpen(false); });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') setOpen(false); });
+    paint();
+    document.getElementById('brandSub').textContent = t().subtitle;
+  })();
 
   render();
   mkResumePending(false);
