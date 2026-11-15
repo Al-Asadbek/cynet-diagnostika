@@ -6755,7 +6755,7 @@
         var d = res.data || {};
         if (d.ok) {
           mkStoreSet(MK_PROFILE_KEY, { ism:f.ism, familya:f.familya, telefon:f.telefon, manzil:f.manzil, lat:f.lat, lon:f.lon });
-          m.pay = { order_id:d.order_id, jami:d.jami, links:d.links || {}, snap:{ ism:f.ism, familya:f.familya, telefon:f.telefon, manzil:f.manzil } };
+          m.pay = { order_id:d.order_id, jami:d.jami, links:d.links || {}, stars:d.stars || 0, snap:{ ism:f.ism, familya:f.familya, telefon:f.telefon, manzil:f.manzil } };
           m.orders = null;
           // ilova to'lov paytida yopilib/qayta ochilsa ham buyurtma holatini tiklash uchun
           mkStoreSet(MK_PENDING_KEY, { order_id:d.order_id, t:Date.now() });
@@ -6777,6 +6777,35 @@
     });
   }
 
+
+  // ---------- To'lov usullari: Payme / Click / Telegram Stars / Visa-Mastercard ----------
+  // Stars va karta Telegram'ning ichki invoice oynasi (tg.openInvoice) orqali, Payme/Click esa tashqi havola orqali ochiladi.
+  var MK_PAY_KINDS = ['payme', 'click', 'stars', 'card'];
+  var MK_PAY_NAMES = { payme:'Payme', click:'Click', stars:'Telegram Stars', card:'Visa / Mastercard' };
+  function mkPayLabel(k, stars){
+    if (k === 'stars') return '⭐ Telegram Stars' + (stars ? ' · ' + stars + ' ⭐' : '');
+    if (k === 'card') return '💳 Visa / Mastercard';
+    return '💳 ' + MK_PAY_NAMES[k] + ' ' + L("orqali to'lash","— оплатить");
+  }
+  function mkPayBtnsHtml(links, stars){
+    return MK_PAY_KINDS.filter(function(k){ return links && links[k]; }).map(function(k){
+      return '<a class="mk-payopt ' + k + '" data-p="' + k + '" href="#">' + mkPayLabel(k, stars) + '</a>';
+    }).join('');
+  }
+  function mkStartPay(kind, url, onPaid){
+    if (!url) return;
+    if ((kind === 'stars' || kind === 'card') && tg && tg.openInvoice) {
+      try {
+        tg.openInvoice(url, function(status){
+          if (status === 'paid') { haptic('ok'); if (onPaid) onPaid(); }
+          else if (status === 'failed') { mkToast(L("To'lov amalga oshmadi. Qayta urinib ko'ring.","Платёж не прошёл. Повторите попытку.")); }
+        });
+        return;
+      } catch(e) {}
+    }
+    mkOpenExternal(url);
+  }
+
   // ---------- To'lov ----------
   function mkPayCleanup(){
     var m = state.mk;
@@ -6794,20 +6823,19 @@
   function renderMarketPay(){
     var m = state.mk, pay = m.pay;
     if (!pay) { state.stack.pop(); render(); return; }
-    var provs = [['payme','Payme'], ['click','Click']].filter(function(x){ return pay.links[x[0]]; });
     mainView.innerHTML =
       '<div class="view mk-view">' +
         '<div class="mk-head"><div class="tt"><span>💳</span>' + L("To'lov","Оплата") + '</div><div class="cn">№' + pay.order_id + '</div></div>' +
         '<div class="mk-totalbox" style="margin:0 0 16px"><span class="k">' + L("To'lov summasi","Сумма к оплате") + '</span><span class="v">' + mkFmt(pay.jami) + ' ' + L("so'm","сум") + '</span></div>' +
         '<div class="mk-hint" style="margin:0 2px 12px">' + L("To'lov usulini tanlang. To'lov tugagach shu oynaga qaytasiz — buyurtma avtomatik tasdiqlanadi.","Выберите способ оплаты. После оплаты вернитесь сюда — заказ подтвердится автоматически.") + '</div>' +
-        '<div class="mk-paybtns">' + provs.map(function(x){ return '<a class="mk-payopt ' + x[0] + '" data-p="' + x[0] + '" href="#">💳 ' + x[1] + ' ' + L('orqali to\'lash','— оплатить') + '</a>'; }).join('') + '</div>' +
+        '<div class="mk-paybtns">' + mkPayBtnsHtml(pay.links, pay.stars) + '</div>' +
         '<div class="mk-wait" id="mkWait"><i></i><span>' + L("To'lov kutilmoqda...","Ожидаем оплату...") + '</span></div>' +
         '<div style="text-align:center;margin-top:12px"><span class="mk-empty" style="padding:0"><span class="act" id="mkCheckPay" style="margin-top:0">' + L("🔄 To'lovni tekshirish","🔄 Проверить оплату") + '</span></span></div>' +
         '<div class="mk-hint" style="text-align:center">' + L("To'lov qilgan bo'lsangiz va oyna yopilib qolgan bo'lsa — holatni ","Если вы оплатили, а окно закрылось — смотрите статус в разделе ") + '<span class="mk-link" id="mkPayOrders">' + L("Buyurtmalarim","Мои заказы") + '</span>' + L(" bo'limidan ko'ring.",".") + '</div>' +
       '</div>';
 
     mainView.querySelectorAll('.mk-payopt').forEach(function(a){
-      a.addEventListener('click', function(e){ e.preventDefault(); haptic('select'); mkOpenExternal(pay.links[a.getAttribute('data-p')]); });
+      a.addEventListener('click', function(e){ e.preventDefault(); haptic('select'); var k = a.getAttribute('data-p'); mkStartPay(k, pay.links[k], function(){ check(false); }); });
     });
 
     var busy = false, tries = 0;
@@ -6985,7 +7013,7 @@
         '<div class="mk-tr"><span class="k">' + L('Telefon','Телефон') + '</span><span class="v">' + esc(o.telefon || '') + '</span></div>' +
         '<div class="mk-tr"><span class="k">' + L('Manzil','Адрес') + '</span><span class="v">' + esc(o.manzil || '') + '</span></div></div></div>';
 
-      var prov = { payme:'Payme', click:'Click' }[o.provider] || '';
+      var prov = MK_PAY_NAMES[o.provider] || '';
       if (o.paid) {
         h += '<div class="mk-sec"><h3>' + L("To'lov","Оплата") + '</h3><div class="mk-box">' +
           '<div class="mk-tr"><span class="k">' + L('Usul','Способ') + '</span><span class="v">' + esc(prov || '—') + '</span></div>' +
@@ -6995,8 +7023,7 @@
       h += '<div class="mk-actions" id="mkOActs" style="flex-direction:column">';
       if (st === 'kutilmoqda') {
         var links = o.links || {};
-        h += '<div class="mk-paybtns" style="width:100%">' + [['payme','Payme'],['click','Click']].filter(function(x){ return links[x[0]]; }).map(function(x){
-          return '<a class="mk-payopt ' + x[0] + '" data-p="' + x[0] + '" href="#">💳 ' + x[1] + ' ' + L("orqali to'lash","— оплатить") + '</a>'; }).join('') + '</div>' +
+        h += '<div class="mk-paybtns" style="width:100%">' + mkPayBtnsHtml(links, o.stars) + '</div>' +
           '<button class="mk-btn ghost" id="mkOCheck">🔄 ' + L("To'lovni tekshirish","Проверить оплату") + '</button>';
       }
       h += '<button class="mk-btn ' + (st === 'kutilmoqda' ? 'ghost' : 'pri') + '" id="mkOBack">🛒 ' + L('Marketga qaytish','Вернуться в маркет') + '</button></div>';
@@ -7006,7 +7033,8 @@
         a.addEventListener('click', function(e){
           e.preventDefault(); haptic('select');
           mkStoreSet(MK_PENDING_KEY, { order_id:oid, t:Date.now() });
-          mkOpenExternal((o.links || {})[a.getAttribute('data-p')]);
+          var k = a.getAttribute('data-p');
+          mkStartPay(k, (o.links || {})[k], function(){ load(false); });
         });
       });
       var chk = document.getElementById('mkOCheck'); if (chk) chk.addEventListener('click', function(){ haptic('tap'); load(true); });
