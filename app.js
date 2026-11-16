@@ -328,7 +328,7 @@
         "• Usta bilan to'g'ridan-to'g'ri qo'ng'iroq yoki Telegram orqali bog'laydi\n" +
         "• Bajarilgan ishdan so'ng ustani baholash imkonini beradi\n" +
         "• Texnika nosozliklarini o'zingiz aniqlashingiz uchun 14 turdagi texnika bo'yicha diagnostika va qadamma-qadam yo'riqnoma beradi\n" +
-        "• Marketda ehtiyot qismlar va printer chip reset dasturlarini sotadi (Payme / Click orqali to'lov)\n" +
+        "• Marketda ehtiyot qismlar va printer chip reset dasturlarini sotadi (Payme / Click / Stars / karta orqali to'lov)\n" +
         "\n" +
         "🔧 Qanday texnikalar?\n" +
         "Televizor, konditsioner, xolodilnik, kir yuvish mashinasi, printer, kompyuter va noutbuk hamda boshqa uy texnikalari.\n" +
@@ -604,7 +604,7 @@
         "• Связывает с мастером напрямую по звонку или в Telegram\n" +
         "• После выполнения работы позволяет оценить мастера\n" +
         "• Помогает самостоятельно определить неисправность: диагностика и пошаговые инструкции по 14 видам техники\n" +
-        "• В маркете продаёт запчасти и программы Chip reset для принтеров (оплата через Payme / Click)\n" +
+        "• В маркете продаёт запчасти и программы Chip reset для принтеров (оплата через Payme / Click / Stars / карту)\n" +
         "\n" +
         "🔧 Какая техника?\n" +
         "Телевизоры, кондиционеры, холодильники, стиральные машины, принтеры, компьютеры и ноутбуки, а также другая бытовая техника.\n" +
@@ -6833,11 +6833,12 @@
 
   // ---------- To'lov usullari: Payme / Click / Telegram Stars / Visa-Mastercard ----------
   // Stars va karta Telegram'ning ichki invoice oynasi (tg.openInvoice) orqali, Payme/Click esa tashqi havola orqali ochiladi.
-  var MK_PAY_KINDS = ['payme', 'click', 'stars', 'card'];
-  var MK_PAY_NAMES = { payme:'Payme', click:'Click', stars:'Telegram Stars', card:'Visa / Mastercard' };
+  var MK_PAY_KINDS = ['payme', 'click', 'stars', 'card', 'manual'];
+  var MK_PAY_NAMES = { payme:'Payme', click:'Click', stars:'Telegram Stars', card:'Visa / Mastercard', manual:"Karta o'tkazmasi" };
   function mkPayLabel(k, stars){
     if (k === 'stars') return '⭐ Telegram Stars' + (stars ? ' · ' + stars + ' ⭐' : '');
     if (k === 'card') return '💳 Visa / Mastercard';
+    if (k === 'manual') return '🏦 ' + L("Karta raqamiga o'tkazish","Перевод на карту");
     return '💳 ' + MK_PAY_NAMES[k] + ' ' + L("orqali to'lash","— оплатить");
   }
   function mkPayBtnsHtml(links, stars){
@@ -6857,6 +6858,161 @@
       } catch(e) {}
     }
     mkOpenExternal(url);
+  }
+
+  // ============================================================================================
+  //  CHEK YUBORISH — to'lovdan keyin chek rasmini yuklaydi, u darhol Telegram orqali adminga boradi.
+  //  Payme / Click / Visa / karta raqamiga o'tkazma uchun. Admin tasdiqlasa buyurtma avtomatik rasmiylashadi.
+  // ============================================================================================
+  state.mk.rc = state.mk.rc || {};
+  (function(){
+    if (document.getElementById('rcCss')) return;
+    var css =
+      '.rc-box{margin-top:18px;padding:16px;border-radius:22px;background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.14)}' +
+      '.rc-h{font-family:var(--f-big);font-weight:800;font-size:16px;margin-bottom:6px}' +
+      '.rc-p{font-size:12.5px;line-height:1.45;color:#b9d0c9;margin-bottom:12px}' +
+      '.rc-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:15px;border-radius:16px;font-family:var(--f-big);font-weight:800;font-size:15px;color:#02140f;background:linear-gradient(135deg,var(--mk-em),#7df5cf);box-shadow:0 12px 26px -10px rgba(25,230,160,.8);transition:transform .15s}' +
+      '.rc-btn:active{transform:scale(.97)}.rc-btn:disabled{opacity:.6}' +
+      '.rc-sent{display:flex;gap:12px;align-items:center;margin-bottom:12px;padding:10px;border-radius:16px;background:rgba(25,230,160,.1);border:1px solid rgba(25,230,160,.3);animation:view-in .25s both}' +
+      '.rc-sent img{width:64px;height:64px;object-fit:cover;border-radius:12px;flex:none;background:#0004}' +
+      '.rc-sent b{display:block;font-size:13.5px;line-height:1.3}.rc-sent span{display:block;font-size:11.5px;color:#a9c7bf;margin-top:2px;line-height:1.35}' +
+      '.rc-sent.sending{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18)}' +
+      '.rc-sent.bad{background:rgba(255,98,89,.12);border-color:rgba(255,98,89,.4)}' +
+      '.rc-sent.sending img{opacity:.6}' +
+      '.rc-card{margin-top:14px;padding:16px;border-radius:22px;background:linear-gradient(135deg,#4f56d9,#7c3aed);color:#fff;border:1px solid rgba(255,255,255,.22);box-shadow:0 16px 34px -16px rgba(79,70,229,.7);animation:view-in .25s both}' +
+      '.rc-cn{font-family:var(--font-mono);font-weight:800;font-size:21px;letter-spacing:.06em;text-align:center;padding:12px 4px;word-break:break-all}' +
+      '.rc-copy{display:block;margin:0 auto 12px;padding:9px 16px;border-radius:999px;font-weight:800;font-size:13px;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3)}' +
+      '.rc-r{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 0;border-top:1px solid rgba(255,255,255,.14)}.rc-r span{opacity:.8}.rc-r b{text-align:right}' +
+      '.rc-steps{margin:10px 0 0;padding-left:20px;font-size:12.5px;line-height:1.5;opacity:.92}';
+    var st = document.createElement('style'); st.id = 'rcCss'; st.textContent = css; document.head.appendChild(st);
+  })();
+
+  function rcKey(kind, oid){ return kind + ':' + oid; }
+  function rcEl(id){ return document.getElementById(id); }
+
+  // Rasmni kichraytirib JPEG ga o'giradi (tez yuborilishi va server limitiga sig'ishi uchun)
+  function rcCompress(file, cb){
+    var fr = new FileReader();
+    fr.onerror = function(){ cb(null); };
+    fr.onload = function(){
+      var img = new Image();
+      img.onerror = function(){ cb(null); };
+      img.onload = function(){
+        try {
+          var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          var k = Math.min(1, 1600 / Math.max(w, h, 1));
+          var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+          var ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+          var q = 0.85, out = c.toDataURL('image/jpeg', q);
+          while (out.length > 5200000 && q > 0.4) { q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+          cb(out);
+        } catch(e) { cb(null); }
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  }
+
+  function rcCopy(text){
+    function fallback(){
+      try {
+        var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+        mkToast(L("Karta raqami nusxalandi ✓","Номер карты скопирован ✓"));
+      } catch(e) { mkToast(text); }
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function(){ mkToast(L("Karta raqami nusxalandi ✓","Номер карты скопирован ✓")); }, fallback);
+        return;
+      }
+    } catch(e) {}
+    fallback();
+  }
+
+  // Karta raqami paneli (qo'lda o'tkazma uchun)
+  function rcManualHtml(man, amount){
+    if (!man || !man.number) return '';
+    return '<div class="rc-card" id="rcManual" style="display:none">' +
+      '<div style="font-size:12px;opacity:.85;text-align:center">' + L("Shu karta raqamiga to'lov qiling","Переведите оплату на эту карту") + '</div>' +
+      '<div class="rc-cn" id="rcNum">' + esc(man.number) + '</div>' +
+      '<button class="rc-copy" id="rcCopy">📋 ' + L('Nusxalash','Копировать') + '</button>' +
+      (man.holder ? '<div class="rc-r"><span>' + L('Karta egasi','Владелец') + '</span><b>' + esc(man.holder) + '</b></div>' : '') +
+      (man.bank ? '<div class="rc-r"><span>' + L('Bank','Банк') + '</span><b>' + esc(man.bank) + '</b></div>' : '') +
+      '<div class="rc-r"><span>' + L("O'tkazma summasi","Сумма перевода") + '</span><b>' + mkFmt(amount) + ' ' + L("so'm","сум") + '</b></div>' +
+      '<ol class="rc-steps"><li>' + L("Summani shu kartaga o'tkazing","Переведите сумму на эту карту") + '</li>' +
+      '<li>' + L("To'lov chekini (skrinshot) saqlang","Сохраните чек (скриншот) оплаты") + '</li>' +
+      '<li>' + L("Pastdagi «Chekni yuborish» tugmasini bosib rasmni yuklang","Нажмите «Отправить чек» ниже и загрузите фото") + '</li></ol></div>';
+  }
+  function rcShowManual(){
+    var box = rcEl('rcManual'); if (!box) return;
+    box.style.display = '';
+    var cp = rcEl('rcCopy'), num = rcEl('rcNum');
+    if (cp && !cp._b) { cp._b = 1; cp.addEventListener('click', function(){ haptic('tap'); rcCopy((num ? num.textContent : '').replace(/\s+/g, '')); }); }
+    try { box.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(e) {}
+  }
+
+  function rcBoxHtml(){
+    return '<div class="rc-box" id="rcBox">' +
+      '<div class="rc-h">🧾 ' + L("To'lov qildingizmi? Chekni yuboring","Оплатили? Отправьте чек") + '</div>' +
+      '<div class="rc-p">' + L("Payme, Click yoki karta orqali to'lagan bo'lsangiz — chek rasmini yuklang. U darhol Telegram orqali adminga yuboriladi va tekshirilgach buyurtma tasdiqlanadi.",
+        "Если вы оплатили через Payme, Click или картой — загрузите фото чека. Оно сразу уйдёт администратору в Telegram, и после проверки заказ будет подтверждён.") + '</div>' +
+      '<div id="rcState"></div>' +
+      '<input type="file" id="rcFile" accept="image/*" style="display:none">' +
+      '<button class="rc-btn" id="rcPick">📤 ' + L('Chekni yuborish','Отправить чек') + '</button></div>';
+  }
+
+  function rcPaint(kind, oid){
+    var s = state.mk.rc[rcKey(kind, oid)], el = rcEl('rcState'), btn = rcEl('rcPick'); if (!el) return;
+    if (!s) { el.innerHTML = ''; if (btn) { btn.disabled = false; btn.textContent = '📤 ' + L('Chekni yuborish','Отправить чек'); } return; }
+    var cls = '', title = '', sub = '';
+    if (s.status === 'sending') { cls = 'sending'; title = '⏳ ' + L('Yuborilmoqda...','Отправляется...'); sub = L("Chek Telegram orqali adminga yuborilmoqda","Чек отправляется администратору в Telegram"); }
+    else if (s.status === 'yangi') { title = '✅ ' + L("Chek yuborildi","Чек отправлен"); sub = L("Admin tekshirmoqda. Tasdiqlanishi bilan buyurtma avtomatik rasmiylashadi.","Администратор проверяет. После подтверждения заказ оформится автоматически."); }
+    else if (s.status === 'tasdiqlandi') { title = '✅ ' + L("Chek tasdiqlandi","Чек подтверждён"); sub = L("To'lov qabul qilindi.","Оплата принята."); }
+    else if (s.status === 'rad') { cls = 'bad'; title = '❌ ' + L("Chek qabul qilinmadi","Чек не принят"); sub = L("To'lovni tekshirib, chekni qayta yuboring.","Проверьте оплату и отправьте чек ещё раз."); }
+    else { cls = 'bad'; title = '⚠️ ' + L("Yuborilmadi","Не отправлено"); sub = esc(s.err || ''); }
+    el.innerHTML = '<div class="rc-sent ' + cls + '">' + (s.thumb ? '<img alt="" src="' + s.thumb + '">' : '') + '<div><b>' + title + '</b><span>' + sub + '</span></div></div>';
+    if (btn) {
+      btn.disabled = s.status === 'sending';
+      btn.textContent = s.status === 'yangi' || s.status === 'tasdiqlandi' ? '📤 ' + L('Yana chek yuborish','Отправить ещё чек') : (s.status === 'sending' ? '⏳' : '📤 ' + L('Chekni yuborish','Отправить чек'));
+    }
+  }
+
+  // Serverdan kelgan oxirgi chek holatini ekranga moslaydi (poll paytida)
+  function rcSync(kind, oid, st){
+    if (!st) return;
+    var key = rcKey(kind, oid), s = state.mk.rc[key];
+    if (!s) state.mk.rc[key] = { status: st, thumb: null };
+    else if (s.status !== 'sending' && s.status !== 'error') {
+      if (s.status === st) return;
+      s.status = st;
+      if (st === 'rad') mkToast(L("Chek qabul qilinmadi","Чек не принят"));
+    } else return;
+    rcPaint(kind, oid);
+  }
+
+  function rcBind(kind, oid, getMethod){
+    var pick = rcEl('rcPick'), file = rcEl('rcFile'); if (!pick || !file) return;
+    rcPaint(kind, oid);
+    pick.addEventListener('click', function(){ haptic('select'); file.click(); });
+    file.addEventListener('change', function(){
+      var f = file.files && file.files[0]; file.value = ''; if (!f) return;
+      var key = rcKey(kind, oid);
+      state.mk.rc[key] = { status:'sending', thumb:null }; rcPaint(kind, oid);
+      rcCompress(f, function(dataUrl){
+        if (!dataUrl) { state.mk.rc[key] = { status:'error', err:L("Rasmni o'qib bo'lmadi. Boshqa rasm tanlang.","Не удалось прочитать фото. Выберите другое.") }; rcPaint(kind, oid); return; }
+        state.mk.rc[key] = { status:'sending', thumb:dataUrl }; rcPaint(kind, oid);   // rasm darhol ko'rinadi
+        apiPost('/api/public/receipt/upload', { init_data:getInitData(), kind:kind, order_id:oid, method:(getMethod ? getMethod() : 'other') || 'other', image:dataUrl }).then(function(res){
+          var d = res.data || {};
+          if (d.ok) { state.mk.rc[key] = { status:'yangi', thumb:dataUrl }; haptic('ok'); mkToast(L("✅ Chek adminga yuborildi","✅ Чек отправлен администратору")); }
+          else state.mk.rc[key] = { status:'error', thumb:dataUrl, err:d.error ? String(d.error) : L("Xatolik yuz berdi","Произошла ошибка") };
+          rcPaint(kind, oid);
+        }).catch(function(){
+          state.mk.rc[key] = { status:'error', thumb:dataUrl, err:L("Ulanib bo'lmadi. Internetni tekshirib, qayta yuboring.","Нет соединения. Проверьте интернет и отправьте снова.") };
+          rcPaint(kind, oid);
+        });
+      });
+    });
   }
 
   // ---------- To'lov ----------
@@ -6882,14 +7038,21 @@
         '<div class="mk-totalbox" style="margin:0 0 16px"><span class="k">' + L("To'lov summasi","Сумма к оплате") + '</span><span class="v">' + mkFmt(pay.jami) + ' ' + L("so'm","сум") + '</span></div>' +
         '<div class="mk-hint" style="margin:0 2px 12px">' + L("To'lov usulini tanlang. To'lov tugagach shu oynaga qaytasiz — buyurtma avtomatik tasdiqlanadi.","Выберите способ оплаты. После оплаты вернитесь сюда — заказ подтвердится автоматически.") + '</div>' +
         '<div class="mk-paybtns">' + mkPayBtnsHtml(pay.links, pay.stars) + '</div>' +
+        rcManualHtml(pay.manual, pay.jami) +
+        rcBoxHtml() +
         '<div class="mk-wait" id="mkWait"><i></i><span>' + L("To'lov kutilmoqda...","Ожидаем оплату...") + '</span></div>' +
         '<div style="text-align:center;margin-top:12px"><span class="mk-empty" style="padding:0"><span class="act" id="mkCheckPay" style="margin-top:0">' + L("🔄 To'lovni tekshirish","🔄 Проверить оплату") + '</span></span></div>' +
         '<div class="mk-hint" style="text-align:center">' + L("To'lov qilgan bo'lsangiz va oyna yopilib qolgan bo'lsa — holatni ","Если вы оплатили, а окно закрылось — смотрите статус в разделе ") + '<span class="mk-link" id="mkPayOrders">' + L("Buyurtmalarim","Мои заказы") + '</span>' + L(" bo'limidan ko'ring.",".") + '</div>' +
       '</div>';
 
     mainView.querySelectorAll('.mk-payopt').forEach(function(a){
-      a.addEventListener('click', function(e){ e.preventDefault(); haptic('select'); var k = a.getAttribute('data-p'); mkStartPay(k, pay.links[k], function(){ check(false); }); });
+      a.addEventListener('click', function(e){
+        e.preventDefault(); haptic('select'); var k = a.getAttribute('data-p'); m.payMethod = k;
+        if (k === 'manual') { rcShowManual(); return; }
+        mkStartPay(k, pay.links[k], function(){ check(false); });
+      });
     });
+    rcBind('market', pay.order_id, function(){ return m.payMethod || 'other'; });
 
     var busy = false, tries = 0;
     function check(manual){
@@ -6897,6 +7060,7 @@
       apiGet('/api/public/market/order/status?id=' + pay.order_id + '&init_data=' + encodeURIComponent(getInitData())).then(function(d){
         busy = false;
         if (state.stack[state.stack.length - 1].view !== 'marketPay') return;
+        if (d && d.ok && d.order) rcSync('market', pay.order_id, d.order.receipt);
         if (d && d.ok && d.paid) { onPaid(); return; }
         if (d && d.ok && d.status === 'bekor') {
           mkPayCleanup();
@@ -7158,19 +7322,27 @@
         '<div class="mk-totalbox" style="margin:0 0 16px"><span class="k">' + L("To'lov summasi","Сумма к оплате") + '</span><span class="v">' + mkFmt(pay.jami) + ' ' + adjSoM() + '</span></div>' +
         '<div class="mk-hint" style="margin:0 2px 12px">' + L("To'lov usulini tanlang. To'lov tasdiqlanishi bilan fayl avtomatik shu bot chatiga yuboriladi.","Выберите способ оплаты. После подтверждения оплаты файл автоматически придёт в чат с ботом.") + '</div>' +
         '<div class="mk-paybtns">' + mkPayBtnsHtml(pay.links, pay.stars) + '</div>' +
+        rcManualHtml(pay.manual, pay.jami) +
+        rcBoxHtml() +
         '<div class="mk-wait" id="mkWait"><i></i><span>' + L("To'lov kutilmoqda...","Ожидаем оплату...") + '</span></div>' +
         '<div style="text-align:center;margin-top:12px"><span class="mk-empty" style="padding:0"><span class="act" id="adjCheckPay" style="margin-top:0">' + L("🔄 To'lovni tekshirish","🔄 Проверить оплату") + '</span></span></div>' +
       '</div>';
 
     mainView.querySelectorAll('.mk-payopt').forEach(function(el){
-      el.addEventListener('click', function(e){ e.preventDefault(); haptic('select'); var k = el.getAttribute('data-p'); mkStartPay(k, pay.links[k], function(){ check(false); }); });
+      el.addEventListener('click', function(e){
+        e.preventDefault(); haptic('select'); var k = el.getAttribute('data-p'); m.payMethod = k;
+        if (k === 'manual') { rcShowManual(); return; }
+        mkStartPay(k, pay.links[k], function(){ check(false); });
+      });
     });
+    rcBind('adj', pay.order_id, function(){ return m.payMethod || 'other'; });
     var busy = false, tries = 0;
     function check(manual){
       if (busy) return; busy = true;
       apiGet('/api/public/adj/order/status?id=' + pay.order_id + '&init_data=' + encodeURIComponent(getInitData())).then(function(d){
         busy = false;
         if (state.stack[state.stack.length - 1].view !== 'marketAdjPay') return;
+        if (d && d.ok && d.order) rcSync('adj', pay.order_id, d.order.receipt);
         if (d && d.ok && d.paid) { onPaid(); return; }
         if (d && d.ok && d.status === 'bekor') {
           mkPayCleanup();
@@ -7425,6 +7597,7 @@
       if (st === 'kutilmoqda') {
         var links = o.links || {};
         h += '<div class="mk-paybtns" style="width:100%">' + mkPayBtnsHtml(links, o.stars) + '</div>' +
+          '<div style="width:100%">' + rcManualHtml(o.manual, o.jami) + rcBoxHtml() + '</div>' +
           '<button class="mk-btn ghost" id="mkOCheck">🔄 ' + L("To'lovni tekshirish","Проверить оплату") + '</button>';
       }
       h += '<button class="mk-btn ' + (st === 'kutilmoqda' ? 'ghost' : 'pri') + '" id="mkOBack">🛒 ' + L('Marketga qaytish','Вернуться в маркет') + '</button></div>';
@@ -7434,10 +7607,12 @@
         a.addEventListener('click', function(e){
           e.preventDefault(); haptic('select');
           mkStoreSet(MK_PENDING_KEY, { order_id:oid, t:Date.now() });
-          var k = a.getAttribute('data-p');
+          var k = a.getAttribute('data-p'); m.payMethod = k;
+          if (k === 'manual') { rcShowManual(); return; }
           mkStartPay(k, (o.links || {})[k], function(){ load(false); });
         });
       });
+      if (st === 'kutilmoqda') rcBind('market', oid, function(){ return m.payMethod || 'other'; });
       var chk = document.getElementById('mkOCheck'); if (chk) chk.addEventListener('click', function(){ haptic('tap'); load(true); });
       document.getElementById('mkOBack').addEventListener('click', function(){ haptic('select'); mkGoHomeMarket(); });
     }
@@ -7458,7 +7633,8 @@
         if (was === 'kutilmoqda' && o.paid) { entry.fresh = true; haptic('ok'); state.mk.orders = null; }
         if (manual && o.status === 'kutilmoqda') mkToast(L("To'lov hali kelmadi","Оплата пока не поступила"));
         cur = o;
-        var sig = JSON.stringify([o.status, o.updated_at, o.paid_at, !!entry.fresh, Object.keys(o.links || {}).length]);
+        if (o.status === 'kutilmoqda') rcSync('market', oid, o.receipt);
+        var sig = JSON.stringify([o.status, o.updated_at, o.paid_at, !!entry.fresh, Object.keys(o.links || {}).length, o.receipt || '']);
         if (sig === lastSig) return;
         lastSig = sig; paint(o);
       }).catch(function(){ busy = false; if (manual) mkToast(L("Ulanib bo'lmadi","Нет соединения")); });
