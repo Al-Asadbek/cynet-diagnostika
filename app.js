@@ -1113,6 +1113,11 @@
     if (entry.view === 'marketPay') return L("To'lov",'Оплата');
     if (entry.view === 'marketDone' || entry.view === 'marketOrder') return L('Buyurtma','Заказ');
     if (entry.view === 'marketOrders') return L('Buyurtmalarim','Мои заказы');
+    if (entry.view === 'marketAdj') return 'Printer · ADJ';
+    if (entry.view === 'marketAdjItem') return null;
+    if (entry.view === 'marketAdjPay') return L("To'lov",'Оплата');
+    if (entry.view === 'marketAdjDone') return L('Buyurtma','Заказ');
+    if (entry.view === 'marketAdjOrders') return L('Xaridlarim','Мои покупки');
     return null;
   }
 
@@ -6192,6 +6197,7 @@
           '<span class="meta"><span><b id="mkTotal">0</b> ' + L('ta qism','дет.') + '</span><span><b id="mkCatN">0</b> ' + L('texnika turi','типов техники') + '</span></span>' +
           '<span class="go">→</span>' +
         '</button>' +
+        '<button class="adj-main" id="mkOpenAdj"><span class="tag">' + L('YANGI','НОВОЕ') + '</span><span class="ico">🖨️</span><span class="tx"><b>' + L('Printer · ADJ','Принтер · ADJ') + '</b><span>' + L("Epson adjustment dasturlari — to'lovdan so'ng darhol chatga yuboriladi","Программы Adjustment для Epson — после оплаты сразу приходят в чат") + '</span></span><span class="go">→</span></button>' +
         '<div id="mkHomeOrders"></div>' +
         '<div class="mk-soon-row">' +
           '<button class="mk-soon" data-soon="1" style="--i:0"><span class="ico">🧰</span><span class="chip">' + L('TEZ ORADA','СКОРО') + '</span><b>' + L('Eski texnika','Старая техника') + '</b><span class="d">' + L("Ehtiyot qism uchun texnika","Техника на запчасти") + '</span></button>' +
@@ -6199,7 +6205,9 @@
         '</div>' +
       '</div>';
     document.getElementById('mkOpenParts').addEventListener('click', function(){ haptic('select'); push({ view:'marketCats' }); });
+    document.getElementById('mkOpenAdj').addEventListener('click', function(){ haptic('select'); push({ view:'marketAdj' }); });
     mkRenderHomeOrders();
+    adjCheckPending();
     mainView.querySelectorAll('[data-soon]').forEach(function(b){
       b.addEventListener('click', function(){ haptic('tap'); mkToast(L("Tez orada ochiladi 🚀","Скоро откроется 🚀")); });
     });
@@ -6537,8 +6545,9 @@
     var entry = state.stack[state.stack.length - 1] || {}, v = entry.view || '';
     var inMk = /^market/.test(v), n = mkCartCount();
     var hideCart = (v === 'marketCart' || v === 'marketCheckout' || v === 'marketPay');
-    c.classList.toggle('show', (inMk || n > 0) && !hideCart);
-    o.classList.toggle('show', inMk && v !== 'marketOrders');
+    var inAdj = /^marketAdj/.test(v);
+    c.classList.toggle('show', (inMk || n > 0) && !hideCart && !inAdj);
+    o.classList.toggle('show', inMk && v !== 'marketOrders' && !inAdj);
     c.classList.toggle('has', n > 0);
     var b = document.getElementById('topCartN'); if (b) b.textContent = n > 0 ? String(n) : '';
     var t = document.getElementById('topCartTot'); if (t) t.textContent = n > 0 ? mkFmt(mkCartTotal()) : '';
@@ -6868,6 +6877,354 @@
     document.getElementById('mkCheckPay').addEventListener('click', function(){ haptic('tap'); check(true); });
     var po = document.getElementById('mkPayOrders');
     if (po) po.addEventListener('click', function(){ haptic('tap'); push({ view:'marketOrders' }); });
+  }
+
+  // ============================================================================================
+  //  ADJ — Printer adjustment dasturlari (Epson va boshqalar). Market → Printer ADJ → model → to'lov.
+  //  To'lov tasdiqlanishi bilan tanlangan fayl serverdan mijozning Telegram chatiga AVTOMATIK yuboriladi.
+  // ============================================================================================
+  state.mk.adj = { items:null, brands:[], at:0, q:'', brend:null, pay:null, buying:false, orders:null, meta:null };
+  var ADJ_PENDING_KEY = 'cynet_adj_pending';
+
+  (function(){
+    if (document.getElementById('adjCss')) return;
+    var css =
+      '.adj-main{position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;margin-top:14px;padding:16px 16px;border-radius:24px;color:#fff;overflow:hidden;isolation:isolate;' +
+        'background:linear-gradient(135deg,#3b82f6 0%,#4f46e5 55%,#7c3aed 100%);border:1px solid rgba(255,255,255,.2);box-shadow:0 18px 38px -16px rgba(79,70,229,.65),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .18s cubic-bezier(.3,1.4,.5,1),filter .18s}' +
+      '.adj-main:active{transform:scale(.97);filter:brightness(1.1)}' +
+      '.adj-main .ico{flex:none;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:28px;background:rgba(255,255,255,.18)}' +
+      '.adj-main .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}' +
+      '.adj-main .tx b{font-family:var(--f-big);font-weight:800;font-size:17px;line-height:1.15}' +
+      '.adj-main .tx span{font-size:12px;line-height:1.35;opacity:.88}' +
+      '.adj-main .tag{position:absolute;right:12px;top:10px;font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:999px;background:#ffc83d;color:#2a1b00}' +
+      '.adj-main .go{flex:none;font-size:22px;opacity:.9}' +
+      '.adj-th{--c1:#3b82f6;--c2:#312e81;flex-direction:column;gap:2px}.adj-th span{font-size:32px;line-height:1}.adj-th b{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;opacity:.95}' +
+      '.adj-tag{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(25,230,160,.12);border:1px solid rgba(25,230,160,.28);color:#9df5d3;white-space:nowrap}' +
+      '.adj-hero{position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;height:150px;border-radius:26px;margin-bottom:14px;overflow:hidden;color:#fff;' +
+        'background:linear-gradient(140deg,#3b82f6,#4f46e5 55%,#1e1b4b);border:1px solid rgba(255,255,255,.16)}' +
+      '.adj-hero .em{font-size:54px;line-height:1}.adj-hero .lb{font-family:var(--font-mono);font-weight:700;letter-spacing:.18em;font-size:12px;opacity:.9}' +
+      '.adj-list{display:flex;flex-direction:column;gap:10px;margin:0 0 4px}' +
+      '.adj-li{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.4;color:#d7e6e1}.adj-li i{font-style:normal;flex:none}' +
+      '.adj-st{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}' +
+      '.adj-st.ok{background:rgba(25,230,160,.14);border-color:rgba(25,230,160,.35);color:#9df5d3}.adj-st.bad{background:rgba(255,98,89,.14);border-color:rgba(255,98,89,.35);color:#ffb3ae}' +
+      '.adj-ord{padding:14px;border-radius:20px;background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:8px}' +
+      '.adj-ord .r{display:flex;justify-content:space-between;align-items:center;gap:8px}.adj-ord .m{font-weight:800;font-size:15px}.adj-ord .d{font-size:12px;color:#9fb8b0}' +
+      '.adj-ord button{padding:11px;border-radius:14px;font-weight:800;font-size:13px;background:rgba(79,70,229,.25);border:1px solid rgba(129,140,248,.4);color:#fff}' +
+      '.adj-ord button:disabled{opacity:.55}' +
+      '.adj-done{text-align:center;padding:26px 10px 8px}.adj-done .big{font-size:64px;display:block;margin-bottom:8px}.adj-done h2{font-family:var(--f-big);font-weight:800;font-size:22px;margin:0 0 6px}' +
+      '.adj-done p{color:#b5cbc4;font-size:14px;line-height:1.5;margin:0 0 12px}';
+    var st = document.createElement('style'); st.id = 'adjCss'; st.textContent = css; document.head.appendChild(st);
+  })();
+
+  function adjSoM(){ return L("so'm","сум"); }
+  function adjExt(p){
+    var m = /\.([a-z0-9]{2,5})$/i.exec(p.file_name || ''); return m ? m[1].toUpperCase() : '';
+  }
+  function adjFileInfo(p){
+    var parts = [];
+    var ext = adjExt(p); if (ext) parts.push(ext);
+    if (p.file_size) parts.push(p.file_size > 1048576 ? (p.file_size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(p.file_size / 1024)) + ' KB');
+    return parts.join(' · ');
+  }
+
+  function adjLoad(cb, force){
+    var a = state.mk.adj;
+    if (!force && a.items && (Date.now() - a.at) < MK_TTL) { cb(a.items, null); return; }
+    if (!API_BASE) { cb(null, 'NO_API'); return; }
+    apiGet('/api/public/adj/products').then(function(d){
+      if (d && d.ok) {
+        a.items = d.items || []; a.brands = d.brands || []; a.at = Date.now(); a.meta = { phone:d.phone, tg:d.tg };
+        if (a.brend === null) {
+          var hasEpson = a.brands.some(function(b){ return String(b.brend).toLowerCase() === 'epson'; });
+          a.brend = hasEpson ? 'Epson' : '';
+        }
+        cb(a.items, null);
+      } else cb(a.items, 'ERR');
+    }).catch(function(){ cb(a.items, 'ERR'); });
+  }
+
+  // ---------- Marketdagi kirish tugmasi uchun: to'lov paytida ilova yopilgan bo'lsa ----------
+  function adjCheckPending(){
+    var p = mkStoreGet(ADJ_PENDING_KEY);
+    if (!p || !p.order_id || (Date.now() - (p.t || 0)) > 30 * 60 * 1000) { if (p) mkStoreSet(ADJ_PENDING_KEY, null); return; }
+    if (!getInitData()) return;
+    apiGet('/api/public/adj/order/status?id=' + p.order_id + '&init_data=' + encodeURIComponent(getInitData())).then(function(d){
+      if (!d || !d.ok) return;
+      if (d.paid) {
+        mkStoreSet(ADJ_PENDING_KEY, null);
+        mkToast(d.delivered ? L("✅ Adjustment fayli bot chatiga yuborildi","✅ Файл Adjustment отправлен в чат с ботом") : L("✅ To'lov qabul qilindi, fayl yuborilmoqda","✅ Оплата получена, файл отправляется"));
+      } else if (d.status === 'bekor') mkStoreSet(ADJ_PENDING_KEY, null);
+    }).catch(function(){});
+  }
+
+  // ---------- Ro'yxat: Market → Printer ADJ ----------
+  function renderMarketAdj(){
+    var a = state.mk.adj;
+    mainView.innerHTML =
+      '<div class="view mk-view">' +
+        '<div class="mk-sticky"><div class="mk-search">' +
+          '<span class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></span>' +
+          '<input id="adjQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + esc(L("Printer modeli: L805, L3150, XP-600...","Модель принтера: L805, L3150, XP-600...")) + '">' +
+          '<button class="mk-clear" id="adjClear" aria-label="clear">✕</button></div>' +
+          '<div class="mk-chips" id="adjChips"></div></div>' +
+        '<div class="mk-head"><div class="tt"><span>🖨️</span>' + L('Printer · ADJ','Принтер · ADJ') + '</div><div class="cn" id="adjCnt"></div></div>' +
+        '<div class="mk-hint" style="margin:0 2px 12px">' + L("Modelni tanlang — to'lovdan so'ng adjustment dasturi darhol shu bot chatiga yuboriladi.","Выберите модель — после оплаты программа Adjustment сразу придёт в чат с ботом.") + '</div>' +
+        '<div class="mk-list fx" id="adjList"><div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div></div>' +
+        '<div class="mk-actions" style="margin-top:16px"><button class="mk-btn ghost" id="adjMy">📥 ' + L('Xaridlarim','Мои покупки') + '</button></div>' +
+      '</div>';
+
+    var input = document.getElementById('adjQ'), clearBtn = document.getElementById('adjClear');
+    var listEl = document.getElementById('adjList'), cntEl = document.getElementById('adjCnt');
+    input.value = a.q || '';
+    var loadError = null, first = true;
+
+    function drawChips(){
+      var box = document.getElementById('adjChips'); if (!box) return;
+      var chips = [['', L('Barchasi','Все')]].concat((a.brands || []).map(function(b){ return [b.brend, b.brend]; }));
+      if (chips.length < 3) { box.style.display = 'none'; return; }
+      box.style.display = '';
+      box.innerHTML = chips.map(function(c){ return '<button class="mk-chip' + ((a.brend || '') === c[0] ? ' on' : '') + '" data-b="' + esc(c[0]) + '">' + esc(c[1]) + '</button>'; }).join('');
+      box.querySelectorAll('.mk-chip').forEach(function(b){
+        b.addEventListener('click', function(){ haptic('select'); a.brend = b.getAttribute('data-b'); drawChips(); paint(); });
+      });
+    }
+
+    function paint(){
+      clearBtn.classList.toggle('show', !!input.value);
+      if (!a.items) {
+        if (loadError) {
+          listEl.className = 'mk-list';
+          listEl.innerHTML = '<div class="mk-empty"><span class="big">📡</span><b>' + L("Ma'lumotni yuklab bo'lmadi","Не удалось загрузить данные") + '</b>' + L("Internetni tekshirib, qayta urinib ko'ring.","Проверьте интернет и повторите попытку.") + '<span class="act" id="adjRetry">' + L('Qayta urinish','Повторить') + '</span></div>';
+          document.getElementById('adjRetry').addEventListener('click', function(){ loadError = null; paint(); load(true); });
+        }
+        return;
+      }
+      var tokens = mkNorm(input.value).split(/\s+/).filter(Boolean);
+      var items = a.items.filter(function(p){
+        if (a.brend && String(p.brend).toLowerCase() !== String(a.brend).toLowerCase()) return false;
+        return !tokens.length || mkMatch(p, tokens);
+      });
+      cntEl.textContent = items.length + ' ' + L('ta model','моделей');
+      if (!items.length) {
+        listEl.className = 'mk-list';
+        listEl.innerHTML = '<div class="mk-empty"><span class="big">🔎</span><b>' + (a.items.length ? L("Model topilmadi","Модель не найдена") : L("Hozircha adjustment yo'q","Пока нет adjustment")) + '</b>' +
+          (a.items.length ? L("Boshqa nom bilan qidirib ko'ring. Kerakli model yo'q bo'lsa — bizga yozing, tez orada qo'shamiz.","Попробуйте другой запрос. Нужной модели нет — напишите нам, добавим.") : L("Tez orada qo'shiladi.","Скоро добавим.")) + '</div>';
+        return;
+      }
+      listEl.className = 'mk-list' + (first ? ' fx' : '');
+      first = false;
+      listEl.innerHTML = items.map(function(p, i){
+        var sub = (p.nomi || (p.brend + ' ' + p.model + ' Adjustment Program')), fi = adjFileInfo(p);
+        return '<button class="mk-card" data-id="' + p.id + '" style="--i:' + Math.min(i, 12) + '">' +
+          '<span class="mk-thumb adj-th"><span>🖨️</span><b>ADJ</b></span>' +
+          '<span class="mk-info"><span class="mk-name">' + esc(p.brend + ' ' + p.model) + '</span>' +
+          '<span class="mk-meta">' + esc(sub) + (fi ? ' · ' + esc(fi) : '') + '</span>' +
+          '<span class="mk-foot"><span class="mk-price">' + mkFmt(p.narx) + ' <small style="font-size:.6em;font-weight:700;opacity:.8">' + adjSoM() + '</small></span>' +
+          '<span class="adj-tag">⚡ ' + L('Darhol yuboriladi','Сразу в чат') + '</span></span></span></button>';
+      }).join('');
+      listEl.querySelectorAll('.mk-card').forEach(function(el){
+        el.addEventListener('click', function(){ haptic('select'); push({ view:'marketAdjItem', id:parseInt(el.getAttribute('data-id'), 10) }); });
+      });
+    }
+
+    function load(force){
+      adjLoad(function(items, err){
+        if (state.stack[state.stack.length - 1].view !== 'marketAdj') return;
+        if (err && !items) loadError = err;
+        drawChips(); paint();
+      }, force);
+    }
+    var tmr = null;
+    input.addEventListener('input', function(){ a.q = input.value; clearTimeout(tmr); tmr = setTimeout(paint, 90); clearBtn.classList.toggle('show', !!input.value); });
+    clearBtn.addEventListener('click', function(){ input.value = ''; a.q = ''; paint(); input.focus(); });
+    document.getElementById('adjMy').addEventListener('click', function(){ haptic('select'); push({ view:'marketAdjOrders' }); });
+    drawChips(); paint(); load(false);
+    adjCheckPending();
+  }
+
+  // ---------- Model sahifasi ----------
+  function renderMarketAdjItem(entry){
+    var a = state.mk.adj;
+    var p = (a.items || []).find(function(x){ return x.id === entry.id; });
+    if (!p) {
+      mainView.innerHTML = '<div class="view mk-view"><div class="mk-skel" style="height:260px"></div></div>';
+      adjLoad(function(items){
+        var top = state.stack[state.stack.length - 1];
+        if (top.view !== 'marketAdjItem' || top.id !== entry.id) return;
+        if ((items || []).find(function(x){ return x.id === entry.id; })) renderMarketAdjItem(entry);
+        else mainView.innerHTML = '<div class="view mk-view"><div class="mk-empty"><span class="big">🤷</span><b>' + L("Adjustment topilmadi","Adjustment не найден") + '</b>' + L("U sotuvdan olingan bo'lishi mumkin.","Возможно, он снят с продажи.") + '</div></div>';
+      }, true);
+      return;
+    }
+    var desc = pick(p, 'tavsif'), fi = adjFileInfo(p);
+    mainView.innerHTML =
+      '<div class="view mk-view">' +
+        '<div class="adj-hero"><span class="em">🖨️</span><span class="lb">' + esc(String(p.brend).toUpperCase()) + ' · ADJUSTMENT</span></div>' +
+        '<div class="mk-d-top"><div class="mk-d-title">' + esc(p.brend + ' ' + p.model) + '</div><div class="mk-d-meta">' + esc(p.nomi || 'Adjustment Program') + (fi ? ' · ' + esc(fi) : '') + '</div></div>' +
+        '<div class="mk-d-row"><span class="mk-d-price">' + mkFmt(p.narx) + ' <small style="font-size:.6em;font-weight:700;opacity:.8">' + adjSoM() + '</small></span><span class="mk-stock">' + L('Raqamli mahsulot','Цифровой товар') + '</span></div>' +
+        '<div class="mk-sec"><h3>' + L('Nima olasiz','Что вы получите') + '</h3><div class="mk-box" style="padding:14px"><div class="adj-list">' +
+          '<div class="adj-li"><i>📦</i><span>' + L("Adjustment program fayli (waste ink counter reset va boshqa servis funksiyalar)","Файл программы Adjustment (сброс счётчика памперса и другие сервисные функции)") + '</span></div>' +
+          '<div class="adj-li"><i>⚡</i><span>' + L("To'lov tasdiqlangach fayl avtomatik shu bot chatiga yuboriladi — kutish shart emas","После подтверждения оплаты файл автоматически придёт в этот чат с ботом") + '</span></div>' +
+          '<div class="adj-li"><i>🔁</i><span>' + L("Fayl yo'qolsa «Xaridlarim» bo'limidan qayta yuboriladi","Если файл потеряется — отправим снова из раздела «Мои покупки»") + '</span></div>' +
+        '</div></div></div>' +
+        (desc ? '<div class="mk-sec"><h3>' + L('Tavsif','Описание') + '</h3><div class="mk-box"><div class="mk-desc">' + esc(desc) + '</div></div></div>' : '') +
+        '<div class="mk-hint" id="adjErr" style="color:#ffb3ae;margin:0 2px 8px"></div>' +
+        '<div class="mk-actions"><button class="mk-btn pri" id="adjBuy">💳 ' + L("Sotib olish","Купить") + ' · ' + mkFmt(p.narx) + ' ' + adjSoM() + '</button></div>' +
+        '<div class="mk-contact" id="adjContact"></div>' +
+      '</div>';
+
+    var meta = a.meta || {};
+    var phone = String(meta.phone || t().contactPhone || '').replace(/[^\d+]/g, '');
+    var tgUser = String(meta.tg || 'online_ustaxona').replace(/^@/, '');
+    var msg = L("Assalomu alaykum! Adjustment bo'yicha so'rayman:\n","Здравствуйте! Вопрос по Adjustment:\n") + p.brend + ' ' + p.model;
+    var tgUrl = 'https://t.me/' + tgUser + '?text=' + encodeURIComponent(msg);
+    document.getElementById('adjContact').innerHTML =
+      (phone ? '<a class="mk-btn ghost" href="tel:' + esc(phone) + '">📞 ' + L("Qo'ng'iroq","Позвонить") + '</a>' : '') +
+      '<a class="mk-btn ghost" id="adjTg" href="' + esc(tgUrl) + '">✈️ ' + L("Savol berish","Задать вопрос") + '</a>';
+    document.getElementById('adjTg').addEventListener('click', function(e){ if (tg && tg.openTelegramLink) { e.preventDefault(); haptic('select'); tg.openTelegramLink(tgUrl); } });
+
+    var buyBtn = document.getElementById('adjBuy'), errEl = document.getElementById('adjErr');
+    buyBtn.addEventListener('click', function(){
+      if (a.buying) return;
+      errEl.textContent = '';
+      if (!getInitData()) { errEl.textContent = L("Xarid qilish uchun ilovani Telegram ichida oching.","Для покупки откройте приложение внутри Telegram."); return; }
+      a.buying = true; haptic('tap');
+      var label = buyBtn.innerHTML; buyBtn.disabled = true; buyBtn.textContent = L('⏳ Tayyorlanmoqda...','⏳ Подготовка...');
+      function reset(msg){ a.buying = false; buyBtn.disabled = false; buyBtn.innerHTML = label; if (msg) errEl.textContent = msg; }
+      apiPost('/api/public/adj/order/create', { init_data:getInitData(), lang:srvLang(), product_id:p.id }).then(function(res){
+        var d = res.data || {};
+        if (d.ok) {
+          a.buying = false;
+          a.pay = { order_id:d.order_id, jami:d.jami, links:d.links || {}, stars:d.stars || 0, model:d.model || (p.brend + ' ' + p.model) };
+          mkStoreSet(ADJ_PENDING_KEY, { order_id:d.order_id, t:Date.now() });
+          haptic('ok'); push({ view:'marketAdjPay' });
+        } else reset(d.error ? String(d.error) : L("Xatolik yuz berdi. Qayta urinib ko'ring.","Произошла ошибка. Повторите попытку."));
+      }).catch(function(){ reset(L("Ulanib bo'lmadi. Internetni tekshiring.","Нет соединения. Проверьте интернет.")); });
+    });
+  }
+
+  // ---------- To'lov ----------
+  function renderMarketAdjPay(){
+    var m = state.mk, a = m.adj, pay = a.pay;
+    if (!pay) { state.stack.pop(); render(); return; }
+    mainView.innerHTML =
+      '<div class="view mk-view">' +
+        '<div class="mk-head"><div class="tt"><span>💳</span>' + L("To'lov","Оплата") + '</div><div class="cn">№' + pay.order_id + '</div></div>' +
+        '<div class="mk-d-top" style="margin-bottom:10px"><div class="mk-d-title">🖨️ ' + esc(pay.model) + '</div><div class="mk-d-meta">Adjustment Program</div></div>' +
+        '<div class="mk-totalbox" style="margin:0 0 16px"><span class="k">' + L("To'lov summasi","Сумма к оплате") + '</span><span class="v">' + mkFmt(pay.jami) + ' ' + adjSoM() + '</span></div>' +
+        '<div class="mk-hint" style="margin:0 2px 12px">' + L("To'lov usulini tanlang. To'lov tasdiqlanishi bilan fayl avtomatik shu bot chatiga yuboriladi.","Выберите способ оплаты. После подтверждения оплаты файл автоматически придёт в чат с ботом.") + '</div>' +
+        '<div class="mk-paybtns">' + mkPayBtnsHtml(pay.links, pay.stars) + '</div>' +
+        '<div class="mk-wait" id="mkWait"><i></i><span>' + L("To'lov kutilmoqda...","Ожидаем оплату...") + '</span></div>' +
+        '<div style="text-align:center;margin-top:12px"><span class="mk-empty" style="padding:0"><span class="act" id="adjCheckPay" style="margin-top:0">' + L("🔄 To'lovni tekshirish","🔄 Проверить оплату") + '</span></span></div>' +
+      '</div>';
+
+    mainView.querySelectorAll('.mk-payopt').forEach(function(el){
+      el.addEventListener('click', function(e){ e.preventDefault(); haptic('select'); var k = el.getAttribute('data-p'); mkStartPay(k, pay.links[k], function(){ check(false); }); });
+    });
+    var busy = false, tries = 0;
+    function check(manual){
+      if (busy) return; busy = true;
+      apiGet('/api/public/adj/order/status?id=' + pay.order_id + '&init_data=' + encodeURIComponent(getInitData())).then(function(d){
+        busy = false;
+        if (state.stack[state.stack.length - 1].view !== 'marketAdjPay') return;
+        if (d && d.ok && d.paid) { onPaid(); return; }
+        if (d && d.ok && d.status === 'bekor') {
+          mkPayCleanup();
+          var w = document.getElementById('mkWait'); if (w) w.innerHTML = '<span>' + L("Buyurtma bekor qilindi. Qaytadan sotib oling.","Заказ отменён. Оформите покупку заново.") + '</span>';
+          return;
+        }
+        if (manual) mkToast(L("To'lov hali kelmadi","Оплата пока не поступила"));
+      }).catch(function(){ busy = false; if (manual) mkToast(L("Ulanib bo'lmadi","Нет соединения")); });
+    }
+    function onPaid(){
+      mkPayCleanup();
+      var oid = pay.order_id;
+      a.pay = null; a.orders = null; mkStoreSet(ADJ_PENDING_KEY, null);
+      haptic('ok');
+      state.stack = [{ view:'mainMenu' }, { view:'market' }, { view:'marketAdj' }];
+      push({ view:'marketAdjDone', order_id:oid });
+    }
+    m.payTimer = setInterval(function(){ tries++; if (tries > 300) { mkPayCleanup(); return; } check(false); }, 3000);
+    m.payVis = function(){ if (!document.hidden) check(false); };
+    document.addEventListener('visibilitychange', m.payVis);
+    document.getElementById('adjCheckPay').addEventListener('click', function(){ haptic('tap'); check(true); });
+  }
+
+  // ---------- To'lov o'tdi: fayl yuborildi ----------
+  function renderMarketAdjDone(entry){
+    var m = state.mk, oid = entry.order_id;
+    mainView.innerHTML =
+      '<div class="view mk-view"><div class="adj-done"><span class="big">🎉</span><h2>' + L("To'lov qabul qilindi!","Оплата получена!") + '</h2>' +
+        '<p id="adjDoneTx">' + L("Adjustment fayli bot chatiga yuborilmoqda...","Файл Adjustment отправляется в чат с ботом...") + '</p>' +
+        '<div id="adjDoneSt"><span class="adj-st">⏳ ' + L('Yuborilmoqda','Отправляется') + '</span></div></div>' +
+        '<div class="mk-actions" style="flex-direction:column"><button class="mk-btn pri" id="adjToChat">💬 ' + L("Chatga o'tish — faylni olish","Перейти в чат — забрать файл") + '</button>' +
+        '<button class="mk-btn ghost" id="adjDoneMy">📥 ' + L('Xaridlarim','Мои покупки') + '</button></div></div>';
+    document.getElementById('adjToChat').addEventListener('click', function(){ haptic('select'); if (tg && tg.close) tg.close(); });
+    document.getElementById('adjDoneMy').addEventListener('click', function(){ haptic('select'); push({ view:'marketAdjOrders' }); });
+    var tries = 0, busy = false;
+    function upd(){
+      if (busy) return; busy = true;
+      apiGet('/api/public/adj/order/status?id=' + oid + '&init_data=' + encodeURIComponent(getInitData())).then(function(d){
+        busy = false;
+        var top = state.stack[state.stack.length - 1];
+        if (!top || top.view !== 'marketAdjDone' || top.order_id !== oid) { mkPayCleanup(); return; }
+        var st = document.getElementById('adjDoneSt'), tx = document.getElementById('adjDoneTx'); if (!st || !tx || !d || !d.ok) return;
+        if (d.delivered) {
+          st.innerHTML = '<span class="adj-st ok">✅ ' + L('Fayl yuborildi','Файл отправлен') + '</span>';
+          tx.textContent = L("Adjustment fayli bot chatiga yuborildi. Chatni oching va faylni yuklab oling.","Файл Adjustment отправлен в чат с ботом. Откройте чат и скачайте файл.");
+          mkPayCleanup();
+        } else if (d.status === 'xato') {
+          st.innerHTML = '<span class="adj-st bad">⚠️ ' + L('Yuborishda xato','Ошибка отправки') + '</span>';
+          tx.textContent = L("Fayl yuborilmadi. «Xaridlarim» bo'limidan qayta yuborishni bosing yoki botni /start qiling.","Файл не отправлен. Нажмите «Отправить снова» в «Моих покупках» или запустите бота (/start).");
+          mkPayCleanup();
+        }
+      }).catch(function(){ busy = false; });
+    }
+    upd();
+    m.ordTimer = setInterval(function(){ tries++; if (tries > 20) { mkPayCleanup(); return; } upd(); }, 2000);
+  }
+
+  // ---------- Xaridlarim (qayta yuborish) ----------
+  function renderMarketAdjOrders(){
+    var a = state.mk.adj;
+    mainView.innerHTML = '<div class="view mk-view"><div class="mk-head"><div class="tt"><span>📥</span>' + L('Xaridlarim','Мои покупки') + '</div><div class="cn" id="adjOCnt"></div></div>' +
+      '<div class="mk-list" id="adjOList"><div class="mk-skel"></div><div class="mk-skel"></div></div></div>';
+    function draw(items){
+      var box = document.getElementById('adjOList'); if (!box) return;
+      document.getElementById('adjOCnt').textContent = items.length ? items.length + ' ' + L('ta','шт.') : '';
+      if (!items.length) {
+        box.innerHTML = '<div class="mk-empty"><span class="big">🛍️</span><b>' + L("Hali xarid yo'q","Покупок пока нет") + '</b>' + L("Sotib olingan adjustmentlar shu yerda ko'rinadi.","Купленные adjustment появятся здесь.") + '<span class="act" id="adjOGo">' + L('Adjustmentlarni ko\'rish','Смотреть adjustment') + '</span></div>';
+        document.getElementById('adjOGo').addEventListener('click', function(){ haptic('select'); state.stack = [{ view:'mainMenu' }, { view:'market' }]; push({ view:'marketAdj' }); });
+        return;
+      }
+      box.innerHTML = items.map(function(o){
+        var ok = o.status === 'yuborildi', bad = o.status === 'xato';
+        var lab = ok ? L('Yuborilgan','Отправлено') : (bad ? L('Yuborishda xato','Ошибка отправки') : L('Yuborilmoqda','Отправляется'));
+        return '<div class="adj-ord"><div class="r"><span class="m">🖨️ ' + esc(o.model) + '</span><span class="adj-st ' + (ok ? 'ok' : (bad ? 'bad' : '')) + '">' + lab + '</span></div>' +
+          '<div class="d">№' + o.id + ' · ' + mkFmt(o.narx) + ' ' + adjSoM() + ' · ' + esc(o.paid_at || o.created_at || '') + '</div>' +
+          '<button data-oid="' + o.id + '"' + (o.resend_left > 0 ? '' : ' disabled') + '>📨 ' + L('Faylni qayta yuborish','Отправить файл снова') + '</button></div>';
+      }).join('');
+      box.querySelectorAll('button[data-oid]').forEach(function(b){
+        b.addEventListener('click', function(){
+          if (b.disabled) return; b.disabled = true; haptic('tap');
+          var old = b.textContent; b.textContent = '⏳';
+          apiPost('/api/public/adj/order/resend', { init_data:getInitData(), order_id:parseInt(b.getAttribute('data-oid'), 10) }).then(function(res){
+            var d = res.data || {};
+            if (d.ok) { haptic('ok'); mkToast(L("Fayl chatga yuborildi ✓","Файл отправлен в чат ✓")); b.textContent = old; setTimeout(load, 600); }
+            else { b.disabled = false; b.textContent = old; mkToast(d.error ? String(d.error) : L("Xatolik","Ошибка")); }
+          }).catch(function(){ b.disabled = false; b.textContent = old; mkToast(L("Ulanib bo'lmadi","Нет соединения")); });
+        });
+      });
+    }
+    function load(){
+      if (!getInitData()) { draw([]); return; }
+      apiGet('/api/public/adj/orders?init_data=' + encodeURIComponent(getInitData())).then(function(d){
+        if (state.stack[state.stack.length - 1].view !== 'marketAdjOrders') return;
+        a.orders = (d && d.ok) ? (d.items || []) : []; draw(a.orders);
+      }).catch(function(){ if (state.stack[state.stack.length - 1].view === 'marketAdjOrders') draw(a.orders || []); });
+    }
+    if (a.orders) draw(a.orders);
+    load();
   }
 
   // ---------- buyurtmalar: holat belgilari, tarix va tafsilot ----------
@@ -7806,7 +8163,7 @@
     var inMk = /^market/.test(entry.view);
     document.body.classList.toggle('in-market', inMk);
     mkUpdateCartBar();
-    document.getElementById('brandSub').textContent = inMk ? 'MARKET · ' + L('EHTIYOT QISMLAR','ЗАПЧАСТИ') : t().subtitle;
+    document.getElementById('brandSub').textContent = inMk ? 'MARKET · ' + (/^marketAdj/.test(entry.view) ? 'PRINTER ADJ' : L('EHTIYOT QISMLAR','ЗАПЧАСТИ')) : t().subtitle;
     var tbEl = document.querySelector('.topbar');
     if (tbEl) document.documentElement.style.setProperty('--tb', tbEl.offsetHeight + 'px');
     window.scrollTo(0,0);
@@ -7862,6 +8219,11 @@
     else if (entry.view === 'marketDone') renderMarketDone(entry);
     else if (entry.view === 'marketOrders') renderMarketOrders();
     else if (entry.view === 'marketOrder') renderMarketOrder(entry);
+    else if (entry.view === 'marketAdj') renderMarketAdj();
+    else if (entry.view === 'marketAdjItem') renderMarketAdjItem(entry);
+    else if (entry.view === 'marketAdjPay') renderMarketAdjPay();
+    else if (entry.view === 'marketAdjDone') renderMarketAdjDone(entry);
+    else if (entry.view === 'marketAdjOrders') renderMarketAdjOrders();
     else if (entry.view === 'calc') renderCalc(entry);
     else if (entry.view === 'advisor') renderAdvisor(entry);
     else if (entry.view === 'devices') renderDevices();
