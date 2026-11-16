@@ -328,7 +328,7 @@
         "• Usta bilan to'g'ridan-to'g'ri qo'ng'iroq yoki Telegram orqali bog'laydi\n" +
         "• Bajarilgan ishdan so'ng ustani baholash imkonini beradi\n" +
         "• Texnika nosozliklarini o'zingiz aniqlashingiz uchun 14 turdagi texnika bo'yicha diagnostika va qadamma-qadam yo'riqnoma beradi\n" +
-        "• Marketda ehtiyot qismlar va printer adjustment dasturlarini sotadi (Payme / Click orqali to'lov)\n" +
+        "• Marketda ehtiyot qismlar va printer chip reset dasturlarini sotadi (Payme / Click orqali to'lov)\n" +
         "\n" +
         "🔧 Qanday texnikalar?\n" +
         "Televizor, konditsioner, xolodilnik, kir yuvish mashinasi, printer, kompyuter va noutbuk hamda boshqa uy texnikalari.\n" +
@@ -604,7 +604,7 @@
         "• Связывает с мастером напрямую по звонку или в Telegram\n" +
         "• После выполнения работы позволяет оценить мастера\n" +
         "• Помогает самостоятельно определить неисправность: диагностика и пошаговые инструкции по 14 видам техники\n" +
-        "• В маркете продаёт запчасти и adjustment-программы для принтеров (оплата через Payme / Click)\n" +
+        "• В маркете продаёт запчасти и программы Chip reset для принтеров (оплата через Payme / Click)\n" +
         "\n" +
         "🔧 Какая техника?\n" +
         "Телевизоры, кондиционеры, холодильники, стиральные машины, принтеры, компьютеры и ноутбуки, а также другая бытовая техника.\n" +
@@ -1157,7 +1157,7 @@
     if (entry.view === 'marketPay') return L("To'lov",'Оплата');
     if (entry.view === 'marketDone' || entry.view === 'marketOrder') return L('Buyurtma','Заказ');
     if (entry.view === 'marketOrders') return L('Buyurtmalarim','Мои заказы');
-    if (entry.view === 'marketAdj') return 'Printer · ADJ';
+    if (entry.view === 'marketAdj') return 'Chip reset';
     if (entry.view === 'marketAdjItem') return null;
     if (entry.view === 'marketAdjPay') return L("To'lov",'Оплата');
     if (entry.view === 'marketAdjDone') return L('Buyurtma','Заказ');
@@ -6239,7 +6239,6 @@
           '<span class="meta"><span><b id="mkTotal">0</b> ' + L('ta qism','дет.') + '</span><span><b id="mkCatN">0</b> ' + L('texnika turi','типов техники') + '</span></span>' +
           '<span class="go">→</span>' +
         '</button>' +
-        '<button class="adj-main" id="mkOpenAdj"><span class="tag">' + L('YANGI','НОВОЕ') + '</span><span class="ico">🖨️</span><span class="tx"><b>' + L('Printer · ADJ','Принтер · ADJ') + '</b><span>' + L("Epson adjustment dasturlari — to'lovdan so'ng darhol chatga yuboriladi","Программы Adjustment для Epson — после оплаты сразу приходят в чат") + '</span></span><span class="go">→</span></button>' +
         '<div id="mkHomeOrders"></div>' +
         '<div class="mk-soon-row">' +
           '<button class="mk-soon" data-soon="1" style="--i:0"><span class="ico">🧰</span><span class="chip">' + L('TEZ ORADA','СКОРО') + '</span><b>' + L('Eski texnika','Старая техника') + '</b><span class="d">' + L("Ehtiyot qism uchun texnika","Техника на запчасти") + '</span></button>' +
@@ -6247,7 +6246,6 @@
         '</div>' +
       '</div>';
     document.getElementById('mkOpenParts').addEventListener('click', function(){ haptic('select'); push({ view:'marketCats' }); });
-    document.getElementById('mkOpenAdj').addEventListener('click', function(){ haptic('select'); push({ view:'marketAdj' }); });
     mkRenderHomeOrders();
     adjCheckPending();
     mainView.querySelectorAll('[data-soon]').forEach(function(b){
@@ -6270,9 +6268,9 @@
       order.sort(function(a, b){ return (b.n > 0) - (a.n > 0) || a.i - b.i; });
       var grid = document.getElementById('mkGrid'); if (!grid) return;
       grid.innerHTML = order.map(function(o, i){
-        return '<button class="mk-cat ' + palOf(o.c.id) + (o.n ? '' : ' zero') + '" data-cat="' + o.c.id + '" style="--i:' + i + '">' +
+        return '<button class="mk-cat ' + palOf(o.c.id) + (o.n || o.c.id === 'printer' ? '' : ' zero') + '" data-cat="' + o.c.id + '" style="--i:' + i + '">' +
           '<span class="emo">' + o.c.icon + '</span><span class="nm">' + esc(pick(o.c,'name')) + '</span>' +
-          '<span class="ct">' + (o.n ? o.n + ' ' + L('ta qism','дет.') : L('Tez orada','Скоро')) + '</span></button>';
+          '<span class="ct">' + (o.c.id === 'printer' ? (o.n ? o.n + ' ' + L('ta qism','дет.') + ' · ' : '') + '🔄 Chip reset' : (o.n ? o.n + ' ' + L('ta qism','дет.') : L('Tez orada','Скоро'))) + '</span></button>';
       }).join('');
       grid.querySelectorAll('[data-cat]').forEach(function(b){
         b.addEventListener('click', function(){ haptic('select'); push({ view:'marketParts', cat:b.getAttribute('data-cat') }); });
@@ -6330,12 +6328,16 @@
           '<input id="mkQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + esc(L("Nomi, model yoki qism raqami...","Название, модель или номер детали...")) + '">' +
           '<button class="mk-clear" id="mkClear" aria-label="clear">✕</button></div>' +
           '<div class="mk-chips" id="mkChips">' + chips.map(function(ch){ return '<button class="mk-chip" data-h="' + ch[0] + '">' + ch[1] + '</button>'; }).join('') + '</div></div>' +
+        (cat === 'printer' ? '<button class="adj-main" id="mkOpenChipReset"><span class="tag">' + L('YANGI','НОВОЕ') + '</span><span class="ico">🔄</span><span class="tx"><b>Chip reset</b><span>' + L("Printer «Service required» yoki ink pad to'lgan deb to'xtab qolsa — tiklash dasturi. To'lovdan so'ng darhol chatga yuboriladi","Принтер остановился с ошибкой «Service required» или памперс переполнен — программа сброса. После оплаты сразу приходит в чат") + '</span></span><span class="go">→</span></button>' : '') +
         '<div class="mk-head"><div class="tt"><span>' + c.icon + '</span>' + esc(pick(c,'name')) + '</div><div class="cn" id="mkCnt"></div></div>' +
         '<div class="mk-list fx" id="mkList"><div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div></div>' +
       '</div>';
 
     var input = document.getElementById('mkQ'), clearBtn = document.getElementById('mkClear');
     var listEl = document.getElementById('mkList'), cntEl = document.getElementById('mkCnt');
+    var chipBtn = document.getElementById('mkOpenChipReset');
+    if (chipBtn) chipBtn.addEventListener('click', function(){ haptic('select'); push({ view:'marketAdj' }); });
+    adjCheckPending();
     input.value = q0;
     var firstPaint = true, loadError = null;
 
@@ -6994,7 +6996,7 @@
       if (!d || !d.ok) return;
       if (d.paid) {
         mkStoreSet(ADJ_PENDING_KEY, null);
-        mkToast(d.delivered ? L("✅ Adjustment fayli bot chatiga yuborildi","✅ Файл Adjustment отправлен в чат с ботом") : L("✅ To'lov qabul qilindi, fayl yuborilmoqda","✅ Оплата получена, файл отправляется"));
+        mkToast(d.delivered ? L("✅ Chip reset fayli bot chatiga yuborildi","✅ Файл Chip reset отправлен в чат с ботом") : L("✅ To'lov qabul qilindi, fayl yuborilmoqda","✅ Оплата получена, файл отправляется"));
       } else if (d.status === 'bekor') mkStoreSet(ADJ_PENDING_KEY, null);
     }).catch(function(){});
   }
@@ -7009,8 +7011,8 @@
           '<input id="adjQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + esc(L("Printer modeli: L805, L3150, XP-600...","Модель принтера: L805, L3150, XP-600...")) + '">' +
           '<button class="mk-clear" id="adjClear" aria-label="clear">✕</button></div>' +
           '<div class="mk-chips" id="adjChips"></div></div>' +
-        '<div class="mk-head"><div class="tt"><span>🖨️</span>' + L('Printer · ADJ','Принтер · ADJ') + '</div><div class="cn" id="adjCnt"></div></div>' +
-        '<div class="mk-hint" style="margin:0 2px 12px">' + L("Modelni tanlang — to'lovdan so'ng adjustment dasturi darhol shu bot chatiga yuboriladi.","Выберите модель — после оплаты программа Adjustment сразу придёт в чат с ботом.") + '</div>' +
+        '<div class="mk-head"><div class="tt"><span>🖨️</span>' + 'Chip reset' + '</div><div class="cn" id="adjCnt"></div></div>' +
+        '<div class="mk-hint" style="margin:0 2px 12px">' + L("Printer modelini tanlang — to'lovdan so'ng chip reset dasturi darhol shu bot chatiga yuboriladi.","Выберите модель принтера — после оплаты программа сброса (Chip reset) сразу придёт в чат с ботом.") + '</div>' +
         '<div class="mk-list fx" id="adjList"><div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div></div>' +
         '<div class="mk-actions" style="margin-top:16px"><button class="mk-btn ghost" id="adjMy">📥 ' + L('Xaridlarim','Мои покупки') + '</button></div>' +
       '</div>';
@@ -7049,16 +7051,16 @@
       cntEl.textContent = items.length + ' ' + L('ta model','моделей');
       if (!items.length) {
         listEl.className = 'mk-list';
-        listEl.innerHTML = '<div class="mk-empty"><span class="big">🔎</span><b>' + (a.items.length ? L("Model topilmadi","Модель не найдена") : L("Hozircha adjustment yo'q","Пока нет adjustment")) + '</b>' +
+        listEl.innerHTML = '<div class="mk-empty"><span class="big">🔎</span><b>' + (a.items.length ? L("Model topilmadi","Модель не найдена") : L("Hozircha chip reset yo'q","Пока нет Chip reset")) + '</b>' +
           (a.items.length ? L("Boshqa nom bilan qidirib ko'ring. Kerakli model yo'q bo'lsa — bizga yozing, tez orada qo'shamiz.","Попробуйте другой запрос. Нужной модели нет — напишите нам, добавим.") : L("Tez orada qo'shiladi.","Скоро добавим.")) + '</div>';
         return;
       }
       listEl.className = 'mk-list' + (first ? ' fx' : '');
       first = false;
       listEl.innerHTML = items.map(function(p, i){
-        var sub = (p.nomi || (p.brend + ' ' + p.model + ' Adjustment Program')), fi = adjFileInfo(p);
+        var sub = (p.nomi || (p.brend + ' ' + p.model + ' Chip reset')), fi = adjFileInfo(p);
         return '<button class="mk-card" data-id="' + p.id + '" style="--i:' + Math.min(i, 12) + '">' +
-          '<span class="mk-thumb adj-th"><span>🖨️</span><b>ADJ</b></span>' +
+          '<span class="mk-thumb adj-th"><span>🔄</span><b>RESET</b></span>' +
           '<span class="mk-info"><span class="mk-name">' + esc(p.brend + ' ' + p.model) + '</span>' +
           '<span class="mk-meta">' + esc(sub) + (fi ? ' · ' + esc(fi) : '') + '</span>' +
           '<span class="mk-foot"><span class="mk-price">' + mkFmt(p.narx) + ' <small style="font-size:.6em;font-weight:700;opacity:.8">' + adjSoM() + '</small></span>' +
@@ -7094,18 +7096,18 @@
         var top = state.stack[state.stack.length - 1];
         if (top.view !== 'marketAdjItem' || top.id !== entry.id) return;
         if ((items || []).find(function(x){ return x.id === entry.id; })) renderMarketAdjItem(entry);
-        else mainView.innerHTML = '<div class="view mk-view"><div class="mk-empty"><span class="big">🤷</span><b>' + L("Adjustment topilmadi","Adjustment не найден") + '</b>' + L("U sotuvdan olingan bo'lishi mumkin.","Возможно, он снят с продажи.") + '</div></div>';
+        else mainView.innerHTML = '<div class="view mk-view"><div class="mk-empty"><span class="big">🤷</span><b>' + L("Chip reset topilmadi","Chip reset не найден") + '</b>' + L("U sotuvdan olingan bo'lishi mumkin.","Возможно, он снят с продажи.") + '</div></div>';
       }, true);
       return;
     }
     var desc = pick(p, 'tavsif'), fi = adjFileInfo(p);
     mainView.innerHTML =
       '<div class="view mk-view">' +
-        '<div class="adj-hero"><span class="em">🖨️</span><span class="lb">' + esc(String(p.brend).toUpperCase()) + ' · ADJUSTMENT</span></div>' +
-        '<div class="mk-d-top"><div class="mk-d-title">' + esc(p.brend + ' ' + p.model) + '</div><div class="mk-d-meta">' + esc(p.nomi || 'Adjustment Program') + (fi ? ' · ' + esc(fi) : '') + '</div></div>' +
+        '<div class="adj-hero"><span class="em">🖨️</span><span class="lb">' + esc(String(p.brend).toUpperCase()) + ' · CHIP RESET</span></div>' +
+        '<div class="mk-d-top"><div class="mk-d-title">' + esc(p.brend + ' ' + p.model) + '</div><div class="mk-d-meta">' + esc(p.nomi || 'Chip reset') + (fi ? ' · ' + esc(fi) : '') + '</div></div>' +
         '<div class="mk-d-row"><span class="mk-d-price">' + mkFmt(p.narx) + ' <small style="font-size:.6em;font-weight:700;opacity:.8">' + adjSoM() + '</small></span><span class="mk-stock">' + L('Raqamli mahsulot','Цифровой товар') + '</span></div>' +
         '<div class="mk-sec"><h3>' + L('Nima olasiz','Что вы получите') + '</h3><div class="mk-box" style="padding:14px"><div class="adj-list">' +
-          '<div class="adj-li"><i>📦</i><span>' + L("Adjustment program fayli (waste ink counter reset va boshqa servis funksiyalar)","Файл программы Adjustment (сброс счётчика памперса и другие сервисные функции)") + '</span></div>' +
+          '<div class="adj-li"><i>📦</i><span>' + L("Chip reset (adjustment) dasturi fayli — waste ink counter reset va boshqa servis funksiyalar","Файл программы Chip reset / Adjustment (сброс счётчика памперса и другие сервисные функции)") + '</span></div>' +
           '<div class="adj-li"><i>⚡</i><span>' + L("To'lov tasdiqlangach fayl avtomatik shu bot chatiga yuboriladi — kutish shart emas","После подтверждения оплаты файл автоматически придёт в этот чат с ботом") + '</span></div>' +
           '<div class="adj-li"><i>🔁</i><span>' + L("Fayl yo'qolsa «Xaridlarim» bo'limidan qayta yuboriladi","Если файл потеряется — отправим снова из раздела «Мои покупки»") + '</span></div>' +
         '</div></div></div>' +
@@ -7118,7 +7120,7 @@
     var meta = a.meta || {};
     var phone = String(meta.phone || t().contactPhone || '').replace(/[^\d+]/g, '');
     var tgUser = String(meta.tg || 'online_ustaxona').replace(/^@/, '');
-    var msg = L("Assalomu alaykum! Adjustment bo'yicha so'rayman:\n","Здравствуйте! Вопрос по Adjustment:\n") + p.brend + ' ' + p.model;
+    var msg = L("Assalomu alaykum! Chip reset bo'yicha so'rayman:\n","Здравствуйте! Вопрос по Chip reset:\n") + p.brend + ' ' + p.model;
     var tgUrl = 'https://t.me/' + tgUser + '?text=' + encodeURIComponent(msg);
     document.getElementById('adjContact').innerHTML =
       (phone ? '<a class="mk-btn ghost" href="tel:' + esc(phone) + '">📞 ' + L("Qo'ng'iroq","Позвонить") + '</a>' : '') +
@@ -7152,7 +7154,7 @@
     mainView.innerHTML =
       '<div class="view mk-view">' +
         '<div class="mk-head"><div class="tt"><span>💳</span>' + L("To'lov","Оплата") + '</div><div class="cn">№' + pay.order_id + '</div></div>' +
-        '<div class="mk-d-top" style="margin-bottom:10px"><div class="mk-d-title">🖨️ ' + esc(pay.model) + '</div><div class="mk-d-meta">Adjustment Program</div></div>' +
+        '<div class="mk-d-top" style="margin-bottom:10px"><div class="mk-d-title">🖨️ ' + esc(pay.model) + '</div><div class="mk-d-meta">Chip reset</div></div>' +
         '<div class="mk-totalbox" style="margin:0 0 16px"><span class="k">' + L("To'lov summasi","Сумма к оплате") + '</span><span class="v">' + mkFmt(pay.jami) + ' ' + adjSoM() + '</span></div>' +
         '<div class="mk-hint" style="margin:0 2px 12px">' + L("To'lov usulini tanlang. To'lov tasdiqlanishi bilan fayl avtomatik shu bot chatiga yuboriladi.","Выберите способ оплаты. После подтверждения оплаты файл автоматически придёт в чат с ботом.") + '</div>' +
         '<div class="mk-paybtns">' + mkPayBtnsHtml(pay.links, pay.stars) + '</div>' +
@@ -7183,7 +7185,7 @@
       var oid = pay.order_id;
       a.pay = null; a.orders = null; mkStoreSet(ADJ_PENDING_KEY, null);
       haptic('ok');
-      state.stack = [{ view:'mainMenu' }, { view:'market' }, { view:'marketAdj' }];
+      state.stack = [{ view:'mainMenu' }, { view:'market' }, { view:'marketCats' }, { view:'marketParts', cat:'printer' }, { view:'marketAdj' }];
       push({ view:'marketAdjDone', order_id:oid });
     }
     m.payTimer = setInterval(function(){ tries++; if (tries > 300) { mkPayCleanup(); return; } check(false); }, 3000);
@@ -7197,7 +7199,7 @@
     var m = state.mk, oid = entry.order_id;
     mainView.innerHTML =
       '<div class="view mk-view"><div class="adj-done"><span class="big">🎉</span><h2>' + L("To'lov qabul qilindi!","Оплата получена!") + '</h2>' +
-        '<p id="adjDoneTx">' + L("Adjustment fayli bot chatiga yuborilmoqda...","Файл Adjustment отправляется в чат с ботом...") + '</p>' +
+        '<p id="adjDoneTx">' + L("Chip reset fayli bot chatiga yuborilmoqda...","Файл Chip reset отправляется в чат с ботом...") + '</p>' +
         '<div id="adjDoneSt"><span class="adj-st">⏳ ' + L('Yuborilmoqda','Отправляется') + '</span></div></div>' +
         '<div class="mk-actions" style="flex-direction:column"><button class="mk-btn pri" id="adjToChat">💬 ' + L("Chatga o'tish — faylni olish","Перейти в чат — забрать файл") + '</button>' +
         '<button class="mk-btn ghost" id="adjDoneMy">📥 ' + L('Xaridlarim','Мои покупки') + '</button></div></div>';
@@ -7213,7 +7215,7 @@
         var st = document.getElementById('adjDoneSt'), tx = document.getElementById('adjDoneTx'); if (!st || !tx || !d || !d.ok) return;
         if (d.delivered) {
           st.innerHTML = '<span class="adj-st ok">✅ ' + L('Fayl yuborildi','Файл отправлен') + '</span>';
-          tx.textContent = L("Adjustment fayli bot chatiga yuborildi. Chatni oching va faylni yuklab oling.","Файл Adjustment отправлен в чат с ботом. Откройте чат и скачайте файл.");
+          tx.textContent = L("Chip reset fayli bot chatiga yuborildi. Chatni oching va faylni yuklab oling.","Файл Chip reset отправлен в чат с ботом. Откройте чат и скачайте файл.");
           mkPayCleanup();
         } else if (d.status === 'xato') {
           st.innerHTML = '<span class="adj-st bad">⚠️ ' + L('Yuborishda xato','Ошибка отправки') + '</span>';
@@ -7235,8 +7237,8 @@
       var box = document.getElementById('adjOList'); if (!box) return;
       document.getElementById('adjOCnt').textContent = items.length ? items.length + ' ' + L('ta','шт.') : '';
       if (!items.length) {
-        box.innerHTML = '<div class="mk-empty"><span class="big">🛍️</span><b>' + L("Hali xarid yo'q","Покупок пока нет") + '</b>' + L("Sotib olingan adjustmentlar shu yerda ko'rinadi.","Купленные adjustment появятся здесь.") + '<span class="act" id="adjOGo">' + L('Adjustmentlarni ko\'rish','Смотреть adjustment') + '</span></div>';
-        document.getElementById('adjOGo').addEventListener('click', function(){ haptic('select'); state.stack = [{ view:'mainMenu' }, { view:'market' }]; push({ view:'marketAdj' }); });
+        box.innerHTML = '<div class="mk-empty"><span class="big">🛍️</span><b>' + L("Hali xarid yo'q","Покупок пока нет") + '</b>' + L("Sotib olingan chip reset dasturlari shu yerda ko'rinadi.","Купленные Chip reset появятся здесь.") + '<span class="act" id="adjOGo">' + L('Chip reset ko\'rish','Смотреть Chip reset') + '</span></div>';
+        document.getElementById('adjOGo').addEventListener('click', function(){ haptic('select'); state.stack = [{ view:'mainMenu' }, { view:'market' }, { view:'marketCats' }, { view:'marketParts', cat:'printer' }]; push({ view:'marketAdj' }); });
         return;
       }
       box.innerHTML = items.map(function(o){
@@ -8205,7 +8207,7 @@
     var inMk = /^market/.test(entry.view);
     document.body.classList.toggle('in-market', inMk);
     mkUpdateCartBar();
-    document.getElementById('brandSub').textContent = inMk ? 'MARKET · ' + (/^marketAdj/.test(entry.view) ? 'PRINTER ADJ' : L('EHTIYOT QISMLAR','ЗАПЧАСТИ')) : t().subtitle;
+    document.getElementById('brandSub').textContent = inMk ? 'MARKET · ' + (/^marketAdj/.test(entry.view) ? 'CHIP RESET' : L('EHTIYOT QISMLAR','ЗАПЧАСТИ')) : t().subtitle;
     var tbEl = document.querySelector('.topbar');
     if (tbEl) document.documentElement.style.setProperty('--tb', tbEl.offsetHeight + 'px');
     window.scrollTo(0,0);
