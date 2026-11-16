@@ -319,15 +319,37 @@
       // ── Biz haqimizda / Bog'lanish ──
       aboutTitle: "ℹ️ Online Ustaxona",
       aboutText:
-        "🏆 Biz kimmiz?\n" +
-        "Professional uy texnikalarini ta'mirlash xizmati\n\n" +
-        "✅ Xizmatlarimiz:\n" +
-        "• Televizor ta'miri\n• Konditsioner xizmati\n• Xolodilnik ta'miri\n" +
-        "• Kir yuvish mashinasi\n• Printer ta'miri\n• Kompyuter va noutbuk\n• Va boshqa uy texnikalari\n\n" +
+        "🏆 Online Ustaxona nima?\n" +
+        "Online Ustaxona — O'zbekiston bo'ylab mijozlarni malakali ustalar bilan bevosita bog'laydigan Telegram platformasi. Usta izlab vaqt sarflash shart emas — bot buni siz uchun qiladi.\n" +
+        "\n" +
+        "🤖 Bot nima qiladi?\n" +
+        "• Hududingiz va xizmat turi bo'yicha ustalarni topadi\n" +
+        "• Buyurtmangizni bir bosishda ustalarga yuboradi — bo'sh usta o'zi qabul qiladi\n" +
+        "• Usta bilan to'g'ridan-to'g'ri qo'ng'iroq yoki Telegram orqali bog'laydi\n" +
+        "• Bajarilgan ishdan so'ng ustani baholash imkonini beradi\n" +
+        "• Texnika nosozliklarini o'zingiz aniqlashingiz uchun 14 turdagi texnika bo'yicha diagnostika va qadamma-qadam yo'riqnoma beradi\n" +
+        "• Marketda ehtiyot qismlar va printer adjustment dasturlarini sotadi (Payme / Click orqali to'lov)\n" +
+        "\n" +
+        "🔧 Qanday texnikalar?\n" +
+        "Televizor, konditsioner, xolodilnik, kir yuvish mashinasi, printer, kompyuter va noutbuk hamda boshqa uy texnikalari.\n" +
+        "\n" +
+        "📋 Qanday foydalaniladi?\n" +
+        "1️⃣ «Buyurtma qilish» ni bosing va nosozlik haqida yozing\n" +
+        "2️⃣ Hududingizdagi ustalar buyurtmani oladi\n" +
+        "3️⃣ Usta siz bilan bog'lanib, uyingizga keladi\n" +
+        "4️⃣ Ish tugagach, ustani baholang\n" +
+        "\n" +
+        "🛠 Usta bo'lsangiz\n" +
+        "«Anketani to'ldirish» orqali ro'yxatdan o'ting. Anketa admin tomonidan ko'rib chiqiladi, tasdiqlangach buyurtmalar sizga keladi va o'z profilingizni boshqarasiz.\n" +
+        "\n" +
         "⚡ Afzalliklarimiz:\n" +
-        "• Tez va sifatli xizmat\n• Kafolat beriladi\n• Uyingizga kelamiz\n• Tajribali ustalar",
+        "• Tez va qulay — hammasi Telegram ichida\n" +
+        "• Tekshirilgan, tajribali ustalar\n" +
+        "• Ustalar reytingi ochiq ko'rinadi\n" +
+        "• Uyingizga kelamiz\n" +
+        "• O'zbekiston bo'ylab",
       contactTitle: "📞 Bog'lanish",
-      contactPhone: "+998 99 009 90 37",
+      contactPhone: "+998 50 071 5242",
       contactHours: "⏰ Ish vaqti:\nDushanba — Shanba: 9:00 — 20:00\nYakshanba: 10:00 — 18:00",
       contactAddress: "📍 Toshkent shahri",
     },
@@ -573,15 +595,37 @@
       // ── О нас / Связаться ──
       aboutTitle: "ℹ️ Online Ustaxona",
       aboutText:
-        "🏆 Кто мы?\n" +
-        "Профессиональный сервис ремонта бытовой техники\n\n" +
-        "✅ Наши услуги:\n" +
-        "• Ремонт телевизоров\n• Обслуживание кондиционеров\n• Ремонт холодильников\n" +
-        "• Стиральные машины\n• Ремонт принтеров\n• Компьютеры и ноутбуки\n• И другая бытовая техника\n\n" +
+        "🏆 Что такое Online Ustaxona?\n" +
+        "Online Ustaxona — Telegram-платформа, которая напрямую связывает клиентов с квалифицированными мастерами по всему Узбекистану. Не нужно тратить время на поиск мастера — бот сделает это за вас.\n" +
+        "\n" +
+        "🤖 Что умеет бот?\n" +
+        "• Находит мастеров по вашему региону и виду услуги\n" +
+        "• Отправляет вашу заявку мастерам в один клик — свободный мастер принимает её сам\n" +
+        "• Связывает с мастером напрямую по звонку или в Telegram\n" +
+        "• После выполнения работы позволяет оценить мастера\n" +
+        "• Помогает самостоятельно определить неисправность: диагностика и пошаговые инструкции по 14 видам техники\n" +
+        "• В маркете продаёт запчасти и adjustment-программы для принтеров (оплата через Payme / Click)\n" +
+        "\n" +
+        "🔧 Какая техника?\n" +
+        "Телевизоры, кондиционеры, холодильники, стиральные машины, принтеры, компьютеры и ноутбуки, а также другая бытовая техника.\n" +
+        "\n" +
+        "📋 Как пользоваться?\n" +
+        "1️⃣ Нажмите «Оставить заявку» и опишите неисправность\n" +
+        "2️⃣ Мастера вашего региона получают заявку\n" +
+        "3️⃣ Мастер связывается с вами и приезжает на дом\n" +
+        "4️⃣ После работы оцените мастера\n" +
+        "\n" +
+        "🛠 Если вы мастер\n" +
+        "Зарегистрируйтесь через «Заполнить анкету». Анкета рассматривается администратором, после одобрения заявки начнут поступать вам, а профилем вы управляете сами.\n" +
+        "\n" +
         "⚡ Наши преимущества:\n" +
-        "• Быстро и качественно\n• Гарантия\n• Выезд на дом\n• Опытные мастера",
+        "• Быстро и удобно — всё внутри Telegram\n" +
+        "• Проверенные опытные мастера\n" +
+        "• Открытый рейтинг мастеров\n" +
+        "• Выезд на дом\n" +
+        "• По всему Узбекистану",
       contactTitle: "📞 Контакты",
-      contactPhone: "+998 99 009 90 37",
+      contactPhone: "+998 50 071 5242",
       contactHours: "⏰ Режим работы:\nПн — Сб: 9:00 — 20:00\nВс: 10:00 — 18:00",
       contactAddress: "📍 г. Ташкент",
     }
@@ -1633,7 +1677,7 @@
     mainView.innerHTML =
       '<div class="view"><div class="detail-head"><h2>' + t().aboutTitle + '</h2></div>' +
       '<div class="panel"><p class="ptext" style="white-space:pre-line">' + esc(t().aboutText) + '</p></div>' +
-      '<div class="panel dashed"><p class="ptext">' + esc(t().contactAddress) + '<br>📞 ' + esc(t().contactPhone) + '<br>✈️ @online_ustaxona</p></div>' +
+      '<div class="panel dashed"><p class="ptext">' + esc(t().contactAddress) + '<br>📞 ' + esc(t().contactPhone) + '<br>✈️ @online_ustaxona<br>📸 @online_ustaxona</p></div>' +
       '</div>';
   }
 
@@ -1643,7 +1687,8 @@
       '<div class="panel">' +
       '<p class="ptext" style="font-size:16px;color:var(--text-1);font-weight:600;margin-bottom:10px">' +
       '<a href="tel:' + esc(t().contactPhone.replace(/\s/g,'')) + '" style="color:var(--cyan);text-decoration:none">📞 ' + esc(t().contactPhone) + '</a></p>' +
-      '<p class="ptext"><a href="https://t.me/online_ustaxona" target="_blank" style="color:var(--cyan);text-decoration:none">✈️ @online_ustaxona</a></p>' +
+      '<p class="ptext" style="margin-bottom:10px"><a href="https://t.me/online_ustaxona" target="_blank" style="color:var(--cyan);text-decoration:none">✈️ Telegram: @online_ustaxona</a></p>' +
+      '<p class="ptext"><a href="https://www.instagram.com/online_ustaxona" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none">📸 Instagram: @online_ustaxona</a></p>' +
       '</div>' +
       '<div class="panel dashed"><p class="ptext" style="white-space:pre-line">' + esc(t().contactHours) + '</p></div>' +
       '</div>';
@@ -4995,23 +5040,7 @@
   //  BOZOR TICKER (valyuta/oltin/BTC/neft...) + OB-HAVO + EFFEKTLAR
   // ============================================================
   var MX_CACHE_KEY = 'mx_market_v1', WX_REGION_KEY = 'wx_region_v1';
-  var WX_REGIONS = [
-    { id:'toshkent_sh', uz:'Toshkent shahri', ru:'г. Ташкент', lat:41.3111, lon:69.2797 },
-    { id:'toshkent_v', uz:'Toshkent viloyati', ru:'Ташкентская обл.', lat:41.0, lon:69.36 },
-    { id:'andijon', uz:'Andijon', ru:'Андижан', lat:40.7821, lon:72.3442 },
-    { id:'buxoro', uz:'Buxoro', ru:'Бухара', lat:39.7747, lon:64.4286 },
-    { id:'fargona', uz:'Farg\u2018ona', ru:'Фергана', lat:40.3864, lon:71.7864 },
-    { id:'jizzax', uz:'Jizzax', ru:'Джизак', lat:40.1158, lon:67.8422 },
-    { id:'xorazm', uz:'Xorazm', ru:'Хорезм', lat:41.5506, lon:60.6317 },
-    { id:'namangan', uz:'Namangan', ru:'Наманган', lat:40.9983, lon:71.6726 },
-    { id:'navoiy', uz:'Navoiy', ru:'Навои', lat:40.1030, lon:65.3739 },
-    { id:'qashqadaryo', uz:'Qashqadaryo', ru:'Кашкадарья', lat:38.8606, lon:65.7890 },
-    { id:'qoraqalpoq', uz:'Qoraqalpog\u2018iston', ru:'Каракалпакстан', lat:42.4531, lon:59.6103 },
-    { id:'samarqand', uz:'Samarqand', ru:'Самарканд', lat:39.6542, lon:66.9597 },
-    { id:'sirdaryo', uz:'Sirdaryo', ru:'Сырдарья', lat:40.4897, lon:68.7842 },
-    { id:'surxondaryo', uz:'Surxondaryo', ru:'Сурхандарья', lat:37.2242, lon:67.2783 }
-  ];
-  var mxState = { data:null, wx:null, region:null, timer:null, wxTimer:null, fx:null, alive:false };
+  var mxState = { data:null, wx:null, wxStatus:null, region:null, timer:null, wxTimer:null, fx:null, alive:false };
 
   function mxLoad(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }
   function mxSave(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
@@ -5098,11 +5127,11 @@
     snow:    { uz:'Qor yog\u2018moqda', ru:'Идёт снег', ic:'❄️', icN:'❄️' },
     storm:   { uz:'Momaqaldiroq', ru:'Гроза', ic:'⛈️', icN:'⛈️' }
   };
+  // Faqat foydalanuvchi joylashuvi bosilganda aniqlangan koordinatalar ishlatiladi.
   function wxRegion(){
     var id = mxLoad(WX_REGION_KEY);
-    if (id && id.geo) return { id:'geo', uz:'Joylashuvim', ru:'Моё местоположение', lat:id.lat, lon:id.lon };
-    for (var i = 0; i < WX_REGIONS.length; i++) if (id && WX_REGIONS[i].id === id.id) return WX_REGIONS[i];
-    return WX_REGIONS[0];
+    if (id && id.geo && isFinite(id.lat) && isFinite(id.lon)) return { id:'geo', lat:id.lat, lon:id.lon };
+    return null;
   }
   function wxForced(){
     var m = /[?&]wx=(clear|cloud|fog|drizzle|rain|snow|storm)/.exec(location.search || '');
@@ -5110,6 +5139,7 @@
   }
   function wxFetch(){
     var r = mxState.region = wxRegion();
+    if (!r) return Promise.reject(new Error('no-location'));
     return mxJson(WX_URL + '&latitude=' + r.lat + '&longitude=' + r.lon).then(function(j){
       var c = j.current || {};
       var w = { t:c.temperature_2m, feels:c.apparent_temperature, h:c.relative_humidity_2m, wind:c.wind_speed_10m,
@@ -5122,45 +5152,55 @@
   function wxPaint(){
     var el = document.getElementById('wxCard');
     if (!el) return;
-    var r = mxState.region || wxRegion(), w = mxState.wx;
-    var opts = WX_REGIONS.map(function(x){
-      return '<option value="' + x.id + '"' + (x.id === r.id ? ' selected' : '') + '>' + esc(state.lang !== 'uz' ? x.ru : x.uz) + '</option>';
-    }).join('');
-    var geoOpt = '<option value="__geo"' + (r.id === 'geo' ? ' selected' : '') + '>📍 ' + L('Joylashuvim','Моё местоположение') + '</option>';
-    var body;
+    var w = mxState.wx, st = mxState.wxStatus;
+    var body, top;
     if (w) {
       var tx = WX_TXT[w.kind] || WX_TXT.cloud;
+      top = '<div class="wx-top"><button type="button" class="wx-loc" id="wxLoc" aria-label="' + L('Joylashuvni yangilash','Обновить местоположение') + '">' +
+        '<span class="wx-pin">📍</span>' + L('Joylashuvim','Моё местоположение') + '<span class="wx-rf">↻</span></button></div>';
       body = '<div class="wx-main"><div class="wx-ic">' + (w.day ? tx.ic : tx.icN) + '</div>' +
         '<div class="wx-temp">' + (w.t != null ? Math.round(w.t) : '—') + '<sup>°C</sup></div>' +
         '<div class="wx-desc"><b>' + (state.lang === 'uz' ? tx.uz : tr(tx.ru)) + '</b><span>' +
         L('His qilinishi','Ощущается') + ' ' + (w.feels != null ? Math.round(w.feels) : '—') + '°</span></div></div>' +
         '<div class="wx-meta"><span>💧 ' + (w.h != null ? Math.round(w.h) : '—') + '%</span><span>💨 ' +
         (w.wind != null ? Math.round(w.wind) : '—') + ' km/h</span></div>';
-    } else {
+    } else if (st === 'loading') {
+      top = '';
       body = '<div class="wx-main"><div class="wx-ic">⏳</div><div class="wx-desc"><b>' + L('Ob-havo yuklanmoqda…','Загрузка погоды…') + '</b></div></div>';
+    } else {
+      var msg = L('Ob-havoni ko‘rish uchun bosing','Нажмите, чтобы увидеть погоду');
+      if (st === 'denied') msg = L('Joylashuvga ruxsat berilmadi. Telefon sozlamalaridan ruxsat bering va qayta bosing.','Доступ к геолокации запрещён. Разрешите его в настройках и нажмите снова.');
+      else if (st === 'error') msg = L('Ob-havoni olib bo‘lmadi. Qayta urinib ko‘ring.','Не удалось получить погоду. Попробуйте ещё раз.');
+      top = '';
+      body = '<button type="button" class="wx-ask" id="wxLoc"><span class="wx-ask-ic">📍</span><span class="wx-ask-tx"><b>' +
+        L('Joylashuvni aniqlash','Определить местоположение') + '</b><span>' + msg + '</span></span></button>';
     }
-    el.innerHTML = '<div class="wx-top"><span class="wx-pin">📍</span><select id="wxSel" aria-label="region">' + opts + geoOpt + '</select></div>' + body;
+    el.innerHTML = top + body;
     el.setAttribute('data-kind', w ? w.kind : 'cloud');
     el.setAttribute('data-day', w && !w.day ? '0' : '1');
-    var sel = document.getElementById('wxSel');
-    if (sel) sel.addEventListener('change', function(){
-      haptic('select');
-      if (sel.value === '__geo') return wxLocate();
-      mxSave(WX_REGION_KEY, { id: sel.value });
-      wxReload();
-    });
+    var btn = document.getElementById('wxLoc');
+    if (btn) btn.addEventListener('click', function(){ haptic('select'); wxLocate(); });
   }
+  // Joylashuv tugmasi bosilganda: ruxsat so'raladi -> koordinatalar saqlanadi -> ob-havo yuklanadi
   function wxLocate(){
-    if (!navigator.geolocation) { wxPaint(); return; }
-    navigator.geolocation.getCurrentPosition(function(pos){
-      mxSave(WX_REGION_KEY, { geo:true, lat:pos.coords.latitude, lon:pos.coords.longitude });
-      wxReload();
-    }, function(){ wxPaint(); }, { timeout:8000, maximumAge:600000 });
-  }
-  function wxReload(){
-    mxState.region = wxRegion(); mxState.wx = null; wxPaint(); wxFx(null);
-    wxFetch().then(function(w){ if (!mxState.alive) return; mxState.wx = w; wxPaint(); wxFx(w); })
-      .catch(function(){ if (!mxState.alive) return; wxPaint(); });
+    if (mxState.wxStatus === 'loading') return;
+    mxState.wxStatus = 'loading'; wxPaint();
+    pfGetLocation().then(function(res){
+      if (!mxState.alive) return;
+      if (!res || res.error || res.lat == null) {
+        mxState.wxStatus = (res && res.error === 'denied') ? 'denied' : 'error';
+        wxPaint(); return;
+      }
+      mxSave(WX_REGION_KEY, { geo:true, lat:res.lat, lon:res.lon });
+      mxState.wx = null;
+      wxFetch().then(function(w){
+        if (!mxState.alive) return;
+        mxState.wx = w; mxState.wxStatus = null; wxPaint(); wxFx(w);
+      }).catch(function(){
+        if (!mxState.alive) return;
+        mxState.wxStatus = 'error'; wxPaint();
+      });
+    });
   }
 
   // --- Effektlar (canvas): qor, yomg'ir, momaqaldiroq, tuman, bulut, quyosh, yulduzlar ---
@@ -5240,13 +5280,15 @@
     var cv0 = document.createElement('canvas'); cv0.id = 'wxFx'; document.body.appendChild(cv0);
     mxState.data = mxState.data || mxLoad(MX_CACHE_KEY);
     var cw = mxLoad('wx_cache_v1'); mxState.region = wxRegion();
-    mxState.wx = (cw && cw.region === mxState.region.id) ? cw : null;
+    mxState.wxStatus = null;
+    mxState.wx = (mxState.region && cw && cw.region === 'geo') ? cw : null;
     if (mxState.wx && wxForced()) mxState.wx.kind = wxForced();
     mxPaintTicker(); wxPaint(); wxFx(mxState.wx);
     mxRefreshMarket();
-    wxFetch().then(function(w){ if (!mxState.alive) return; mxState.wx = w; wxPaint(); wxFx(w); }).catch(function(){});
+    if (mxState.region) wxFetch().then(function(w){ if (!mxState.alive) return; mxState.wx = w; wxPaint(); wxFx(w); }).catch(function(){});
     mxState.timer = setInterval(mxRefreshMarket, 60000);
     mxState.wxTimer = setInterval(function(){
+      if (!wxRegion()) return;
       wxFetch().then(function(w){ if (!mxState.alive) return; var changed = !mxState.wx || mxState.wx.kind !== w.kind; mxState.wx = w; wxPaint(); if (changed) wxFx(w); }).catch(function(){});
     }, 600000);
   }
@@ -5279,7 +5321,7 @@
       { pal:'g-sky', icon:'👤', title:cl(t().menuProfile), sub:t().menuProfileSub, brand:L('Profil','Профиль'), action:function(el){ pzOpen('prof', el, function(){ push({ view:'profileGate' }); }); } },
       { pal:'g-lime', icon:'📝', title:cl(t().menuAnketa), sub:t().menuAnketaSub, brand:L('Usta bo\'l','Стать мастером'), action:function(el){ pzOpen('anketa', el, function(){ push({ view:'anketaGate' }); }); } },
       { pal:'g-fire', icon:'🏆', title:cl(t().menuAbout), sub:t().menuAboutSub, brand:L('Biz','Мы'), action:function(el){ pzOpen('about', el, function(){ push({ view:'about' }); }); } },
-      { pal:'g-violet', wide:true, icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, cta:'+998 99 009 90 37', brand:L('Aloqa','Связь'), action:function(el){ pzOpen('call', el, function(){ push({ view:'contact' }); }); } }
+      { pal:'g-violet', wide:true, icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, cta:'+998 50 071 5242', brand:L('Aloqa','Связь'), action:function(el){ pzOpen('call', el, function(){ push({ view:'contact' }); }); } }
     ];
     mainView.innerHTML =
       '<div class="view"><div class="mx-ticker" id="mxTicker"></div><div class="hello"><h1>' + L('Salom','Привет') + ', <span class="gr">' + userName() + '</span> <span class="wave">👋</span></h1>' +
