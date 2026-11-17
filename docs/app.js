@@ -1141,6 +1141,7 @@
     if (entry.view === 'anketaForm') return entry.viloyat;
     if (entry.view === 'anketaContract') return t().anketaContractTitle;
     if (entry.view === 'anketaSuccess') return t().menuAnketa;
+    if (entry.view === 'faceCapture') return L('Yuzni tasdiqlash','Подтверждение лица');
     if (entry.view === 'calc') return L('Narx kalkulyatori','Калькулятор цен');
     if (entry.view === 'advisor') return L('Maslahatchi','Советчик');
     if (entry.view === 'devices') return L('Uskunalarim','Моя техника');
@@ -1779,6 +1780,7 @@
       '<button class="row" id="btnMasterStats"><span class="idx">📊</span><span class="lbl">' + t().profileStatsBtn + '</span><span class="chev">→</span></button>' +
       '<button class="row" id="btnEditMaster"><span class="idx">✏️</span><span class="lbl">' + t().profileEditBtn + '</span><span class="chev">→</span></button>' +
       '<button class="row" id="btnMasterJobs"><span class="idx">📋</span><span class="lbl">' + t().profileJobsBtn + '</span><span class="chev">→</span></button>' +
+      (m.face_verified === false ? '<button class="row" id="btnMasterFace"><span class="idx">🧑</span><span class="lbl">' + L('Yuzni tasdiqlash','Подтвердить лицо') + '</span><span class="chev">→</span></button>' : '') +
       '</div>' +
       '</div>';
 
@@ -1809,6 +1811,8 @@
       haptic('select');
       push({ view:'profileEditMaster', master: m });
     });
+    var faceBtn = mainView.querySelector('#btnMasterFace');
+    if (faceBtn) faceBtn.addEventListener('click', function(){ haptic('select'); lvInjectCss(); push({ view:'faceCapture', mode:'profile', master: m }); });
     mainView.querySelector('#btnMasterJobs').addEventListener('click', function(){
       haptic('select');
       push({ view:'profileMasterJobs', offset: 0 });
@@ -3264,6 +3268,11 @@
       '<span class="pu-thumb" id="afPhotoThumb">' + (f.photo_b64 ? '' : '📷') + '</span>' +
       '<span class="pu-label" id="afPhotoLabel">' + (f.photo_b64 ? t().anketaPhotoGot : t().anketaPhotoHint) + '</span>' +
       '<input type="file" accept="image/*" id="afPhotoInput"></label></div>' +
+      '<div class="field"><label>🧑 ' + L('Yuzni tasdiqlash','Подтверждение лица') + '</label>' +
+      '<button type="button" class="fv-open' + (f.face_photos ? ' got' : '') + '" id="afFaceBtn"><span>' +
+      (f.face_photos ? '✅ ' + L('Yuz tasdiqlandi (qayta olish)','Лицо подтверждено (переснять)') : '📸 ' + L('Kamera orqali yuzni tasdiqlash','Подтвердить лицо через камеру')) + '</span>' +
+      (f.face_photos ? '<span class="fv-mini">' + f.face_photos.map(function(u){ return '<i style="background-image:url(' + u + ')"></i>'; }).join('') + '</span>' : '') + '</button>' +
+      '<div class="note" style="margin-top:6px">🔒 ' + L('Suratlar shaxsingizni tasdiqlash uchun saqlanadi','Снимки сохраняются для подтверждения вашей личности') + '</div></div>' +
       '</div>' +
       '<button class="loc-btn" id="afLocBtn">' + (f.lat ? t().topishLocGot : t().anketaLocHint) + '</button>' +
       '</div>';
@@ -3273,6 +3282,15 @@
     }
     if (f.lat) mainView.querySelector('#afLocBtn').classList.add('got');
 
+    lvInjectCss();
+    mainView.querySelector('#afFaceBtn').addEventListener('click', function(){
+      var af = state.anketaForm;
+      af.ism = mainView.querySelector('#afIsm').value; af.yil = mainView.querySelector('#afYil').value;
+      af.telefon = mainView.querySelector('#afTel').value; af.pasport = mainView.querySelector('#afPasport').value;
+      af.xizmatlar = Array.prototype.slice.call(mainView.querySelectorAll('#afXizmatlar .chip-toggle.active')).map(function(b){ return b.getAttribute('data-x'); });
+      haptic('select');
+      push({ view:'faceCapture', mode:'anketa' });
+    });
     mainView.querySelector('#afLocBtn').addEventListener('click', function(){
       requestLocation().then(function(loc){
         if (loc) {
@@ -3355,11 +3373,17 @@
         alert(t().anketaErrPhoto);
         return;
       }
+      var facePh = state.anketaForm.face_photos;
+      if (!facePh || facePh.length !== 3) {
+        alert(L("Iltimos, kamera orqali yuzingizni tasdiqlang","Пожалуйста, подтвердите лицо через камеру"));
+        return;
+      }
 
       state.anketaForm = {
         ism: ism, yil: yil, telefon: telefon, pasport: pasport, xizmatlar: xizmatlar,
         photo_b64: photo_b64, lat: state.anketaForm.lat, lon: state.anketaForm.lon,
-        tuman_list: state.anketaForm.tuman_list
+        tuman_list: state.anketaForm.tuman_list,
+        face_photos: facePh, face_detector: !!state.anketaForm.face_detector
       };
       haptic('select');
       push({ view:'anketaContract', viloyat: entry.viloyat });
@@ -3405,7 +3429,8 @@
         viloyat: entry.viloyat, tuman_list: f.tuman_list,
         ism: f.ism, yil: f.yil, telefon: f.telefon, pasport: f.pasport,
         xizmatlar: f.xizmatlar, photo_b64: f.photo_b64,
-        lat: f.lat, lon: f.lon, shartnoma_imzo: true
+        lat: f.lat, lon: f.lon, shartnoma_imzo: true,
+        face_photos: f.face_photos, face_steps: ['front','left','right'], face_detector: !!f.face_detector
       }).then(function(res){
         if (res.data && res.data.ok) {
           haptic('ok');
@@ -5294,10 +5319,246 @@
   }
   function mxStop(){
     mxState.alive = false;
+    if (typeof lvStop === 'function') lvStop();
     if (mxState.timer) { clearInterval(mxState.timer); mxState.timer = null; }
     if (mxState.wxTimer) { clearInterval(mxState.wxTimer); mxState.wxTimer = null; }
     if (mxState.fx) { mxState.fx.stop(); mxState.fx = null; }
     var cv = document.getElementById('wxFx'); if (cv && cv.parentNode) cv.parentNode.removeChild(cv);
+  }
+
+  // ---------- Jonli obunachilar hisoblagichi + Yuz tasdiqlash (kamera) ----------
+  function lvInjectCss(){
+    if (document.getElementById('lvFvCss')) return;
+    var st = document.createElement('style'); st.id = 'lvFvCss';
+    st.textContent = [
+      '.lv-card{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:14px;background:var(--bg-panel,#161b26);border:1px solid var(--border,rgba(255,255,255,.1))}',
+      '.lv-ic{font-size:26px;line-height:1}',
+      '.lv-main{flex:1;min-width:0}',
+      '.lv-label{font-size:12px;color:var(--text-2,#9aa4b5);display:flex;align-items:center;gap:6px}',
+      '.lv-num{font-size:26px;font-weight:800;letter-spacing:.2px;line-height:1.15;font-variant-numeric:tabular-nums}',
+      '.lv-side{text-align:right;font-size:11.5px;color:var(--text-2,#9aa4b5)}',
+      '.lv-side b{display:block;font-size:16px;color:inherit;font-variant-numeric:tabular-nums}',
+      '.lv-live{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;letter-spacing:.6px;color:#22c55e;text-transform:uppercase}',
+      '.lv-live i{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:lv-pulse 1.6s infinite}',
+      '@keyframes lv-pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}',
+      '.fv-wrap{text-align:center}',
+      '.fv-prompt{font-size:18px;font-weight:700;margin:6px 0 4px}',
+      '.fv-step{font-size:12px;color:var(--text-2,#9aa4b5);margin-bottom:12px}',
+      '.fv-circle{position:relative;width:min(72vw,280px);aspect-ratio:1/1;margin:0 auto 14px;border-radius:50%;overflow:hidden;background:#000;border:3px solid var(--border,rgba(255,255,255,.18));box-shadow:0 0 0 4px rgba(99,102,241,.25)}',
+      '.fv-circle video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}',
+      '.fv-circle.ok{border-color:#22c55e}',
+      '.fv-dots{display:flex;justify-content:center;gap:8px;margin-bottom:12px}',
+      '.fv-dots span{width:9px;height:9px;border-radius:50%;background:var(--border,rgba(255,255,255,.2))}',
+      '.fv-dots span.cur{background:#6366f1;transform:scale(1.25)}',
+      '.fv-dots span.done{background:#22c55e}',
+      '.fv-thumbs{display:flex;justify-content:center;gap:10px;margin:12px 0}',
+      '.fv-thumb{width:72px;height:72px;border-radius:50%;background:var(--bg-panel-2,#1d2331) center/cover no-repeat;border:2px dashed var(--border,rgba(255,255,255,.2));display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-2,#9aa4b5);cursor:pointer;padding:0}',
+      '.fv-thumb.got{border-style:solid;border-color:#22c55e;font-size:0}',
+      '.fv-msg{min-height:18px;font-size:12.5px;margin:6px 0;color:var(--text-2,#9aa4b5)}',
+      '.fv-msg.err{color:var(--red,#ef4444)}',
+      '.fv-open{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border-radius:12px;border:1px dashed var(--border,rgba(255,255,255,.2));background:var(--bg-panel-2,#1d2331);color:inherit;font:inherit;cursor:pointer;text-align:left}',
+      '.fv-open.got{border-style:solid;border-color:#22c55e}',
+      '.fv-open .fv-mini{display:flex;gap:4px;margin-left:auto}',
+      '.fv-open .fv-mini i{width:26px;height:26px;border-radius:50%;background:center/cover no-repeat}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+
+  // ---- Jonli statistika ----
+  var lv = { timer:null, shown:null, last:null, raf:0 };
+  function lvFmt(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function lvPaint(){
+    var el = document.getElementById('lvCard');
+    if (!el || !lv.last) return;
+    if (!el.firstChild) {
+      el.innerHTML = '<div class="lv-ic">👥</div><div class="lv-main"><div class="lv-label"><span>' + L('Obunachilar','Подписчики') +
+        '</span><span class="lv-live"><i></i>' + L('jonli','live') + '</span></div><div class="lv-num" id="lvNum">0</div></div>' +
+        '<div class="lv-side">' + L('Ustalar','Мастера') + '<b id="lvMasters">0</b></div>';
+    }
+    var numEl = el.querySelector('#lvNum'), mEl = el.querySelector('#lvMasters');
+    mEl.textContent = lvFmt(lv.last.masters_active || 0);
+    var from = (lv.shown == null) ? 0 : lv.shown, to = lv.last.users_total || 0;
+    if (lv.raf) cancelAnimationFrame(lv.raf);
+    if (from === to) { numEl.textContent = lvFmt(to); lv.shown = to; return; }
+    var t0 = performance.now(), dur = 700;
+    (function step(now){
+      var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      lv.shown = from + (to - from) * e;
+      var n2 = document.getElementById('lvNum'); if (n2) n2.textContent = lvFmt(lv.shown);
+      if (p < 1) lv.raf = requestAnimationFrame(step); else { lv.shown = to; lv.raf = 0; }
+    })(t0);
+  }
+  function lvFetch(){
+    if (document.hidden || !API_BASE) return;
+    apiGet('/api/public/live/stats').then(function(res){
+      if (res && res.ok) { lv.last = res; lvPaint(); }
+    }).catch(function(){});
+  }
+  function lvStart(){
+    lvInjectCss();
+    if (lv.last) { lv.shown = lv.last.users_total || 0; lvPaint(); }
+    if (lv.timer) clearInterval(lv.timer);
+    lvFetch();
+    lv.timer = setInterval(lvFetch, 10000);
+  }
+  function lvStop(){
+    if (lv.timer) { clearInterval(lv.timer); lv.timer = null; }
+    if (lv.raf) { cancelAnimationFrame(lv.raf); lv.raf = 0; }
+  }
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden && lv.timer) lvFetch(); });
+
+  // ---- Yuzni tasdiqlash (jonli kamera, 3 qadam) ----
+  var FV_STEPS = ['front', 'left', 'right'];
+  var fv = { stream:null, shots:[null,null,null], step:0, detector:false, busy:false, entry:null };
+  function fvPrompt(i){
+    return [L("To'g'ri qarang","Смотрите прямо"), L("Boshingizni chapga buring","Поверните голову влево"), L("Boshingizni o'ngga buring","Поверните голову вправо")][i];
+  }
+  function fvStop(){
+    if (fv.stream) { try { fv.stream.getTracks().forEach(function(tr){ tr.stop(); }); } catch(e){} fv.stream = null; }
+    var v = document.getElementById('fvVideo'); if (v) { try { v.srcObject = null; } catch(e){} }
+  }
+  function fvDone(){ return fv.shots.every(function(s){ return !!s; }); }
+  function fvMsg(txt, err){
+    var m = document.getElementById('fvMsg'); if (!m) return;
+    m.textContent = txt || ''; m.className = 'fv-msg' + (err ? ' err' : '');
+  }
+  function fvStartCamera(){
+    fvStop();
+    var vid = document.getElementById('fvVideo');
+    var capBtn = document.getElementById('fvCap');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      fvMsg(L("Bu qurilmada kamera qo'llab-quvvatlanmaydi","Камера не поддерживается на этом устройстве"), true);
+      fvShowRetry(true); return;
+    }
+    fvMsg(L("Kamera ochilmoqda...","Открываем камеру..."), false);
+    navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false }).then(function(stream){
+      var v = document.getElementById('fvVideo');
+      if (!v || (state.stack[state.stack.length-1] || {}).view !== 'faceCapture') { stream.getTracks().forEach(function(tr){ tr.stop(); }); return; }
+      fv.stream = stream;
+      v.setAttribute('playsinline', ''); v.muted = true;
+      v.srcObject = stream;
+      var p = v.play(); if (p && p.catch) p.catch(function(){});
+      fvShowRetry(false);
+      if (capBtn) capBtn.disabled = false;
+      fvMsg('', false);
+    }).catch(function(err){
+      var denied = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
+      fvMsg(denied
+        ? L("Kameraga ruxsat berilmadi. Telegram/telefon sozlamalarida kameraga ruxsat bering va qayta urinib ko'ring.","Нет доступа к камере. Разрешите доступ к камере в настройках Telegram/телефона и повторите.")
+        : L("Kamera topilmadi yoki ochib bo'lmadi.","Камера не найдена или недоступна."), true);
+      fvShowRetry(true);
+      if (capBtn) capBtn.disabled = true;
+    });
+  }
+  function fvShowRetry(show){
+    var r = document.getElementById('fvRetry'); if (r) r.style.display = show ? '' : 'none';
+  }
+  function fvPaintState(){
+    var dots = document.getElementById('fvDots'), th = document.getElementById('fvThumbs');
+    if (!dots) return;
+    dots.innerHTML = FV_STEPS.map(function(_, i){
+      return '<span class="' + (fv.shots[i] ? 'done' : (i === fv.step ? 'cur' : '')) + '"></span>';
+    }).join('');
+    th.innerHTML = FV_STEPS.map(function(_, i){
+      return '<button type="button" class="fv-thumb' + (fv.shots[i] ? ' got' : '') + '" data-i="' + i + '"' +
+        (fv.shots[i] ? ' style="background-image:url(' + fv.shots[i] + ')"' : '') + '>' + (i + 1) + '</button>';
+    }).join('');
+    th.querySelectorAll('.fv-thumb').forEach(function(b){
+      b.addEventListener('click', function(){
+        fv.step = parseInt(b.getAttribute('data-i'), 10); fv.shots[fv.step] = null;
+        haptic('tap'); fvPaintState();
+        if (!fv.stream) fvStartCamera();
+      });
+    });
+    var pr = document.getElementById('fvPrompt'), st = document.getElementById('fvStepTxt');
+    var done = fvDone();
+    pr.textContent = done ? L("Tayyor! ✅","Готово! ✅") : fvPrompt(fv.step);
+    st.textContent = done ? L("Barcha 3 surat olindi","Все 3 снимка сделаны") : (L("Qadam","Шаг") + ' ' + (fv.step + 1) + ' / 3');
+    document.getElementById('fvCircle').classList.toggle('ok', done);
+    var cap = document.getElementById('fvCap'), ok = document.getElementById('fvOk');
+    cap.style.display = done ? 'none' : '';
+    ok.style.display = done ? '' : 'none';
+    if (done) fvStop();
+  }
+  function fvCapture(){
+    if (fv.busy) return;
+    var v = document.getElementById('fvVideo');
+    if (!v || !v.videoWidth) { fvMsg(L("Kamera hali tayyor emas","Камера ещё не готова"), true); return; }
+    fv.busy = true;
+    var w = v.videoWidth, h = v.videoHeight, sc = Math.min(1, 640 / Math.max(w, h));
+    var cv = document.createElement('canvas'); cv.width = Math.round(w * sc); cv.height = Math.round(h * sc);
+    cv.getContext('2d').drawImage(v, 0, 0, cv.width, cv.height);
+    var finish = function(){
+      fv.shots[fv.step] = cv.toDataURL('image/jpeg', 0.82);
+      var nx = fv.shots.findIndex(function(s){ return !s; });
+      if (nx > -1) fv.step = nx;
+      fv.busy = false; haptic('ok'); fvMsg('', false); fvPaintState();
+    };
+    if (window.FaceDetector) {
+      var det; try { det = new window.FaceDetector({ fastMode:true, maxDetectedFaces:1 }); } catch(e){ det = null; }
+      if (det) {
+        det.detect(cv).then(function(faces){
+          fv.detector = true;
+          if (!faces || !faces.length) { fv.busy = false; haptic('tap'); fvMsg(L("Yuz aniqlanmadi. Yuzingiz kadrda va yorug' joyda bo'lsin, qayta urinib ko'ring.","Лицо не найдено. Встаньте в кадр при хорошем свете и повторите."), true); return; }
+          finish();
+        }).catch(function(){ finish(); });
+        return;
+      }
+    }
+    finish();
+  }
+  function fvSubmitProfile(){
+    var btn = document.getElementById('fvOk');
+    btn.disabled = true; btn.textContent = L('Yuborilmoqda...','Отправка...');
+    apiPost('/api/public/profile/master/face', {
+      init_data: getInitData(), lang: srvLang(),
+      face_photos: fv.shots.slice(), face_steps: FV_STEPS.slice(), face_detector: !!fv.detector
+    }).then(function(res){
+      if (res.data && res.data.ok) {
+        haptic('ok');
+        var e = fv.entry; if (e && e.master) e.master.face_verified = true;
+        state.stack = state.stack.slice(0, -1);
+        var prev = state.stack[state.stack.length - 1];
+        if (prev && prev.master) prev.master.face_verified = true;
+        render();
+      } else {
+        btn.disabled = false; btn.textContent = L('Yuborish','Отправить');
+        fvMsg((res.data && res.data.error) || t().orderErrGeneric, true);
+      }
+    }).catch(function(){
+      btn.disabled = false; btn.textContent = L('Yuborish','Отправить');
+      fvMsg(t().orderErrGeneric, true);
+    });
+  }
+  function renderFaceCapture(entry){
+    lvInjectCss();
+    var firstEnter = fv.entry !== entry;
+    if (firstEnter) { fv.entry = entry; fv.shots = [null,null,null]; fv.step = 0; fv.detector = false; fv.busy = false; }
+    var isAnk = entry.mode === 'anketa';
+    mainView.innerHTML =
+      '<div class="view fv-wrap"><div class="fv-prompt" id="fvPrompt"></div><div class="fv-step" id="fvStepTxt"></div>' +
+      '<div class="fv-circle" id="fvCircle"><video id="fvVideo" autoplay playsinline muted></video></div>' +
+      '<div class="fv-dots" id="fvDots"></div>' +
+      '<div class="fv-msg" id="fvMsg"></div>' +
+      '<button class="btn-ghost" id="fvRetry" style="display:none;margin-bottom:8px">' + L('Qayta urinish','Повторить') + '</button>' +
+      '<div class="fv-thumbs" id="fvThumbs"></div>' +
+      '<p class="note">🔒 ' + L('Suratlar shaxsingizni tasdiqlash uchun saqlanadi','Снимки сохраняются для подтверждения вашей личности') + '</p>' +
+      '<button class="btn-primary" id="fvCap" style="width:100%;padding:13px;border-radius:11px">📸 ' + L('Suratga olish','Сделать снимок') + '</button>' +
+      '<button class="btn-primary" id="fvOk" style="width:100%;padding:13px;border-radius:11px;display:none">' + (isAnk ? L('Tayyor','Готово') : L('Yuborish','Отправить')) + '</button></div>';
+    fvPaintState();
+    document.getElementById('fvCap').addEventListener('click', fvCapture);
+    document.getElementById('fvRetry').addEventListener('click', function(){ haptic('tap'); fvStartCamera(); });
+    document.getElementById('fvOk').addEventListener('click', function(){
+      if (!fvDone()) return;
+      if (isAnk) {
+        state.anketaForm.face_photos = fv.shots.slice();
+        state.anketaForm.face_detector = !!fv.detector;
+        haptic('ok'); fvStop(); pop();
+      } else {
+        fvSubmitProfile();
+      }
+    });
+    if (!fvDone()) fvStartCamera();
   }
 
   function renderMainMenu(){
@@ -5327,11 +5588,13 @@
       '<div class="view"><div class="mx-ticker" id="mxTicker"></div><div class="hello"><h1>' + L('Salom','Привет') + ', <span class="gr">' + userName() + '</span> <span class="wave">👋</span></h1>' +
       '<p>' + L('Barcha bo\'limlar shu yerda — tanlang','Все разделы здесь — выбирайте') + '</p></div>' +
       '<div class="wx-card" id="wxCard"></div>' +
+      '<div class="lv-card" id="lvCard"></div>' +
       '<div class="tiles">' + items.map(tileHTML).join('') + '</div></div>';
     mainView.querySelectorAll('[data-ti]').forEach(function(btn){
       btn.addEventListener('click', function(){ haptic('select'); items[parseInt(btn.getAttribute('data-ti'), 10)].action(btn); });
     });
   mxStart();
+  lvStart();
   }
 
   function renderHome(){
@@ -6062,7 +6325,11 @@
 
   function mkFmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
   function mkPriceHTML(p, cls){
-    if (p.narx > 0) return '<span class="' + cls + '">' + mkFmt(p.narx) + ' <small style="font-size:.6em;font-weight:700;opacity:.8">' + L("so'm","сум") + '</small></span>';
+    if (p.narx > 0) {
+      var oldP = (p.usta && p.narx_asl > p.narx) ? '<s style="opacity:.55;font-size:.72em;font-weight:600;margin-right:6px">' + mkFmt(p.narx_asl) + '</s>' : '';
+      var badge = p.usta ? '<small style="display:block;font-size:.58em;font-weight:800;color:#16a34a;margin-top:2px">👷 ' + L("Usta narxi","Цена для мастера") + '</small>' : '';
+      return '<span class="' + cls + '">' + oldP + mkFmt(p.narx) + ' <small style="font-size:.6em;font-weight:700;opacity:.8">' + L("so'm","сум") + '</small>' + badge + '</span>';
+    }
     return '<span class="' + cls + ' neg">' + L('Narx kelishiladi','Цена договорная') + '</span>';
   }
   function mkHolat(h){
@@ -6213,7 +6480,7 @@
     var fresh = m.parts[cat] && (Date.now() - (m.partsAt[cat] || 0)) < MK_TTL;
     if (fresh) { cb(m.parts[cat], null); return; }
     if (!API_BASE) { cb(null, 'NO_API'); return; }
-    apiGet('/api/public/market/parts?cat=' + encodeURIComponent(cat)).then(function(d){
+    apiGet('/api/public/market/parts?cat=' + encodeURIComponent(cat) + (getInitData() ? '&init_data=' + encodeURIComponent(getInitData()) : '')).then(function(d){
       if (d && d.ok) { m.parts[cat] = d.items || []; m.partsAt[cat] = Date.now(); cb(m.parts[cat], null); }
       else cb(m.parts[cat] || null, 'ERR');
     }).catch(function(){ cb(m.parts[cat] || null, 'ERR'); });
@@ -6945,11 +7212,25 @@
       '<li>' + L("Pastdagi «Chekni yuborish» tugmasini bosib rasmni yuklang","Нажмите «Отправить чек» ниже и загрузите фото") + '</li></ol></div>';
   }
   function rcShowManual(){
-    var box = rcEl('rcManual'); if (!box) return;
+    var box = rcEl('rcManual');
+    if (!box) { mkToast(L("Karta raqami hali kiritilmagan. Adminga murojaat qiling","Номер карты не указан. Обратитесь к администратору")); return; }
     box.style.display = '';
     var cp = rcEl('rcCopy'), num = rcEl('rcNum');
     if (cp && !cp._b) { cp._b = 1; cp.addEventListener('click', function(){ haptic('tap'); rcCopy((num ? num.textContent : '').replace(/\s+/g, '')); }); }
-    try { box.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(e) {}
+    // Karta bosilganda raqam darhol alohida oynada (bottom-sheet) chiqadi
+    var prev = document.getElementById('rcModal'); if (prev) prev.remove();
+    var ov = document.createElement('div'); ov.id = 'rcModal';
+    ov.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:12px';
+    var inner = box.innerHTML.replace('id="rcNum"', 'id="rcNum2"').replace('id="rcCopy"', 'id="rcCopy2"');
+    ov.innerHTML = '<div style="width:100%;max-width:480px;max-height:88vh;overflow:auto">' +
+      '<div class="rc-card" style="margin-top:0">' + inner + '</div>' +
+      '<button id="rcClose" style="width:100%;margin-top:10px;padding:14px;border:0;border-radius:16px;font-weight:800;font-size:15px;background:#fff;color:#111">' + L('Yopish','Закрыть') + '</button></div>';
+    document.body.appendChild(ov);
+    function close(){ var m = document.getElementById('rcModal'); if (m) m.remove(); }
+    ov.addEventListener('click', function(e){ if (e.target === ov) close(); });
+    var c2 = document.getElementById('rcClose'); if (c2) c2.addEventListener('click', function(){ haptic('tap'); close(); });
+    var cp2 = document.getElementById('rcCopy2'), num2 = document.getElementById('rcNum2');
+    if (cp2) cp2.addEventListener('click', function(){ haptic('tap'); rcCopy((num2 ? num2.textContent : '').replace(/\s+/g, '')); });
   }
 
   function rcBoxHtml(){
@@ -8376,6 +8657,7 @@
   function render(){
     var entry = state.stack[state.stack.length - 1];
     mapCleanup();
+    fvStop();
     if (entry.view !== 'mainMenu') mxStop();
     mkPayCleanup();
     backBtn.classList.toggle('show', state.stack.length > 1);
@@ -8429,6 +8711,7 @@
     else if (entry.view === 'anketaForm') renderAnketaForm(entry);
     else if (entry.view === 'anketaContract') renderAnketaContract(entry);
     else if (entry.view === 'anketaSuccess') renderAnketaSuccess();
+    else if (entry.view === 'faceCapture') renderFaceCapture(entry);
     else if (entry.view === 'market') renderMarket();
     else if (entry.view === 'marketCats') renderMarketCats();
     else if (entry.view === 'marketParts') renderMarketParts(entry);
@@ -8494,5 +8777,12 @@
 
   render();
   mkResumePending(false);
+  (function(){
+    if (mkQuery('go') !== 'market') return;
+    try { history.replaceState(null, '', location.pathname); } catch(e){}
+    var tp = state.stack[state.stack.length - 1] || {};
+    if (tp.view === 'oferta') return;
+    mkGoHomeMarket();
+  })();
   document.addEventListener('visibilitychange', function(){ if (!document.hidden) mkResumePending(true); });
 })();
