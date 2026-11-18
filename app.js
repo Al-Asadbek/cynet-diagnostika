@@ -1163,6 +1163,7 @@
     if (entry.view === 'marketAdjPay') return L("To'lov",'Оплата');
     if (entry.view === 'marketAdjDone') return L('Buyurtma','Заказ');
     if (entry.view === 'marketAdjOrders') return L('Xaridlarim','Мои покупки');
+    if (entry.view === 'feedback') return L("Taklif va e'tirozlar",'Предложения и претензии');
     if (entry.view === 'guide') return L("Qo'llanma",'Руководство');
     if (entry.view === 'guideTech') { var gm = gdMeta(entry.gid); return gm ? gm.name : ''; }
     return null;
@@ -5568,25 +5569,27 @@
     var items = [
       { pal:'g-sun', wide:true, tall:true, icon:'🛠️', title:cl(t().menuTechs), sub:t().menuTechsSub, badge:'🎬 ' + L('ANIMATSIYA','АНИМАЦИЯ'),
         count:t().itemsCount(totalIssues()), brand:L('Texnika','Техника'), action:function(el){ pzOpen('tech', el, function(){ push({ view:'home' }); }); } },
-      { pal:'g-gold', wide:true, icon:'📖', title:L("Qo'llanma",'Руководство'), sub:L("Yangi texnikani o'rnatish, ishga tushirish va foydalanish bo'yicha qadamlar","Установка, запуск и использование новой техники — пошагово"), badge:'✨ ' + L('YANGI','НОВОЕ'),
-        cta:'📖 ' + L("Qo'llanmani ochish","Открыть руководство") + ' ›', brand:L("Qo'llanma","Руководство"), action:function(el){ state.guideQuery = ''; push({ view:'guide' }); } },
       { pal:'g-market', wide:true, icon:'🛒', title:'Market', sub:L('Ehtiyot qismlar, eski va B/U texnika','Запчасти, старая и Б/У техника'), badge:'🔥 ' + L('YANGI','НОВОЕ'),
         cta:'🛒 ' + L('Marketga kirish','В маркет') + ' ›', brand:'Market', action:function(el){ mkOpenPortal(el); } },
-      { pal:'g-lime', wide:true, icon:'🏠', title:L('Mening uskunalarim','Моя техника'), sub:L('Kafolat, ta\'mirlash tarixi va eslatmalar','Гарантия, история ремонта и напоминания'), badge:'✨ ' + L('YANGI','НОВОЕ'),
-        cta:'🏠 ' + L('Uskunalarimni ochish','Открыть мою технику') + ' ›', brand:L('Uy pasporti','Паспорт дома'), action:function(el){ state.dv.items = null; push({ view:'devices' }); } },
-      { pal:'g-fire', icon:'💰', title:L('Narx kalkulyatori','Калькулятор цен'), sub:L('Ta\'mirlash narxini oldindan biling','Узнайте цену ремонта заранее'), brand:L('Narxlar','Цены'),
-        action:function(el){ state.calc.tur = ''; state.calc.sel = {}; push({ view:'calc' }); } },
-      { pal:'g-sky', icon:'🧭', title:L('Sotib olish maslahatchisi','Советчик по покупке'), sub:L('Qaysi texnika sizga mos?','Какая техника вам подойдёт?'), brand:L('Maslahat','Совет'),
-        action:function(el){ state.adv.tur = ''; state.adv.step = 0; state.adv.ans = {}; push({ view:'advisor' }); } },
       { pal:'g-night', wide:true, icon:'🔍', title:cl(t().menuTopish), sub:t().menuTopishSub, cta:'🔎 ' + L('Qidirish','Искать') + ' ›',
         brand:L('Ustaxona','Мастерская'), action:function(el){ pzOpen('find', el, function(){ push({ view:'topishViloyat' }); }); } },
       { pal:'g-teal', wide:true, icon:'🗺️', title:L('Xarita','Карта'), sub:L('Yaqin atrofdagi ustalarni xaritada toping','Найдите мастеров рядом на карте'),
         cta:'🗺 ' + L('Xaritani ochish','Открыть карту') + ' ›', brand:L('Xarita','Карта'), action:function(el){ pzOpen('map', el, function(){ push({ view:'map' }); }); } },
-      { pal:'g-pink', icon:'📋', title:cl(t().menuOrder), sub:t().menuOrderSub, brand:L('Buyurtma','Заказ'), action:function(el){ pzOpen('order', el, function(){ push({ view:'orderGate' }); }); } },
       { pal:'g-sky', icon:'👤', title:cl(t().menuProfile), sub:t().menuProfileSub, brand:L('Profil','Профиль'), action:function(el){ pzOpen('prof', el, function(){ push({ view:'profileGate' }); }); } },
+      { pal:'g-pink', icon:'📋', title:cl(t().menuOrder), sub:t().menuOrderSub, brand:L('Buyurtma','Заказ'), action:function(el){ pzOpen('order', el, function(){ push({ view:'orderGate' }); }); } },
+      { pal:'g-fire', icon:'💰', title:L('Narx kalkulyatori','Калькулятор цен'), sub:L('Ta\'mirlash narxini oldindan biling','Узнайте цену ремонта заранее'), brand:L('Narxlar','Цены'),
+        action:function(el){ state.calc.tur = ''; state.calc.sel = {}; push({ view:'calc' }); } },
+      { pal:'g-sky', icon:'🧭', title:L('Sotib olish maslahatchisi','Советчик по покупке'), sub:L('Qaysi texnika sizga mos?','Какая техника вам подойдёт?'), brand:L('Maslahat','Совет'),
+        action:function(el){ state.adv.tur = ''; state.adv.step = 0; state.adv.ans = {}; push({ view:'advisor' }); } },
+      { pal:'g-lime', wide:true, icon:'🏠', title:L('Mening uskunalarim','Моя техника'), sub:L('Kafolat, ta\'mirlash tarixi va eslatmalar','Гарантия, история ремонта и напоминания'), badge:'✨ ' + L('YANGI','НОВОЕ'),
+        cta:'🏠 ' + L('Uskunalarimni ochish','Открыть мою технику') + ' ›', brand:L('Uy pasporti','Паспорт дома'), action:function(el){ state.dv.items = null; push({ view:'devices' }); } },
       { pal:'g-lime', icon:'📝', title:cl(t().menuAnketa), sub:t().menuAnketaSub, brand:L('Usta bo\'l','Стать мастером'), action:function(el){ pzOpen('anketa', el, function(){ push({ view:'anketaGate' }); }); } },
       { pal:'g-fire', icon:'🏆', title:cl(t().menuAbout), sub:t().menuAboutSub, brand:L('Biz','Мы'), action:function(el){ pzOpen('about', el, function(){ push({ view:'about' }); }); } },
-      { pal:'g-violet', wide:true, icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, cta:'+998 50 071 5242', brand:L('Aloqa','Связь'), action:function(el){ pzOpen('call', el, function(){ push({ view:'contact' }); }); } }
+      { pal:'g-violet', wide:true, icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, cta:'+998 50 071 5242', brand:L('Aloqa','Связь'), action:function(el){ pzOpen('call', el, function(){ push({ view:'contact' }); }); } },
+      { pal:'g-gold', wide:true, icon:'📖', title:L("Qo'llanma",'Руководство'), sub:L("Yangi texnikani o'rnatish, ishga tushirish va foydalanish — rasm va video bilan","Установка, запуск и использование новой техники — с фото и видео"), badge:'✨ ' + L('YANGI','НОВОЕ'),
+        cta:'📖 ' + L("Qo'llanmani ochish","Открыть руководство") + ' ›', brand:L("Qo'llanma","Руководство"), action:function(el){ state.guideQuery = ''; push({ view:'guide' }); } },
+      { pal:'g-night', wide:true, icon:'💬', title:L("Taklif va e'tirozlar","Предложения и претензии"), sub:L("Fikringiz yoki shikoyatingizni bevosita adminga yuboring","Отправьте идею или жалобу напрямую администратору"),
+        cta:'💬 ' + L("Yozish","Написать") + ' ›', brand:L("Fikr-mulohaza","Обратная связь"), action:function(el){ state.fb = { type:'taklif', text:'', sent:false }; push({ view:'feedback' }); } }
     ];
     mainView.innerHTML =
       '<div class="view"><div class="mx-ticker" id="mxTicker"></div><div class="hello"><h1>' + L('Salom','Привет') + ', <span class="gr">' + userName() + '</span> <span class="wave">👋</span></h1>' +
@@ -8738,6 +8741,7 @@
     else if (entry.view === 'device') renderDevice(entry);
     else if (entry.view === 'deviceHistoryForm') renderDeviceHistoryForm(entry);
     else if (entry.view === 'deviceReminderForm') renderDeviceReminderForm(entry);
+    else if (entry.view === 'feedback') renderFeedback();
     else if (entry.view === 'guide') renderGuide();
     else if (entry.view === 'guideTech') renderGuideTech(entry);
   }
@@ -9650,6 +9654,7 @@
   //  ishga tushirish va foydalanish bo'yicha yo'riqnomalar
   // ============================================================
   var GD_SECS = [
+    { k:'media',   ic:'🎬', uz:"Rasm va video",   ru:"Фото и видео" },
     { k:'new',     ic:'📦', uz:"Yangi olingach",  ru:"После покупки" },
     { k:'install', ic:'🔧', uz:"O'rnatish",       ru:"Установка" },
     { k:'start',   ic:'▶️', uz:"Ishga tushirish", ru:"Запуск" },
@@ -9718,7 +9723,7 @@
     var chips = GD_SECS.map(function(s){
       var n = gdSteps(id, s.k).length;
       return '<button type="button" class="gd-chip' + (s.k === sec ? ' on' : '') + (s.k === 'warn' ? ' warn' : '') + '" data-sec="' + s.k + '">' +
-        '<span>' + s.ic + '</span> ' + L(s.uz, s.ru) + ' <i>' + n + '</i></button>';
+        '<span>' + s.ic + '</span> ' + L(s.uz, s.ru) + (s.k === 'media' ? '' : ' <i>' + n + '</i>') + '</button>';
     }).join('');
     var list = steps.map(function(s, i){
       var key = id + ':' + sec + ':' + i;
@@ -9736,8 +9741,8 @@
       '<div><div class="eyebrow gd-eb">' + L("QO'LLANMA", 'РУКОВОДСТВО') + '</div><h2>' + esc(m.name) + '</h2></div></div>' +
       '<div class="gd-chips" id="gdChips">' + chips + '</div>' +
       '<div class="gd-sec-title"><span>' + cur.ic + '</span> ' + L(cur.uz, cur.ru) + '</div>' +
-      '<ol class="gd-steps">' + list + '</ol>' +
-      (sec === 'warn' ? '' : '<p class="gd-hint">' + L("Bajarilgan qadamni belgilash uchun ustiga bosing.", "Нажмите на пункт, чтобы отметить его выполненным.") + '</p>') +
+      (sec === 'media' ? gdMediaHTML(id) : '<ol class="gd-steps">' + list + '</ol>') +
+      (sec === 'warn' || sec === 'media' ? '' : '<p class="gd-hint">' + L("Bajarilgan qadamni belgilash uchun ustiga bosing.", "Нажмите на пункт, чтобы отметить его выполненным.") + '</p>') +
       nav + diag + '</div>';
     mainView.querySelectorAll('[data-sec]').forEach(function(b){
       b.addEventListener('click', function(){
@@ -9754,6 +9759,134 @@
     if (d) d.addEventListener('click', function(){ haptic('select'); openCategory(id); });
     var on = mainView.querySelector('.gd-chip.on');
     if (on && on.scrollIntoView) { try { on.scrollIntoView({ inline:'center', block:'nearest' }); } catch(e){} window.scrollTo(0,0); }
+  }
+
+
+  // ============================================================
+  //  🎬 QO'LLANMA MEDIA — har bir texnika uchun rasm va uzun video
+  //  VIDEO QO'SHISH: pastdagi GD_MEDIA ichiga texnika id'si bo'yicha
+  //  havola yozing (YouTube yoki .mp4). Misol:
+  //    printer: { videos:[ { uz:"Printerni o'rnatish (to'liq)", ru:"Установка принтера (полностью)",
+  //                          url:"https://youtu.be/XXXXXXXXXXX" } ],
+  //               images:[ { src:"https://.../printer1.jpg", uz:"Kartrijni o'rnatish", ru:"Установка картриджа" } ] }
+  //  Texnika id'lari: gen (har qanday), printer, ... (CATS ichidagi id).
+  // ============================================================
+  var GD_MEDIA = {
+    gen: { videos:[], images:[] }
+  };
+
+  function gdVideoEmbed(url){
+    var u = String(url || '').trim(); if (!u) return '';
+    var m = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/.exec(u);
+    if (m) return '<div class="gdm-vid"><iframe src="https://www.youtube.com/embed/' + m[1] + '?rel=0&playsinline=1" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>';
+    if (/\.(mp4|webm|mov)(\?|$)/i.test(u)) return '<div class="gdm-vid"><video src="' + esc(u) + '" controls playsinline preload="metadata"></video></div>';
+    return '<a class="btn-primary gdm-link" href="' + esc(u) + '" target="_blank" rel="noopener">▶ ' + L('Videoni ochish','Открыть видео') + '</a>';
+  }
+
+  function gdInjectCss(){
+    if (document.getElementById('gdmCss')) return;
+    var st = document.createElement('style'); st.id = 'gdmCss';
+    st.textContent = [
+      '.gdm-h{margin:16px 0 8px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}',
+      '.gdm-vid{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin-bottom:6px}',
+      '.gdm-vid iframe,.gdm-vid video{position:absolute;inset:0;width:100%;height:100%;border:0}',
+      '.gdm-vt{font-size:13.5px;font-weight:600;margin:10px 0 6px}',
+      '.gdm-link{display:block;text-align:center;padding:12px;border-radius:11px;text-decoration:none;margin-bottom:8px}',
+      '.gdm-empty{padding:18px 14px;border-radius:14px;border:1px dashed var(--border,rgba(255,255,255,.2));text-align:center;font-size:13px;opacity:.8;line-height:1.5}',
+      '.gdm-empty b{display:block;font-size:26px;margin-bottom:4px}',
+      '.gdm-img{width:100%;border-radius:14px;display:block;margin-bottom:4px}',
+      '.gdm-cap{font-size:12.5px;opacity:.8;margin:0 0 12px}',
+      '.gdm-card{border-radius:16px;padding:14px;margin-bottom:12px;background:var(--bg-panel,#161b26);border:1px solid var(--border,rgba(255,255,255,.1))}',
+      '.gdm-card.warn{border-color:rgba(255,90,90,.5)}',
+      '.gdm-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}',
+      '.gdm-big{font-size:38px;line-height:1;width:58px;height:58px;display:flex;align-items:center;justify-content:center;border-radius:16px;background:rgba(255,255,255,.07)}',
+      '.gdm-ct{font-weight:700;font-size:15px}',
+      '.gdm-cs{font-size:12px;opacity:.7}',
+      '.gdm-rules{margin:0;padding:0;list-style:none}',
+      '.gdm-rules li{display:flex;gap:8px;font-size:13px;line-height:1.45;padding:5px 0;border-top:1px solid rgba(255,255,255,.07)}',
+      '.gdm-rules li:first-child{border-top:0}',
+      '.gdm-rules li i{font-style:normal;flex:none}',
+      '.fb-types{display:flex;gap:8px;margin:12px 0}',
+      '.fb-types button{flex:1;padding:12px 8px;border-radius:12px;border:1px solid var(--border,rgba(255,255,255,.15));background:transparent;color:inherit;font-weight:600;font-size:14px}',
+      '.fb-types button.on{background:linear-gradient(135deg,#f5a524,#e67635);color:#191008;border-color:transparent}',
+      '.fb-ta{width:100%;min-height:150px;border-radius:14px;padding:12px;font-size:14.5px;line-height:1.5;resize:vertical;box-sizing:border-box;background:rgba(255,255,255,.06);color:inherit;border:1px solid var(--border,rgba(255,255,255,.15))}',
+      '.fb-msg{min-height:20px;margin:8px 0;font-size:13px}',
+      '.fb-msg.err{color:#ff7a7a}.fb-msg.ok{color:#5ee08a}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+
+  // Har bir bo'lim uchun qoidalar kartasi (rasm-plakat): matn mavjud GD ma'lumotidan olinadi
+  function gdMediaHTML(id){
+    gdInjectCss();
+    var md = GD_MEDIA[id] || {};
+    var vids = md.videos || [], imgs = md.images || [];
+    var out = '<div class="gdm-h">🎬 ' + L("Video darslik","Видеоурок") + '</div>';
+    if (vids.length) {
+      out += vids.map(function(v){
+        return (v.uz || v.ru ? '<div class="gdm-vt">' + esc(L(v.uz || v.ru, v.ru || v.uz)) + '</div>' : '') + gdVideoEmbed(v.url);
+      }).join('');
+    } else {
+      out += '<div class="gdm-empty"><b>🎥</b>' + L("Bu texnika uchun to'liq video darslik tez orada qo'shiladi.","Полный видеоурок по этой технике скоро появится.") + '</div>';
+    }
+    if (imgs.length) {
+      out += '<div class="gdm-h">📷 ' + L("Rasmlar","Фото") + '</div>' + imgs.map(function(im){
+        return '<img class="gdm-img" loading="lazy" src="' + esc(im.src) + '" alt="">' +
+          ((im.uz || im.ru) ? '<p class="gdm-cap">' + esc(L(im.uz || im.ru, im.ru || im.uz)) + '</p>' : '');
+      }).join('');
+    }
+    out += '<div class="gdm-h">📐 ' + L("Qonun-qoidalar (qisqacha)","Правила (кратко)") + '</div>';
+    GD_SECS.forEach(function(sc){
+      if (sc.k === 'media') return;
+      var st = gdSteps(id, sc.k); if (!st.length) return;
+      out += '<div class="gdm-card' + (sc.k === 'warn' ? ' warn' : '') + '"><div class="gdm-top"><div class="gdm-big">' + sc.ic + '</div>' +
+        '<div><div class="gdm-ct">' + L(sc.uz, sc.ru) + '</div><div class="gdm-cs">' + st.length + ' ' + L('ta qadam','шагов') + '</div></div></div>' +
+        '<ul class="gdm-rules">' + st.slice(0, 3).map(function(x){ return '<li><i>' + (sc.k === 'warn' ? '⚠️' : '✔️') + '</i><span>' + gdText(x) + '</span></li>'; }).join('') + '</ul></div>';
+    });
+    return out;
+  }
+
+  // ================= TAKLIF VA E'TIROZLAR =================
+  function renderFeedback(){
+    gdInjectCss();
+    var f = state.fb || (state.fb = { type:'taklif', text:'', sent:false });
+    if (f.sent) {
+      mainView.innerHTML = '<div class="view"><div class="detail-head"><h2>' + L("Rahmat!","Спасибо!") + '</h2></div>' +
+        '<div class="panel"><p class="ptext" style="font-size:15px">✅ ' + L("Xabaringiz adminga yuborildi. Ko'rib chiqamiz.","Ваше сообщение отправлено администратору. Мы рассмотрим его.") + '</p></div>' +
+        '<button class="btn-primary" id="fbBack" style="width:100%;padding:13px;border-radius:11px">' + L("Asosiy menyuga","В главное меню") + '</button></div>';
+      document.getElementById('fbBack').addEventListener('click', function(){ haptic('select'); state.stack = [{ view:'mainMenu' }]; render(); });
+      return;
+    }
+    mainView.innerHTML =
+      '<div class="view"><div class="detail-head"><h2>💬 ' + L("Taklif va e'tirozlar","Предложения и претензии") + '</h2></div>' +
+      '<p class="ptext">' + L("Ilovani yaxshilash uchun taklifingiz yoki e'tirozingiz bormi? Yozing — to'g'ridan-to'g'ri adminga boradi.","Есть идея или претензия? Напишите — это уйдёт напрямую администратору.") + '</p>' +
+      '<div class="fb-types"><button type="button" data-ft="taklif" class="' + (f.type === 'taklif' ? 'on' : '') + '">💡 ' + L("Taklif","Предложение") + '</button>' +
+      '<button type="button" data-ft="etiroz" class="' + (f.type === 'etiroz' ? 'on' : '') + '">⚠️ ' + L("E'tiroz","Претензия") + '</button></div>' +
+      '<textarea class="fb-ta" id="fbText" maxlength="2000" placeholder="' + L("Fikringizni shu yerga yozing...","Напишите здесь...") + '">' + esc(f.text) + '</textarea>' +
+      '<div class="fb-msg" id="fbMsg"></div>' +
+      '<button class="btn-primary" id="fbSend" style="width:100%;padding:13px;border-radius:11px">📨 ' + L("Yuborish","Отправить") + '</button></div>';
+    var ta = document.getElementById('fbText'), msg = document.getElementById('fbMsg'), btn = document.getElementById('fbSend');
+    ta.addEventListener('input', function(){ f.text = ta.value; });
+    mainView.querySelectorAll('[data-ft]').forEach(function(b){
+      b.addEventListener('click', function(){
+        haptic('select'); f.type = b.getAttribute('data-ft');
+        mainView.querySelectorAll('[data-ft]').forEach(function(x){ x.classList.toggle('on', x === b); });
+      });
+    });
+    btn.addEventListener('click', function(){
+      var txt = (ta.value || '').trim();
+      msg.className = 'fb-msg';
+      if (txt.length < 5) { msg.className = 'fb-msg err'; msg.textContent = L("Matn juda qisqa (kamida 5 belgi).","Слишком короткий текст (минимум 5 символов)."); return; }
+      if (!getInitData()) { msg.className = 'fb-msg err'; msg.textContent = L("Iltimos, ilovani Telegram ichidan oching.","Пожалуйста, откройте приложение внутри Telegram."); return; }
+      btn.disabled = true; btn.textContent = L("Yuborilmoqda...","Отправка...");
+      var tag = f.type === 'taklif' ? '[💡 TAKLIF] ' : "[⚠️ E'TIROZ] ";
+      apiPost('/api/public/complaint/create', { init_data:getInitData(), matn: tag + txt, lang:srvLang() }).then(function(res){
+        if (res.data && res.data.ok) { haptic('ok'); f.sent = true; f.text = ''; renderFeedback(); }
+        else { btn.disabled = false; btn.textContent = '📨 ' + L("Yuborish","Отправить"); msg.className = 'fb-msg err'; msg.textContent = (res.data && res.data.error) || t().orderErrGeneric; }
+      }).catch(function(){
+        btn.disabled = false; btn.textContent = '📨 ' + L("Yuborish","Отправить"); msg.className = 'fb-msg err'; msg.textContent = t().orderErrGeneric;
+      });
+    });
   }
 
   // ---------- Til tanlagich (bayroqli ochiladigan menyu) ----------
