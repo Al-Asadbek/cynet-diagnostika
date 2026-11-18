@@ -1150,6 +1150,9 @@
     if (entry.view === 'deviceHistoryForm') return L('Yozuv','Запись');
     if (entry.view === 'deviceReminderForm') return L('Eslatma','Напоминание');
     if (entry.view === 'market') return 'Market';
+    if (entry.view === 'marketBu') return L('B/U texnika','Б/У техника');
+    if (entry.view === 'marketBuForm') return L("E'lon berish",'Подать объявление');
+    if (entry.view === 'marketBuMy') return L("Mening e'lonlarim",'Мои объявления');
     if (entry.view === 'marketCats') return L('Ehtiyot qismlar','Запчасти');
     if (entry.view === 'marketParts') { var mc = catById(entry.cat); return mc ? pick(mc, 'name') : ''; }
     if (entry.view === 'marketPart') return null;
@@ -6516,12 +6519,14 @@
         '<div id="mkHomeOrders"></div>' +
         '<div class="mk-soon-row">' +
           '<button class="mk-soon" data-soon="1" style="--i:0"><span class="ico">🧰</span><span class="chip">' + L('TEZ ORADA','СКОРО') + '</span><b>' + L('Eski texnika','Старая техника') + '</b><span class="d">' + L("Ehtiyot qism uchun texnika","Техника на запчасти") + '</span></button>' +
-          '<button class="mk-soon" data-soon="2" style="--i:1"><span class="ico">♻️</span><span class="chip">' + L('TEZ ORADA','СКОРО') + '</span><b>' + L('B/U texnika','Б/У техника') + '</b><span class="d">' + L("Ishlatilgan texnikalar","Бывшая в употреблении") + '</span></button>' +
+          '<button class="mk-soon" id="mkOpenBu" style="--i:1"><span class="ico">♻️</span><span class="chip">' + L('FAOL','АКТИВНО') + '</span><b>' + L('B/U texnika','Б/У техника') + '</b><span class="d">' + L("Ishlatilgan texnikani soting yoki toping","Продавайте и находите Б/У технику") + '</span></button>' +
         '</div>' +
       '</div>';
     document.getElementById('mkOpenParts').addEventListener('click', function(){ haptic('select'); push({ view:'marketCats' }); });
     mkRenderHomeOrders();
     adjCheckPending();
+    var buBtn = document.getElementById('mkOpenBu');
+    if (buBtn) buBtn.addEventListener('click', function(){ haptic('select'); buOpen(); });
     mainView.querySelectorAll('[data-soon]').forEach(function(b){
       b.addEventListener('click', function(){ haptic('tap'); mkToast(L("Tez orada ochiladi 🚀","Скоро откроется 🚀")); });
     });
@@ -8720,6 +8725,9 @@
     else if (entry.view === 'anketaSuccess') renderAnketaSuccess();
     else if (entry.view === 'faceCapture') renderFaceCapture(entry);
     else if (entry.view === 'market') renderMarket();
+    else if (entry.view === 'marketBu') renderBu();
+    else if (entry.view === 'marketBuForm') renderBuForm();
+    else if (entry.view === 'marketBuMy') renderBuMy();
     else if (entry.view === 'marketCats') renderMarketCats();
     else if (entry.view === 'marketParts') renderMarketParts(entry);
     else if (entry.view === 'marketPart') renderMarketPart(entry);
@@ -9887,6 +9895,324 @@
         btn.disabled = false; btn.textContent = '📨 ' + L("Yuborish","Отправить"); msg.className = 'fb-msg err'; msg.textContent = t().orderErrGeneric;
       });
     });
+  }
+
+
+  // ============================================================
+  //  ♻️ B/U TEXNIKA — foydalanuvchilar o'z texnikasini soladi
+  //  E'lonlar ro'yxati + filtr (texnika/viloyat/tuman) + "＋" forma.
+  //  Yuborilgan e'lon adminga boradi; tasdiqlansa darhol chiqadi.
+  // ============================================================
+  var BU_CATS = ['tv','kond','xolod','kir','suv','komp','dux','mikro','piles','dazmol','vent','stab','ups','printer'];
+  var BU_MIN = 3, BU_MAX = 6;
+  state.bu = { regions:null, f:{ cat:'', viloyat:'', tuman:'' }, items:null, loading:false, my:null, form:null };
+
+  function buInjectCss(){
+    if (document.getElementById('buCss')) return;
+    var st = document.createElement('style'); st.id = 'buCss';
+    st.textContent = [
+      '.bu-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}',
+      '.bu-top .mk-title{margin:0}',
+      '.bu-acts{display:flex;gap:8px;align-items:center}',
+      '.bu-my{height:42px;padding:0 13px;border-radius:21px;border:1px solid var(--border,rgba(255,255,255,.18));background:rgba(255,255,255,.06);color:inherit;font-weight:700;font-size:13px}',
+      '.bu-plus{width:46px;height:46px;border-radius:50%;border:0;font-size:28px;line-height:1;font-weight:700;color:#06231a;background:linear-gradient(135deg,#19e6a0,#0aa37a);box-shadow:0 6px 18px rgba(25,230,160,.4)}',
+      '.bu-filter{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}',
+      '.bu-filter .full{grid-column:1/-1}',
+      '.bu-sel,.bu-in,.bu-ta{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;font-size:14.5px;color:inherit;background:rgba(255,255,255,.07);border:1px solid var(--border,rgba(255,255,255,.16));appearance:none;-webkit-appearance:none}',
+      '.bu-sel{background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 18px) 52%,calc(100% - 12px) 52%;background-size:6px 6px;background-repeat:no-repeat;padding-right:32px}',
+      '.bu-sel option{color:#111}',
+      '.bu-sel:disabled{opacity:.45}',
+      '.bu-ta{min-height:80px;resize:vertical}',
+      '.bu-clear{grid-column:1/-1;padding:9px;border-radius:10px;border:1px dashed var(--border,rgba(255,255,255,.25));background:transparent;color:inherit;font-size:13px}',
+      '.bu-count{font-size:12.5px;opacity:.75;margin:0 2px 8px}',
+      '.bu-list{display:grid;grid-template-columns:1fr;gap:12px}',
+      '.bu-card{display:flex;gap:12px;text-align:left;padding:10px;border-radius:16px;border:1px solid var(--border,rgba(255,255,255,.12));background:var(--bg-panel,#161b26);color:inherit;width:100%}',
+      '.bu-ph{flex:none;width:104px;height:104px;border-radius:12px;background:#0b0e14 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden}',
+      '.bu-ph i{position:absolute;right:5px;bottom:5px;font-style:normal;font-size:11px;font-weight:700;padding:2px 7px;border-radius:9px;background:rgba(0,0,0,.6);color:#fff}',
+      '.bu-inf{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}',
+      '.bu-mdl{font-weight:800;font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.bu-meta{font-size:12.5px;opacity:.75}',
+      '.bu-prc{font-weight:800;font-size:16px;color:#19e6a0;margin-top:auto}',
+      '.bu-empty{padding:26px 14px;text-align:center;border-radius:16px;border:1px dashed var(--border,rgba(255,255,255,.2));opacity:.85;line-height:1.5}',
+      '.bu-empty b{display:block;font-size:34px;margin-bottom:6px}',
+      '.bu-lbl{display:block;font-size:12.5px;font-weight:700;margin:12px 0 5px;opacity:.85}',
+      '.bu-lbl em{font-style:normal;opacity:.6;font-weight:500}',
+      '.bu-ups{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}',
+      '.bu-up{position:relative;aspect-ratio:1;border-radius:12px;background:rgba(255,255,255,.07) center/cover no-repeat;border:1px dashed var(--border,rgba(255,255,255,.25));display:flex;align-items:center;justify-content:center;font-size:26px;color:inherit}',
+      '.bu-up.has{border-style:solid}',
+      '.bu-up button{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:13px}',
+      '.bu-hint{font-size:12px;opacity:.7;margin:6px 0 0}',
+      '.bu-err{color:#ff7a7a;font-size:13px;min-height:18px;margin:10px 0 4px}',
+      '.bu-send{width:100%;padding:14px;border-radius:12px;font-size:15px;margin-top:6px}',
+      '.bu-badge{display:inline-block;font-size:11px;font-weight:800;padding:3px 9px;border-radius:9px}',
+      '.bu-badge.kutilmoqda{background:rgba(255,200,61,.18);color:#ffc83d}',
+      '.bu-badge.tasdiqlandi{background:rgba(25,230,160,.18);color:#19e6a0}',
+      '.bu-badge.rad{background:rgba(255,90,90,.18);color:#ff7a7a}',
+      '.bu-del{margin-top:6px;align-self:flex-start;font-size:12px;padding:6px 10px;border-radius:9px;border:1px solid rgba(255,90,90,.5);background:transparent;color:#ff7a7a}',
+      '.bu-ov{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center}',
+      '.bu-sheet{width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;background:var(--bg-panel,#161b26);color:var(--text-1,#fff);padding:0 0 18px}',
+      '.bu-gal{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}',
+      '.bu-gal img{flex:none;width:100%;aspect-ratio:4/3;object-fit:cover;scroll-snap-align:center;background:#0b0e14}',
+      '.bu-dots{text-align:center;font-size:12px;opacity:.7;margin:6px 0}',
+      '.bu-det{padding:4px 16px}',
+      '.bu-det h3{margin:6px 0 2px;font-size:19px}',
+      '.bu-det .bu-prc{font-size:22px;margin:4px 0 10px;display:block}',
+      '.bu-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);font-size:14px}',
+      '.bu-row span:first-child{opacity:.65}',
+      '.bu-call{display:block;text-align:center;text-decoration:none;padding:14px;border-radius:12px;font-weight:800;margin:12px 16px 0;color:#06231a;background:linear-gradient(135deg,#19e6a0,#0aa37a)}',
+      '.bu-x{position:sticky;top:0;float:right;margin:10px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:16px;z-index:2}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+
+  function buCatName(id){ var c = catById(id); return c ? c.icon + ' ' + pick(c, 'name') : id; }
+  function buCatOptions(sel, withAll){
+    var o = withAll ? '<option value="">' + L('Barcha texnikalar','Вся техника') + '</option>' : '<option value="">' + L('Texnikani tanlang','Выберите технику') + '</option>';
+    CATS.filter(function(c){ return BU_CATS.indexOf(c.id) > -1; }).forEach(function(c){
+      o += '<option value="' + esc(c.id) + '"' + (c.id === sel ? ' selected' : '') + '>' + esc(c.icon + ' ' + pick(c, 'name')) + '</option>';
+    });
+    return o;
+  }
+  function buRegions(cb){
+    if (state.bu.regions) { cb(state.bu.regions); return; }
+    apiGet('/api/public/bu/regions').then(function(r){
+      state.bu.regions = (r && r.regions) || []; cb(state.bu.regions);
+    }).catch(function(){ cb([]); });
+  }
+  function buRegionOptions(sel, withAll){
+    var o = '<option value="">' + (withAll ? L('Barcha viloyatlar','Все регионы') : L('Viloyatni tanlang','Выберите область')) + '</option>';
+    (state.bu.regions || []).forEach(function(r){ o += '<option value="' + esc(r.v) + '"' + (r.v === sel ? ' selected' : '') + '>' + esc(r.nom) + '</option>'; });
+    return o;
+  }
+  function buTumanOptions(viloyat, sel, withAll){
+    var o = '<option value="">' + (withAll ? L('Barcha tumanlar','Все районы') : L('Tumanni tanlang','Выберите район')) + '</option>';
+    var r = (state.bu.regions || []).filter(function(x){ return x.v === viloyat; })[0];
+    ((r && r.tumanlar) || []).forEach(function(t){ o += '<option value="' + esc(t) + '"' + (t === sel ? ' selected' : '') + '>' + esc(t) + '</option>'; });
+    return o;
+  }
+  function buPhoto(it, i){ return API_BASE + '/api/public/bu/photo?id=' + it.id + '&i=' + (i || 0); }
+
+  function buOpen(){
+    buInjectCss();
+    state.bu.items = null;
+    push({ view:'marketBu' });
+  }
+
+  function renderBu(){
+    buInjectCss();
+    var f = state.bu.f;
+    mainView.innerHTML =
+      '<div class="view mk-view">' +
+        '<div class="bu-top"><div class="mk-title">♻️ ' + L('B/U texnika','Б/У техника') + '</div>' +
+        '<div class="bu-acts"><button type="button" class="bu-my" id="buMyBtn">📋 ' + L("E'lonlarim","Мои") + '</button>' +
+        '<button type="button" class="bu-plus" id="buAdd" aria-label="add">＋</button></div></div>' +
+        '<div class="bu-filter">' +
+          '<select class="bu-sel full" id="buFCat">' + buCatOptions(f.cat, true) + '</select>' +
+          '<select class="bu-sel" id="buFVil">' + buRegionOptions(f.viloyat, true) + '</select>' +
+          '<select class="bu-sel" id="buFTum"' + (f.viloyat ? '' : ' disabled') + '>' + buTumanOptions(f.viloyat, f.tuman, true) + '</select>' +
+          ((f.cat || f.viloyat || f.tuman) ? '<button type="button" class="bu-clear" id="buFClr">✕ ' + L('Filtrni tozalash','Сбросить фильтр') + '</button>' : '') +
+        '</div>' +
+        '<div class="bu-count" id="buCnt"></div>' +
+        '<div class="bu-list" id="buList"><div class="mk-skel"></div><div class="mk-skel"></div></div>' +
+      '</div>';
+    var cat = document.getElementById('buFCat'), vil = document.getElementById('buFVil'), tum = document.getElementById('buFTum');
+    cat.addEventListener('change', function(){ f.cat = cat.value; haptic('select'); renderBu(); });
+    vil.addEventListener('change', function(){ f.viloyat = vil.value; f.tuman = ''; haptic('select'); renderBu(); });
+    tum.addEventListener('change', function(){ f.tuman = tum.value; haptic('select'); renderBu(); });
+    var clr = document.getElementById('buFClr');
+    if (clr) clr.addEventListener('click', function(){ f.cat = ''; f.viloyat = ''; f.tuman = ''; haptic('tap'); renderBu(); });
+    document.getElementById('buAdd').addEventListener('click', function(){
+      haptic('select'); state.bu.form = { photos:[], cat:f.cat || '', model:'', yil:'', telefon:'', viloyat:f.viloyat || '', tuman:f.tuman || '', narx:'', izoh:'', sent:false, busy:false };
+      push({ view:'marketBuForm' });
+    });
+    document.getElementById('buMyBtn').addEventListener('click', function(){ haptic('select'); state.bu.my = null; push({ view:'marketBuMy' }); });
+
+    if (!state.bu.regions) buRegions(function(){ if (state.stack[state.stack.length-1].view === 'marketBu') { var keep = JSON.stringify(f); if (JSON.stringify(state.bu.f) === keep) renderBu(); } });
+    var qs = '?cat=' + encodeURIComponent(f.cat) + '&viloyat=' + encodeURIComponent(f.viloyat) + '&tuman=' + encodeURIComponent(f.tuman);
+    var myF = JSON.stringify(f);
+    apiGet('/api/public/bu/list' + qs).then(function(r){
+      if (state.stack[state.stack.length-1].view !== 'marketBu' || JSON.stringify(state.bu.f) !== myF) return;
+      drawBuList((r && r.items) || [], r && r.ok === false ? r.error : '');
+    }).catch(function(){
+      if (state.stack[state.stack.length-1].view !== 'marketBu') return;
+      drawBuList([], L("Internetni tekshirib, qayta urinib ko'ring","Проверьте интернет и повторите"));
+    });
+  }
+
+  function buCardHTML(it, idx){
+    var ph = it.rasm_soni > 0 ? ' style="background-image:url(\'' + esc(buPhoto(it, 0)) + '\')"' : '';
+    return '<button type="button" class="bu-card" data-bi="' + idx + '"><span class="bu-ph"' + ph + '>' + (it.rasm_soni > 0 ? '<i>📷 ' + it.rasm_soni + '</i>' : '🖼') + '</span>' +
+      '<span class="bu-inf"><span class="bu-mdl">' + esc(it.model) + '</span>' +
+      '<span class="bu-meta">' + esc(buCatName(it.cat_id)) + (it.yil ? ' · ' + it.yil : '') + '</span>' +
+      '<span class="bu-meta">📍 ' + esc(it.viloyat_nom) + (it.tuman ? ', ' + esc(it.tuman) : '') + '</span>' +
+      '<span class="bu-prc">' + mkFmt(it.narx) + ' ' + L("so'm","сум") + '</span></span></button>';
+  }
+
+  function drawBuList(items, err){
+    state.bu.items = items;
+    var list = document.getElementById('buList'), cnt = document.getElementById('buCnt');
+    if (!list) return;
+    if (err) { list.innerHTML = '<div class="bu-empty"><b>⚠️</b>' + esc(err) + '</div>'; return; }
+    if (cnt) cnt.textContent = items.length ? (L("E'lonlar: ","Объявлений: ") + items.length) : '';
+    if (!items.length) {
+      list.innerHTML = '<div class="bu-empty"><b>♻️</b>' + L("Tanlangan filtr bo'yicha e'lon topilmadi. Birinchi bo'lib o'z texnikangizni soting — «＋» tugmasini bosing.","По выбранному фильтру объявлений нет. Станьте первым — нажмите «＋».") + '</div>';
+      return;
+    }
+    list.innerHTML = items.map(buCardHTML).join('');
+    list.querySelectorAll('[data-bi]').forEach(function(b){
+      b.addEventListener('click', function(){ haptic('select'); buDetail(items[parseInt(b.getAttribute('data-bi'), 10)]); });
+    });
+  }
+
+  function buDetail(it){
+    var ov = document.createElement('div'); ov.className = 'bu-ov';
+    var imgs = ''; for (var i = 0; i < it.rasm_soni; i++) imgs += '<img loading="lazy" alt="" src="' + esc(buPhoto(it, i)) + '">';
+    var tel = String(it.telefon || '').replace(/[^\d+]/g, '');
+    ov.innerHTML = '<div class="bu-sheet"><button type="button" class="bu-x" aria-label="close">✕</button>' +
+      (imgs ? '<div class="bu-gal">' + imgs + '</div><div class="bu-dots">' + (it.rasm_soni > 1 ? '‹ ' + L("suring","листайте") + ' ›' : '') + '</div>' : '') +
+      '<div class="bu-det"><h3>' + esc(it.model) + '</h3><span class="bu-prc">' + mkFmt(it.narx) + ' ' + L("so'm","сум") + '</span>' +
+      '<div class="bu-row"><span>' + L('Texnika','Техника') + '</span><span>' + esc(buCatName(it.cat_id)) + '</span></div>' +
+      (it.yil ? '<div class="bu-row"><span>' + L('Yili','Год') + '</span><span>' + it.yil + '</span></div>' : '') +
+      '<div class="bu-row"><span>' + L('Manzil','Адрес') + '</span><span>' + esc(it.viloyat_nom) + (it.tuman ? ', ' + esc(it.tuman) : '') + '</span></div>' +
+      '<div class="bu-row"><span>' + L('Telefon','Телефон') + '</span><span>' + esc(it.telefon) + '</span></div>' +
+      (it.izoh ? '<div class="bu-row"><span>' + L('Izoh','Описание') + '</span><span style="text-align:right">' + esc(it.izoh) + '</span></div>' : '') +
+      '</div><a class="bu-call" href="tel:' + esc(tel) + '">📞 ' + L("Sotuvchiga qo'ng'iroq","Позвонить продавцу") + '</a></div>';
+    document.body.appendChild(ov);
+    var close = function(){ ov.remove(); };
+    ov.addEventListener('click', function(e){ if (e.target === ov) close(); });
+    ov.querySelector('.bu-x').addEventListener('click', close);
+  }
+
+  // ---------- Rasmni siqish (telefon rasmlari katta bo'ladi) ----------
+  function buCompress(file){
+    return new Promise(function(resolve, reject){
+      var fr = new FileReader();
+      fr.onerror = function(){ reject(new Error('read')); };
+      fr.onload = function(){
+        var img = new Image();
+        img.onerror = function(){ reject(new Error('img')); };
+        img.onload = function(){
+          var max = 1100, w = img.width, h = img.height, sc = Math.min(1, max / Math.max(w, h));
+          var cv = document.createElement('canvas'); cv.width = Math.round(w * sc); cv.height = Math.round(h * sc);
+          cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+          var q = 0.8, out = cv.toDataURL('image/jpeg', q);
+          while (out.length > 900 * 1024 && q > 0.35) { q -= 0.1; out = cv.toDataURL('image/jpeg', q); }
+          resolve(out);
+        };
+        img.src = fr.result;
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+
+  function renderBuForm(){
+    buInjectCss();
+    var F = state.bu.form || (state.bu.form = { photos:[], cat:'', model:'', yil:'', telefon:'', viloyat:'', tuman:'', narx:'', izoh:'', sent:false, busy:false });
+    if (F.sent) {
+      mainView.innerHTML = '<div class="view mk-view"><div class="bu-empty" style="margin-top:20px"><b>✅</b><div style="font-size:16px;font-weight:800;margin-bottom:6px">' + L("E'lon yuborildi!","Объявление отправлено!") + '</div>' +
+        L("Admin tekshirib chiqadi. Tasdiqlansa e'loningiz darhol B/U texnika bo'limida ko'rinadi, natija haqida botdan xabar olasiz.","Администратор проверит его. После одобрения объявление сразу появится в разделе Б/У, а результат придёт в бот.") + '</div>' +
+        '<button type="button" class="btn-primary bu-send" id="buDone">' + L("E'lonlarga qaytish","К объявлениям") + '</button></div>';
+      document.getElementById('buDone').addEventListener('click', function(){ haptic('select'); state.bu.form = null; pop(); });
+      return;
+    }
+    if (!state.bu.regions) { buRegions(function(){ if (state.stack[state.stack.length-1].view === 'marketBuForm') renderBuForm(); }); }
+    var slots = '';
+    for (var i = 0; i < F.photos.length; i++) slots += '<div class="bu-up has" style="background-image:url(\'' + F.photos[i] + '\')"><button type="button" data-rm="' + i + '">✕</button></div>';
+    if (F.photos.length < BU_MAX) slots += '<button type="button" class="bu-up" id="buAddPh">📷<span style="font-size:11px;position:absolute;bottom:6px">' + L("Qo'shish","Добавить") + '</span></button>';
+    mainView.innerHTML =
+      '<div class="view mk-view"><div class="mk-title">＋ ' + L("Texnika sotish","Продать технику") + '</div>' +
+      '<span class="bu-lbl">📷 ' + L("Rasmlar","Фото") + ' <em>(' + L("kamida ","минимум ") + BU_MIN + ')</em> — <span id="buPhN">' + F.photos.length + '/' + BU_MAX + '</span></span>' +
+      '<div class="bu-ups">' + slots + '</div>' +
+      '<input type="file" id="buFile" accept="image/*" multiple style="display:none">' +
+      '<p class="bu-hint">' + L("Texnikaning turli tomonlaridan aniq rasmga oling.","Сфотографируйте технику с разных сторон.") + '</p>' +
+      '<label class="bu-lbl">' + L("Texnika turi","Тип техники") + '</label><select class="bu-sel" id="buCat">' + buCatOptions(F.cat, false) + '</select>' +
+      '<label class="bu-lbl">' + L("Modeli","Модель") + '</label><input class="bu-in" id="buModel" maxlength="80" placeholder="' + esc(L("Masalan: Samsung UE43T5300","Например: Samsung UE43T5300")) + '" value="' + esc(F.model) + '">' +
+      '<label class="bu-lbl">' + L("Yili","Год") + ' <em>(' + L("ixtiyoriy","необязательно") + ')</em></label><input class="bu-in" id="buYil" inputmode="numeric" maxlength="4" placeholder="2020" value="' + esc(F.yil) + '">' +
+      '<label class="bu-lbl">' + L("Telefon raqam","Номер телефона") + '</label><input class="bu-in" id="buTel" type="tel" inputmode="tel" maxlength="20" placeholder="+998 90 123 45 67" value="' + esc(F.telefon) + '">' +
+      '<label class="bu-lbl">' + L("Viloyat","Область") + '</label><select class="bu-sel" id="buVil">' + buRegionOptions(F.viloyat, false) + '</select>' +
+      '<label class="bu-lbl">' + L("Tuman","Район") + '</label><select class="bu-sel" id="buTum"' + (F.viloyat ? '' : ' disabled') + '>' + buTumanOptions(F.viloyat, F.tuman, false) + '</select>' +
+      '<label class="bu-lbl">' + L("Narxi (so'm)","Цена (сум)") + '</label><input class="bu-in" id="buNarx" inputmode="numeric" placeholder="1 500 000" value="' + esc(F.narx) + '">' +
+      '<label class="bu-lbl">' + L("Izoh","Описание") + ' <em>(' + L("ixtiyoriy","необязательно") + ')</em></label><textarea class="bu-ta" id="buIzoh" maxlength="500" placeholder="' + esc(L("Holati, nosozligi, komplekti...","Состояние, комплект...")) + '">' + esc(F.izoh) + '</textarea>' +
+      '<div class="bu-err" id="buErr"></div>' +
+      '<button type="button" class="btn-primary bu-send" id="buSend">📨 ' + L("Yuborish","Отправить") + '</button></div>';
+
+    var $ = function(id){ return document.getElementById(id); };
+    var err = function(m){ $('buErr').textContent = m || ''; };
+    $('buCat').addEventListener('change', function(){ F.cat = this.value; });
+    $('buModel').addEventListener('input', function(){ F.model = this.value; });
+    $('buYil').addEventListener('input', function(){ this.value = this.value.replace(/\D/g, '').slice(0, 4); F.yil = this.value; });
+    $('buTel').addEventListener('input', function(){ F.telefon = this.value; });
+    $('buTel').addEventListener('focus', function(){ if (!this.value) { this.value = '+998 '; F.telefon = this.value; } });
+    $('buNarx').addEventListener('input', function(){ var d = this.value.replace(/\D/g, '').slice(0, 11); this.value = d ? mkFmt(d) : ''; F.narx = this.value; });
+    $('buIzoh').addEventListener('input', function(){ F.izoh = this.value; });
+    $('buVil').addEventListener('change', function(){ F.viloyat = this.value; F.tuman = ''; $('buTum').innerHTML = buTumanOptions(F.viloyat, '', false); $('buTum').disabled = !F.viloyat; });
+    $('buTum').addEventListener('change', function(){ F.tuman = this.value; });
+
+    var addBtn = $('buAddPh'), fileIn = $('buFile');
+    if (addBtn) addBtn.addEventListener('click', function(){ haptic('tap'); fileIn.click(); });
+    fileIn.addEventListener('change', function(){
+      var files = Array.prototype.slice.call(fileIn.files || [], 0, BU_MAX - F.photos.length);
+      if (!files.length) return;
+      err(L("Rasmlar tayyorlanmoqda...","Подготовка фото..."));
+      var chain = Promise.resolve();
+      files.forEach(function(fl){ chain = chain.then(function(){ return buCompress(fl).then(function(d){ F.photos.push(d); }).catch(function(){}); }); });
+      chain.then(function(){ renderBuForm(); });
+    });
+    mainView.querySelectorAll('[data-rm]').forEach(function(b){
+      b.addEventListener('click', function(){ haptic('tap'); F.photos.splice(parseInt(b.getAttribute('data-rm'), 10), 1); renderBuForm(); });
+    });
+
+    $('buSend').addEventListener('click', function(){
+      if (F.busy) return;
+      if (F.photos.length < BU_MIN) { err(L("Kamida " + BU_MIN + " ta rasm yuklang","Загрузите минимум " + BU_MIN + " фото")); return; }
+      if (!F.cat) { err(L("Texnika turini tanlang","Выберите тип техники")); return; }
+      if (F.model.trim().length < 2) { err(L("Model nomini kiriting","Введите модель")); return; }
+      if (F.yil && (parseInt(F.yil, 10) < 1980 || parseInt(F.yil, 10) > new Date().getFullYear() + 1)) { err(L("Yilni to'g'ri kiriting","Неверный год")); return; }
+      if (F.telefon.replace(/\D/g, '').length < 9) { err(L("Telefon raqamini to'liq kiriting","Введите номер полностью")); return; }
+      if (!F.viloyat) { err(L("Viloyatni tanlang","Выберите область")); return; }
+      if (!F.tuman) { err(L("Tumanni tanlang","Выберите район")); return; }
+      if (!F.narx.replace(/\D/g, '')) { err(L("Narxni kiriting","Введите цену")); return; }
+      if (!getInitData()) { err(L("Iltimos, ilovani Telegram ichidan oching.","Откройте приложение внутри Telegram.")); return; }
+      err(''); F.busy = true;
+      var btn = $('buSend'); btn.disabled = true; btn.textContent = L("Yuborilmoqda...","Отправка...");
+      apiPost('/api/public/bu/create', {
+        init_data:getInitData(), lang:srvLang(), cat_id:F.cat, model:F.model.trim(), yil:F.yil || null, telefon:F.telefon.trim(),
+        viloyat:F.viloyat, tuman:F.tuman, narx:F.narx.replace(/\D/g, ''), izoh:F.izoh.trim(), photos:F.photos
+      }).then(function(res){
+        F.busy = false;
+        if (res.data && res.data.ok) { haptic('ok'); F.sent = true; F.photos = []; renderBuForm(); }
+        else { btn.disabled = false; btn.textContent = '📨 ' + L("Yuborish","Отправить"); err((res.data && res.data.error) || t().orderErrGeneric); }
+      }).catch(function(){
+        F.busy = false; btn.disabled = false; btn.textContent = '📨 ' + L("Yuborish","Отправить"); err(t().orderErrGeneric);
+      });
+    });
+  }
+
+  function renderBuMy(){
+    buInjectCss();
+    mainView.innerHTML = '<div class="view mk-view"><div class="mk-title">📋 ' + L("Mening e'lonlarim","Мои объявления") + '</div><div class="bu-list" id="buMyList"><div class="mk-skel"></div></div></div>';
+    var list = document.getElementById('buMyList');
+    if (!getInitData()) { list.innerHTML = '<div class="bu-empty"><b>⚠️</b>' + L("Ilovani Telegram ichidan oching.","Откройте приложение внутри Telegram.") + '</div>'; return; }
+    apiGet('/api/public/bu/my?init_data=' + encodeURIComponent(getInitData())).then(function(r){
+      if (state.stack[state.stack.length-1].view !== 'marketBuMy') return;
+      var items = (r && r.items) || [];
+      if (!items.length) { list.innerHTML = '<div class="bu-empty"><b>📭</b>' + L("Sizda hali e'lon yo'q.","У вас пока нет объявлений.") + '</div>'; return; }
+      var lab = { kutilmoqda:L("⏳ Tekshiruvda","⏳ На проверке"), tasdiqlandi:L("✅ Faol","✅ Активно"), rad:L("❌ Rad etilgan","❌ Отклонено") };
+      list.innerHTML = items.map(function(it){
+        var ph = (it.status === 'tasdiqlandi' && it.rasm_soni > 0) ? ' style="background-image:url(\'' + esc(buPhoto(it, 0)) + '\')"' : '';
+        return '<div class="bu-card"><span class="bu-ph"' + ph + '>' + (ph ? '' : '🖼') + '</span><span class="bu-inf"><span class="bu-mdl">' + esc(it.model) + '</span>' +
+          '<span class="bu-meta">' + esc(buCatName(it.cat_id)) + '</span><span><span class="bu-badge ' + esc(it.status) + '">' + (lab[it.status] || esc(it.status)) + '</span></span>' +
+          '<span class="bu-prc">' + mkFmt(it.narx) + ' ' + L("so'm","сум") + '</span>' +
+          '<button type="button" class="bu-del" data-del="' + it.id + '">🗑 ' + L("O'chirish (sotildi)","Удалить (продано)") + '</button></span></div>';
+      }).join('');
+      list.querySelectorAll('[data-del]').forEach(function(b){
+        b.addEventListener('click', function(){
+          if (!confirm(L("E'lonni o'chirasizmi?","Удалить объявление?"))) return;
+          haptic('tap');
+          apiPost('/api/public/bu/delete', { init_data:getInitData(), id:parseInt(b.getAttribute('data-del'), 10) }).then(function(){ renderBuMy(); });
+        });
+      });
+    }).catch(function(){ list.innerHTML = '<div class="bu-empty"><b>⚠️</b>' + t().orderErrGeneric + '</div>'; });
   }
 
   // ---------- Til tanlagich (bayroqli ochiladigan menyu) ----------
