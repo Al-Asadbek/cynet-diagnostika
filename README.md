@@ -117,3 +117,15 @@ yoki xizmatlar/hududlar ro'yxati o'zgarsa: **🔄 last.py'dan yangilash →
 🌐 Push qilish** — ikki tugma bosish kifoya, hech narsa qo'lda
 tahrirlanmaydi.
 
+
+## 📖 Qo'llanma bo'limi (yangi)
+
+Bosh menyuda **Qo'llanma** plitasi qo'shildi: umumiy qoidalar + 14 texnika (Televizor, Konditsioner,
+Xolodilnik, Kir yuvish mashinasi, Suv isitgich, Kompyuter/Noutbuk, Duxovka, Mikroto'lqin pech,
+Changso'rg'ich, Dazmol, Ventilyator, Stabilizator, UPS, Printer). Har biri 6 bo'limdan iborat:
+📦 Yangi olingach · 🔧 O'rnatish · ▶️ Ishga tushirish · 📖 Foydalanish · 🧹 Parvarish · ⚠️ Ehtiyot bo'ling.
+
+- Matnlar `app.js` ichida `GD` obyektida (UZ/RU). Yangi band qo'shish: `GD.<texnika>.<bo'lim>` massivlariga
+  ikkala tilda bir xil sonda qator qo'shing.
+- Stil (`.gd-*`) `index.html` va `index_template.html` ichida. Server (`last.py`) o'zgarmagan.
+- Yangilash: faqat `index.html`, `index_template.html`, `app.js` — admin paneldan push qiling.
