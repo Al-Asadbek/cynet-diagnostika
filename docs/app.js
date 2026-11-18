@@ -1163,6 +1163,8 @@
     if (entry.view === 'marketAdjPay') return L("To'lov",'Оплата');
     if (entry.view === 'marketAdjDone') return L('Buyurtma','Заказ');
     if (entry.view === 'marketAdjOrders') return L('Xaridlarim','Мои покупки');
+    if (entry.view === 'guide') return L("Qo'llanma",'Руководство');
+    if (entry.view === 'guideTech') { var gm = gdMeta(entry.gid); return gm ? gm.name : ''; }
     return null;
   }
 
@@ -5566,6 +5568,8 @@
     var items = [
       { pal:'g-sun', wide:true, tall:true, icon:'🛠️', title:cl(t().menuTechs), sub:t().menuTechsSub, badge:'🎬 ' + L('ANIMATSIYA','АНИМАЦИЯ'),
         count:t().itemsCount(totalIssues()), brand:L('Texnika','Техника'), action:function(el){ pzOpen('tech', el, function(){ push({ view:'home' }); }); } },
+      { pal:'g-gold', wide:true, icon:'📖', title:L("Qo'llanma",'Руководство'), sub:L("Yangi texnikani o'rnatish, ishga tushirish va foydalanish bo'yicha qadamlar","Установка, запуск и использование новой техники — пошагово"), badge:'✨ ' + L('YANGI','НОВОЕ'),
+        cta:'📖 ' + L("Qo'llanmani ochish","Открыть руководство") + ' ›', brand:L("Qo'llanma","Руководство"), action:function(el){ state.guideQuery = ''; push({ view:'guide' }); } },
       { pal:'g-market', wide:true, icon:'🛒', title:'Market', sub:L('Ehtiyot qismlar, eski va B/U texnika','Запчасти, старая и Б/У техника'), badge:'🔥 ' + L('YANGI','НОВОЕ'),
         cta:'🛒 ' + L('Marketga kirish','В маркет') + ' ›', brand:'Market', action:function(el){ mkOpenPortal(el); } },
       { pal:'g-lime', wide:true, icon:'🏠', title:L('Mening uskunalarim','Моя техника'), sub:L('Kafolat, ta\'mirlash tarixi va eslatmalar','Гарантия, история ремонта и напоминания'), badge:'✨ ' + L('YANGI','НОВОЕ'),
@@ -8734,8 +8738,1023 @@
     else if (entry.view === 'device') renderDevice(entry);
     else if (entry.view === 'deviceHistoryForm') renderDeviceHistoryForm(entry);
     else if (entry.view === 'deviceReminderForm') renderDeviceReminderForm(entry);
+    else if (entry.view === 'guide') renderGuide();
+    else if (entry.view === 'guideTech') renderGuideTech(entry);
   }
 
+
+  var GD = {};
+  // Har bir bo'lim: [ [uz bandlari], [ru bandlari] ]
+  GD.gen = { new:[[
+    "Qutini ochishdan oldin va keyin telefon bilan video/rasmga oling — transport shikasti bo'lsa isbot bo'ladi.",
+    "Do'konda texnikani yoqtirib ko'ring: ekran, tugmalar, tovush, sovutish/isitish ishlayaptimi.",
+    "Chek, kafolat talonini va seriya raqami (S/N) yozilgan stikerni saqlang — rasmga olib qo'yish ham yaxshi.",
+    "Komplektni qo'llanmadagi ro'yxat bilan solishtiring: pult, batareya, kabel, shlang, mahkamlagichlar.",
+    "Qadoq va stirofoamni kafolat muddati tugaguncha (kamida 14 kun) tashlamang — qaytarish/almashtirish uchun kerak bo'ladi."
+  ],[
+    "Снимите на видео/фото вскрытие коробки и состояние техники — это доказательство при повреждении в транспортировке.",
+    "В магазине включите технику: проверьте экран, кнопки, звук, охлаждение/нагрев.",
+    "Сохраните чек, гарантийный талон и наклейку с серийным номером (S/N) — лучше сфотографировать.",
+    "Сверьте комплектацию со списком в инструкции: пульт, батарейки, кабели, шланги, крепёж.",
+    "Не выбрасывайте упаковку до конца срока возврата (минимум 14 дней) — она нужна для возврата/обмена."
+  ]], install:[[
+    "Rozetka erga ulangan (3 simli, «zemlya») bo'lishi shart — ayniqsa kir yuvish mashinasi, xolodilnik, boyler, duxovka uchun.",
+    "Katta quvvatli uskunalarni uzaytirgich orqali ulamang — to'g'ridan-to'g'ri rozetkaga ulang.",
+    "O'zbekiston tarmog'ida kuchlanish tez-tez tushib ketadi: xolodilnik, konditsioner, televizor uchun stabilizator ishlating.",
+    "Gaz, suv va kuchli elektr ulanishlarini faqat malakali usta bajarsin."
+  ],[
+    "Розетка должна быть с заземлением (3 провода) — особенно для стиральной машины, холодильника, бойлера, духовки.",
+    "Мощную технику не подключайте через удлинитель — только напрямую в розетку.",
+    "В сети часто «проседает» напряжение: для холодильника, кондиционера, телевизора используйте стабилизатор.",
+    "Газ, воду и мощное электроподключение должен делать квалифицированный мастер."
+  ]], start:[[
+    "Birinchi yoqishdan oldin qo'llanmani (kamida «Xavfsizlik» bo'limini) o'qib chiqing.",
+    "Barcha transport plyonkalari, lentalari va himoya qistirmalarini olib tashlang.",
+    "Birinchi ishga tushirishni bo'sh holda, qarov ostida o'tkazing: g'alati hid, shovqin, tutun bo'lsa darhol o'chiring.",
+    "Sozlamalarni zavod holatida qoldirib, avval oddiy rejimda sinab ko'ring."
+  ],[
+    "Перед первым включением прочитайте инструкцию (минимум раздел «Безопасность»).",
+    "Снимите все транспортировочные плёнки, ленты и защитные прокладки.",
+    "Первый запуск проведите без нагрузки и под присмотром: при странном запахе, шуме, дыме — сразу выключите.",
+    "Оставьте заводские настройки и сначала проверьте работу в обычном режиме."
+  ]], use:[[
+    "Texnikani faqat o'z vazifasi uchun ishlating va yuklama chegarasidan oshirmang.",
+    "Uzoq vaqt foydalanmasangiz, rozetkadan uzib qo'ying — chaqmoq va kuchlanish sakrashidan saqlaydi.",
+    "G'ayrioddiy ovoz, hid yoki xato kodi chiqsa, «Diagnostika» bo'limiga kiring."
+  ],[
+    "Используйте технику только по назначению и не превышайте допустимую нагрузку.",
+    "Если не пользуетесь долго — отключайте от розетки: это защитит от грозы и скачков напряжения.",
+    "При странном звуке, запахе или коде ошибки откройте раздел «Диагностика»."
+  ]], care:[[
+    "Tozalashdan oldin har doim tarmoqdan uzing.",
+    "Abraziv, spirtli va kimyoviy tozalagichlarni faqat qo'llanmada ruxsat etilgan joyda ishlating.",
+    "Mavsumiy profilaktikani o'z vaqtida qiling — arzon va texnika umrini uzaytiradi."
+  ],[
+    "Перед чисткой всегда отключайте от сети.",
+    "Абразивы, спирт и химию применяйте только там, где это разрешено инструкцией.",
+    "Делайте сезонную профилактику вовремя — это дёшево и продлевает срок службы."
+  ]], warn:[[
+    "Ho'l qo'l bilan rozetkaga tegmang, shikastlangan kabel bilan ishlatmang.",
+    "O'zingiz ichini ochmang — kafolat bekor bo'ladi va xavfli. Usta chaqiring.",
+    "Texnika yonida suv, yonuvchi suyuqlik yoki aerozol saqlamang."
+  ],[
+    "Не трогайте розетку мокрыми руками, не используйте технику с повреждённым кабелем.",
+    "Не вскрывайте технику самостоятельно — гарантия аннулируется и это опасно. Вызовите мастера.",
+    "Не храните рядом воду, горючие жидкости и аэрозоли."
+  ]] };
+
+  GD.tv = { new:[[
+    "Televizorni ikki kishi bo'lib, faqat ramka tomonidan ushlab ko'taring — ekranga bosmang, o'rtasidan ushlamang.",
+    "Komplektni tekshiring: pult, batareyalar, oyoqchalar/taglik, mahkamlash vintlari, tarmoq kabeli, kafolat.",
+    "Do'konda ekranni oq va qora fonda tekshiring: o'lik piksellar, dog'lar, yoriq va yorug'lik tekis emasligi.",
+    "Oyoqchalarni qadoqdagi sxema bo'yicha qo'ying; ekran yuzi pastga qaratib stolga qo'yilsa — yumshoq mato ustida."
+  ],[
+    "Поднимайте телевизор вдвоём, только за рамку — не давите на экран и не беритесь за центр.",
+    "Проверьте комплект: пульт, батарейки, ножки/подставка, крепёж, сетевой кабель, гарантия.",
+    "В магазине проверьте экран на белом и чёрном фоне: битые пиксели, пятна, трещины, неравномерная подсветка.",
+    "Ножки ставьте по схеме в упаковке; если кладёте экраном вниз — только на мягкую ткань."
+  ]], install:[[
+    "Devorga osish: televizor VESA o'lchamiga (masalan 200×200, 400×400) mos qavs oling va devor materialiga mos dyubel/anker ishlating.",
+    "Tagligi bilan qo'ysangiz, stol/tumba televizor og'irligi va kengligiga chidasin; chetga yaqin qo'ymang.",
+    "Orqada va yonlarda kamida 10 sm bo'sh joy qoldiring — shamollatish uchun.",
+    "Quyosh nuri tushmaydigan, radiator/konditsioner shamoli yo'q joyni tanlang. Ko'z balandligi ekran markaziga to'g'ri kelsin.",
+    "Antenna/kabelli TV/HDMI/Internet kabellarini avval ulang, tarmoqqa eng oxirida ulang."
+  ],[
+    "Крепление на стену: купите кронштейн под размер VESA телевизора (например 200×200, 400×400) и дюбели/анкеры под материал стены.",
+    "На тумбу: она должна выдерживать вес и ширину телевизора; не ставьте у самого края.",
+    "Оставьте минимум 10 см свободного места сзади и по бокам — для вентиляции.",
+    "Выберите место без прямого солнца и потока воздуха от радиатора/кондиционера. Центр экрана — на уровне глаз.",
+    "Сначала подключите антенну/кабельное ТВ/HDMI/интернет, питание — в последнюю очередь."
+  ]], start:[[
+    "Ulang va pultdan yoqing; ekran tilini va mamlakatni (O'zbekiston) tanlang.",
+    "Wi-Fi'ga ulang, Smart TV akkauntiga (Google/ ilova do'koni) kiring.",
+    "Kanallarni avto-qidirish: efirli TV uchun DVB-T2, kabelli TV uchun DVB-C yoki operator qutisi orqali HDMI.",
+    "Sozlamalar → Dastur yangilanishi: eng so'nggi versiyani o'rnating.",
+    "Rasm rejimini «Kino/Uy/Standart» ga qo'ying — do'kondagi «Yorqin» (Vivid) rejim ko'zni charchatadi va ekranni tez eskiradi."
+  ],[
+    "Включите, выберите язык и страну (Узбекистан).",
+    "Подключитесь к Wi-Fi, войдите в аккаунт Smart TV (Google/магазин приложений).",
+    "Автопоиск каналов: для эфирного ТВ — DVB-T2, для кабельного — DVB-C или через приставку по HDMI.",
+    "Настройки → Обновление ПО: установите последнюю версию.",
+    "Режим изображения — «Кино/Дом/Стандарт»: магазинный «Яркий» (Vivid) утомляет глаза и ускоряет износ экрана."
+  ]], use:[[
+    "Tashqi qurilmalar (TV-box, konsol, noutbuk) uchun HDMI kabel ishlating; HDMI-CEC bitta pult bilan boshqarishga imkon beradi.",
+    "Ovozni yorqinlikni kechasi kamaytiring; «Energiya tejash» rejimi quvvatni 20–30% kamaytiradi.",
+    "Uzoq vaqt foydalanmasangiz, kutish (standby)da qoldirmay, tarmoq tugmasi/uzaytirgichdan o'chiring.",
+    "Ilovalarni yangilab turing; keraksiz ilovalarni o'chiring — xotira bo'shaydi va TV tez ishlaydi."
+  ],[
+    "Для внешних устройств (ТВ-бокс, консоль, ноутбук) используйте HDMI; HDMI-CEC позволяет управлять одним пультом.",
+    "Ночью уменьшайте яркость; режим «Энергосбережение» снижает потребление на 20–30%.",
+    "Если не пользуетесь долго — отключайте от сети, а не оставляйте в режиме ожидания.",
+    "Обновляйте приложения и удаляйте ненужные — освободится память, телевизор станет быстрее."
+  ]], care:[[
+    "Ekranni faqat o'chirilgan va sovigan holda, quruq yoki biroz nam mikrofibra mato bilan arting.",
+    "Ekranga to'g'ridan-to'g'ri suyuqlik purkamang; spirt, ammiak, aseton ishlatmang.",
+    "Shamollatish teshiklarini 3–6 oyda bir marta changyutgich (past quvvat) bilan tozalang.",
+    "Chaqmoq paytida antenna va tarmoq kabelini uzing."
+  ],[
+    "Протирайте экран только выключенным и остывшим, сухой или слегка влажной микрофиброй.",
+    "Не распыляйте жидкость на экран; не используйте спирт, аммиак, ацетон.",
+    "Раз в 3–6 месяцев чистите вентиляционные отверстия пылесосом на малой мощности.",
+    "Во время грозы отключайте антенну и сетевой кабель."
+  ]], warn:[[
+    "Ekranni barmoq yoki o'tkir narsa bilan bosmang — matritsa yorilsa kafolatga kirmaydi.",
+    "Bir xil statik rasmni (logotip, o'yin interfeysi) soatlab qoldirmang — OLED/Plazmada «kuyish» bo'ladi.",
+    "Bolalar bor uyda televizorni devorga yoki tumbaga mahkam o'rnating — yiqilib tushishi xavfli.",
+    "Yoriq ekran, yorug'lik chizig'i, tarmoqqa ulanganda hid/shitir-shitir bo'lsa — darhol o'chiring."
+  ],[
+    "Не давите на экран пальцем и острыми предметами — трещина матрицы не по гарантии.",
+    "Не оставляйте на часы статичную картинку (логотип, интерфейс игры) — на OLED/плазме возможно «выгорание».",
+    "Если в доме дети, надёжно закрепите телевизор на стене/тумбе — падение опасно.",
+    "Трещина экрана, полосы, запах или треск при включении — сразу выключите."
+  ]] };
+
+  GD.kond = { new:[[
+    "Ichki va tashqi blokni, pult, mahkamlash plastinasi, drenaj shlangi, ulash kabelini tekshiring.",
+    "Quvvatni xona maydoniga qarab tanlang: 9000 BTU ≈ 25 m², 12000 BTU ≈ 35 m², 18000 BTU ≈ 50 m², 24000 BTU ≈ 70 m² (shift balandligi 2,7 m gacha).",
+    "Inverter modellari kam elektr sarflaydi va tovushi past — kunlik foydalanish uchun afzal.",
+    "Bloklarni qadoqdan o'z joyida olish tavsiya etiladi — tashishda yon tomoniga yotqizmang."
+  ],[
+    "Проверьте внутренний и наружный блоки, пульт, монтажную планку, дренажный шланг, соединительный кабель.",
+    "Мощность выбирайте по площади: 9000 BTU ≈ 25 м², 12000 BTU ≈ 35 м², 18000 BTU ≈ 50 м², 24000 BTU ≈ 70 м² (потолок до 2,7 м).",
+    "Инверторные модели потребляют меньше и работают тише — лучше для ежедневного использования.",
+    "Блоки лучше распаковывать на месте монтажа; при перевозке не кладите на бок."
+  ]], install:[[
+    "Konditsionerni faqat malakali usta o'rnatsin — noto'g'ri montaj kafolatni bekor qiladi va freon oqishiga olib keladi.",
+    "Ichki blok: poldan 2 m dan baland, shiftdan kamida 15 sm, ro'parasida to'siq (parda, shkaf) bo'lmasin, to'g'ridan-to'g'ri quyoshdan va karavot/divan tepasidan uzoq.",
+    "Tashqi blok: mustahkam qavsga, atrofida 30–50 sm bo'sh joy qoldirib, issiq havo qaytib kirmaydigan qilib qo'yiladi.",
+    "Mis quvurlar: standart trassa 3–5 m, maksimal ~15 m; quvurlar issiqlik izolyatsiyasi bilan o'ralgan bo'lishi kerak.",
+    "Drenaj shlangi tashqariga qiyalik bilan, bukilmasdan chiqarilsin.",
+    "Elektr: alohida kabel (kamida 2,5 mm² mis) va alohida avtomat (9–12 ming BTU uchun 16 A), rozetka erga ulangan."
+  ],[
+    "Монтаж — только квалифицированным мастером: неправильная установка снимает гарантию и приводит к утечке фреона.",
+    "Внутренний блок: выше 2 м от пола, от потолка не менее 15 см, перед ним не должно быть преград (шторы, шкаф), вдали от прямого солнца и от места над кроватью/диваном.",
+    "Наружный блок: на прочный кронштейн, со свободным местом 30–50 см вокруг, чтобы горячий воздух не возвращался.",
+    "Медные трубы: стандартная трасса 3–5 м, максимум ~15 м; трубы должны быть в теплоизоляции.",
+    "Дренажный шланг выводится наружу под уклоном, без изгибов.",
+    "Электрика: отдельный кабель (мин. 2,5 мм² медь) и отдельный автомат (для 9–12 тыс. BTU — 16 А), розетка с заземлением."
+  ]], start:[[
+    "Usta tizimni vakuum nasosi bilan 20–30 daqiqa vakuumlashi shart — havo va namlik qolsa kompressor tez ishdan chiqadi.",
+    "Klapanlar ochilgach, ulanish joylari sovunli suv bilan oqish uchun tekshiriladi.",
+    "Birinchi yoqish: pult bilan «Sovutish» rejimi, 18–20 °C — ichki blok havosi 8–12 °C sovuq chiqishi kerak.",
+    "Drenaj suvi tashqariga oqayotganini va ichki blok jaluzilari ishlayotganini tekshiring.",
+    "Ish tugagach ustadan montaj yozuvini (sana, usta) kafolat talonida belgilashni so'rang."
+  ],[
+    "Мастер обязан провести вакуумирование насосом 20–30 минут — остатки воздуха и влаги быстро убивают компрессор.",
+    "После открытия вентилей места соединений проверяют на утечки мыльным раствором.",
+    "Первый запуск: режим «Охлаждение», 18–20 °C — воздух из внутреннего блока должен быть холоднее на 8–12 °C.",
+    "Проверьте, что дренаж отводит воду наружу, а жалюзи внутреннего блока двигаются.",
+    "Попросите мастера отметить монтаж (дата, мастер) в гарантийном талоне."
+  ]], use:[[
+    "Yozda 24–26 °C, qishda isitishda 20–22 °C qo'yish eng tejamli va sog'lom; tashqi harorat bilan farq 6–8 °C dan oshmasin.",
+    "Sovutish/isitishda eshik va derazalarni yoping.",
+    "Rejimlar: Cool — sovutish, Heat — isitish, Dry — namlikni olish, Fan — shamollatish, Auto — avtomatik; Sleep tun uchun haroratni asta o'zgartiradi.",
+    "Havo oqimini to'g'ridan-to'g'ri odamga qaratmang — shamollash xavfi bor.",
+    "Konditsionerni o'chirgach, qayta yoqish uchun kamida 3 daqiqa kuting (kompressorni himoya qilish uchun)."
+  ],[
+    "Летом 24–26 °C, зимой при обогреве 20–22 °C — самое экономичное и здоровое; разница с улицей не более 6–8 °C.",
+    "При работе закрывайте окна и двери.",
+    "Режимы: Cool — охлаждение, Heat — обогрев, Dry — осушение, Fan — вентиляция, Auto — авто; Sleep плавно меняет температуру ночью.",
+    "Не направляйте поток воздуха прямо на людей — риск простуды.",
+    "После выключения подождите минимум 3 минуты перед повторным включением (защита компрессора)."
+  ]], care:[[
+    "Ichki blok filtrini 2–4 haftada bir marta ajratib, iliq suvda (40 °C dan issiq emas) yuving va soyada quriting.",
+    "Mavsum oldidan (bahorda) professional tozalash: ichki blok radiatori, drenaj, tashqi blok; yiliga kamida 1 marta.",
+    "Tashqi blok panjarasidagi chang, tol paxtasi, barglarni tozalang.",
+    "Freon bosimini 1–2 yilda bir marta tekshirtiring."
+  ],[
+    "Фильтры внутреннего блока снимайте и мойте тёплой водой (не горячее 40 °C) раз в 2–4 недели, сушите в тени.",
+    "Перед сезоном (весной) — профессиональная чистка: радиатор внутреннего блока, дренаж, наружный блок; минимум раз в год.",
+    "Очищайте решётку наружного блока от пыли, тополиного пуха, листьев.",
+    "Проверяйте давление фреона раз в 1–2 года."
+  ]], warn:[[
+    "Tashqi harorat +16 °C dan past bo'lsa sovutishga yoqmang; isitishda -7 °C (inverterda ko'pincha -15 °C) dan past bo'lsa pasportga qarang.",
+    "Filtrsiz ishlatmang — radiator tiqiladi.",
+    "Tashqi blokka oyoq qo'ymang va narsa osib qo'ymang.",
+    "Ichki blokdan suv tomchilasa yoki muz bossa — o'chirib usta chaqiring."
+  ],[
+    "Не включайте на охлаждение при уличной температуре ниже +16 °C; обогрев ниже -7 °C (у инверторных часто -15 °C) — смотрите паспорт.",
+    "Не работайте без фильтров — радиатор забьётся.",
+    "Не наступайте на наружный блок и ничего не вешайте на него.",
+    "Если из внутреннего блока капает вода или он обмерзает — выключите и вызовите мастера."
+  ]] };
+
+  GD.xolod = { new:[[
+    "Xolodilnikni tik holda tashing. Yotqizilgan bo'lsa, ishga tushirishdan oldin 12–24 soat tik turishi kerak (moy kompressorga qaytishi uchun).",
+    "Tik tashilgan bo'lsa ham kamida 2–4 soat kuting.",
+    "Ichki va tashqi himoya plyonkalari, stirofoam va yopishqoq lentalarni olib tashlang.",
+    "Ichkarini iliq suv va ozgina soda bilan yuvib, quriting — yangi plastik hidi ketadi."
+  ],[
+    "Перевозите холодильник строго вертикально. Если везли лёжа — перед включением выстоять 12–24 часа (масло должно стечь в компрессор).",
+    "Даже при вертикальной перевозке подождите минимум 2–4 часа.",
+    "Снимите защитные плёнки, пенопласт и клейкие ленты внутри и снаружи.",
+    "Протрите внутри тёплой водой с небольшим количеством соды и высушите — уйдёт запах нового пластика."
+  ]], install:[[
+    "Devordan orqa tomonda 5–10 sm, yonlarda 2–3 sm, tepada 10 sm bo'sh joy qoldiring.",
+    "Plita, radiator, quyosh nuri va isitgichdan uzoq qo'ying — aks holda ko'p elektr sarflaydi.",
+    "Pol tekis bo'lsin: old oyoqchalarni sozlab xolodilnikni sal orqaga og'dirib qo'ying (eshik o'zi yopilishi uchun).",
+    "Alohida rozetka (erga ulangan), uzaytirgichsiz. Stabilizator yoki kuchlanish relesi qo'yish tavsiya etiladi."
+  ],[
+    "Оставьте от стены 5–10 см сзади, 2–3 см по бокам, 10 см сверху.",
+    "Ставьте вдали от плиты, радиатора, солнца и обогревателей — иначе большой расход электроэнергии.",
+    "Пол ровный: регулируйте передние ножки, чтобы холодильник слегка наклонялся назад (дверь закрывается сама).",
+    "Отдельная розетка с заземлением, без удлинителя. Рекомендуется стабилизатор или реле напряжения."
+  ]], start:[[
+    "Tarmoqqa ulang va 4–6 soat bo'sh ishlating; shundan keyin mahsulot joylang.",
+    "Harorat: sovutgich bo'limi +3…+5 °C, muzlatgich −18 °C. Yangi xolodilnikda 3–5 raqami o'rtacha hisoblanadi.",
+    "Mahsulotlarni birinchi kuni asta-sekin, bir necha bosqichda joylang.",
+    "No Frost modellarida muz eritish kerak emas; oddiy (tomchi) modelda muz qalinligi 5 mm bo'lganda eritiladi."
+  ],[
+    "Включите в сеть и дайте поработать 4–6 часов без продуктов; потом загружайте.",
+    "Температура: холодильная камера +3…+5 °C, морозильная −18 °C. На новом холодильнике 3–5 — средний режим.",
+    "В первый день загружайте продукты постепенно, в несколько приёмов.",
+    "В моделях No Frost размораживать не нужно; в капельных — когда лёд толщиной около 5 мм."
+  ]], use:[[
+    "Issiq ovqatni avval xona haroratigacha sovitib so'ng soling.",
+    "Eshikni uzoq ochiq qoldirmang; to'ldirish darajasi 70–80% bo'lsin — havo aylanishi uchun mahsulotlar orasida joy qoldiring.",
+    "Xom go'sht va baliqni pastki javonda, yopiq idishda saqlang — sharbat boshqa mahsulotga tomishi mumkin emas.",
+    "Ichi hidlanmasligi uchun mahsulotlarni yopiq idish yoki plyonkada saqlang."
+  ],[
+    "Горячее сначала остудите до комнатной температуры.",
+    "Не держите дверь долго открытой; заполнение 70–80% — оставляйте между продуктами место для циркуляции воздуха.",
+    "Сырое мясо и рыбу держите на нижней полке в закрытой посуде, чтобы сок не попал на другие продукты.",
+    "Храните продукты в закрытых контейнерах или плёнке, чтобы не было запахов."
+  ]], care:[[
+    "Ichini har 3–6 oyda iliq suv va soda bilan yuvib, eshik rezinasini ham tozalang.",
+    "Orqa panel/kondensatorni (agar ochiq bo'lsa) yilda 1–2 marta changdan tozalang.",
+    "Drenaj teshigi (orqa devor ostidagi) tiqilmasligi uchun ingichka cho'p bilan tozalab turing.",
+    "Uzoq vaqt ishlatmasangiz: bo'shatib, yuvib, eshikni ochiq qoldiring."
+  ],[
+    "Раз в 3–6 месяцев мойте внутри тёплой водой с содой и протирайте уплотнитель двери.",
+    "Заднюю панель/конденсатор (если открыт) чистите от пыли 1–2 раза в год.",
+    "Дренажное отверстие на задней стенке прочищайте тонкой палочкой, чтобы не засорилось.",
+    "При длительном простое: разгрузить, помыть и оставить дверь приоткрытой."
+  ]], warn:[[
+    "O'chirgandan keyin kamida 5 daqiqa kutib qayta yoqing — aks holda kompressor ishlamay qolishi mumkin.",
+    "Muzni pichoq, o'tkir narsa bilan qirmang — sovutish trubkasi teshilishi mumkin.",
+    "Tok o'chganda eshikni ochmang — sovuqlik ~4 soat saqlanadi.",
+    "Ichkarida aerozol, yonuvchan suyuqlik va yopiq shisha ichimliklarni muzlatgichda saqlamang."
+  ],[
+    "После выключения подождите минимум 5 минут перед повторным включением — иначе компрессор может не запуститься.",
+    "Не скалывайте лёд ножом и острыми предметами — можно проколоть трубку испарителя.",
+    "При отключении света не открывайте дверь — холод сохраняется около 4 часов.",
+    "Не храните внутри аэрозоли, горючие жидкости и закрытые бутылки в морозилке."
+  ]] };
+
+  GD.kir = { new:[[
+    "ENG MUHIM: orqa devordagi transport boltlarini (odatda 4 ta) albatta oling — aks holda baraban buziladi va mashina qattiq titraydi.",
+    "Boltlar tuynuklarini komplektdagi plastik tiqinlar bilan yoping; boltlarni saqlab qo'ying (ko'chirganda kerak).",
+    "Stirofoam va plyonkani olib tashlang. Ichida bir oz suv chiqsa — bu zavod sinovidan, me'yor.",
+    "Komplekt: kirish shlangi, drenaj shlangi (ayrim modelda), kukun uchun idish, qo'llanma."
+  ],[
+    "ВАЖНЕЙШЕЕ: обязательно снимите транспортировочные болты на задней стенке (обычно 4 шт.) — иначе сломается барабан и машина будет сильно вибрировать.",
+    "Закройте отверстия пластиковыми заглушками из комплекта; болты сохраните (понадобятся при переезде).",
+    "Уберите пенопласт и плёнку. Немного воды внутри — остаток заводского теста, это нормально.",
+    "Комплект: шланг подачи воды, сливной шланг (в некоторых моделях), лоток для порошка, инструкция."
+  ]], install:[[
+    "Qattiq, tekis polga qo'ying; oyoqchalarni suv sathi (uroven) bilan sozlab, kontrgaykalarni qotiring — mashina tebranmasin.",
+    "Sovuq suv kranidan ulang (shlang 3/4\"), albatta mexanik filtr (setka) qo'ying; shlangni bukmang.",
+    "Drenaj shlangi poldan 60–100 sm balandlikda sifonga yoki kanalizatsiyaga ulangan bo'lsin; uchi suvga botmasin.",
+    "Alohida erga ulangan rozetka; plastik/yog'och uy-joyda ham uzaytirgichsiz.",
+    "Mashinani gaz plitasi va vannaning to'g'ridan-to'g'ri suv sachrashi joyiga qo'ymang."
+  ],[
+    "Ставьте на ровный жёсткий пол; отрегулируйте ножки по уровню и затяните контргайки — машина не должна качаться.",
+    "Подключайте к холодному водопроводу (шланг 3/4\"), обязательно с механическим фильтром (сеткой); шланг не перегибать.",
+    "Сливной шланг — на высоте 60–100 см от пола, в сифон или канализацию; конец не должен быть погружён в воду.",
+    "Отдельная заземлённая розетка, без удлинителя.",
+    "Не ставьте рядом с газовой плитой и в зоне прямых брызг воды из ванны."
+  ]], start:[[
+    "Birinchi marta kirsiz, 60–90 °C li to'liq dastur (yoki «Barabanni tozalash») bilan yuvib, ozgina kukun qo'shing — zavod yog'i va chang ketadi.",
+    "Shu vaqt ichida shlang ulanishlarida oqish borligini, ustiga qog'oz qo'yib tekshiring.",
+    "Mashina chayqalmasligi, boltlarsiz ham shovqinsiz aylanishini kuzating."
+  ],[
+    "В первый раз запустите без белья программу 60–90 °C (или «Очистка барабана») с небольшим количеством порошка — уйдут заводская смазка и пыль.",
+    "В это время проверьте подключения шлангов на течь, подложив бумагу.",
+    "Следите, чтобы машина не прыгала и крутилась без сильного шума."
+  ]], use:[[
+    "Kirni rang, mato turi va haroratga qarab ajrating; cho'ntaklarni tekshiring (tanga, qalam, qog'oz).",
+    "Barabanni 3/4 to'ldiring; to'la yuklash yuvish sifatini yomonlashtiradi, kam yuklash esa mashinani qattiq titratadi.",
+    "Faqat «avtomat» uchun kukun/gel ishlating — qo'lda yuvish kukuni juda ko'pik beradi.",
+    "Kukun miqdori suv qattiqligi va kir miqdoriga bog'liq; Toshkentda suv o'rtacha qattiq — kalgon (antinakipin) foydali.",
+    "Mato belgilari: paxta 40–60 °C, sintetika 30–40 °C, jun/ipak — maxsus rejim."
+  ],[
+    "Сортируйте бельё по цвету, ткани и температуре; проверяйте карманы (монеты, ручки, бумага).",
+    "Загружайте барабан на 3/4: переполнение ухудшает стирку, недогруз вызывает сильную вибрацию.",
+    "Используйте порошок/гель только для «автомата» — для ручной стирки даёт слишком много пены.",
+    "Количество порошка зависит от жёсткости воды и объёма белья; вода у нас в основном жёсткая — полезен антинакипин.",
+    "Ткани: хлопок 40–60 °C, синтетика 30–40 °C, шерсть/шёлк — специальный режим."
+  ]], care:[[
+    "Kukun idishini oyda 1 marta chiqarib yuving.",
+    "Eshik manjetini (rezina) har yuvishdan keyin quruq latta bilan arting; eshikni va idishni ochiq qoldirib quriting — hid va chirish bo'lmasin.",
+    "Drenaj nasosi filtrini (pastdagi lyuk) 1–2 oyda tozalang: oldin idish qo'yib suv chiqaring.",
+    "Oyda bir marta bo'sh holda 60 °C li dastur yoki mashina tozalagichi bilan yuvish; 3–4 oyda kalgon.",
+    "Kirish shlangidagi setka filtrni yilda bir marta tozalang."
+  ],[
+    "Лоток для порошка раз в месяц вынимайте и мойте.",
+    "Манжету люка вытирайте насухо после каждой стирки; оставляйте дверцу и лоток приоткрытыми — чтобы не было запаха и плесени.",
+    "Фильтр сливного насоса (нижний лючок) чистите раз в 1–2 месяца: сначала подставьте ёмкость.",
+    "Раз в месяц — стирка без белья на 60 °C или средством для чистки машин; раз в 3–4 месяца — антинакипин.",
+    "Сетку-фильтр на входном шланге чистите раз в год."
+  ]], warn:[[
+    "Transport boltlarini olmasdan ISHGA TUSHIRMANG.",
+    "Yuvish ketayotganda eshikni majburlab ochmang; suv va issiqlik xavfi.",
+    "Foydalanilmayotganda suv kranini yoping — shlang uzilsa uy suv bosadi.",
+    "Kirish shlangi 5 yilda bir marta almashtiriladi; Aquastop himoyali shlang tavsiya etiladi.",
+    "Bolalar va uy hayvonlari barabanga kirib qolmasligini nazorat qiling."
+  ],[
+    "НЕ ВКЛЮЧАЙТЕ без снятия транспортировочных болтов.",
+    "Не открывайте люк силой во время стирки — опасность воды и ожога.",
+    "Когда не пользуетесь — перекрывайте кран: прорыв шланга затопит квартиру.",
+    "Шланг подачи меняйте раз в 5 лет; лучше шланг с защитой Aquastop.",
+    "Следите, чтобы дети и домашние животные не залезли в барабан."
+  ]] };
+
+  GD.suv = { new:[[
+    "Hajmni tanlang: 1–2 kishiga 30–50 l, 3–4 kishiga 80 l, katta oila uchun 100 l.",
+    "Komplektni tekshiring: devorga mahkamlash qavslari, xavfsizlik (qaytarma) klapani, qo'llanma. Klapan bo'lmasa — albatta sotib oling.",
+    "To'ldirilgan 80 l boyler 100 kg ga yaqin og'irlikda bo'ladi — devor shunga chidashi kerak."
+  ],[
+    "Выберите объём: 30–50 л на 1–2 человека, 80 л на 3–4, 100 л для большой семьи.",
+    "Проверьте комплект: кронштейны, предохранительный (обратный) клапан, инструкция. Если клапана нет — обязательно купите.",
+    "Заполненный бойлер на 80 л весит около 100 кг — стена должна это выдержать."
+  ]], install:[[
+    "Devor g'isht yoki beton bo'lishi kerak; gipsokarton va yupqa devorga mahkamlamang. Anker boltlar ishlating.",
+    "Kirish (ko'k) va chiqish (qizil) quvurlarini adashtirmang.",
+    "Xavfsizlik klapani KIRISH quvuriga o'rnatiladi — ortiqcha bosimda u suvni tashlab yuboradi; klapanga drenaj quvuri ulang.",
+    "Klapan oldiga o'chirgich (kran) qo'ymang — tizim yopiq bo'lib portlashi mumkin.",
+    "Erga ulangan alohida rozetka; UZO (qoldiq tok o'chirgichi) o'rnatish tavsiya etiladi."
+  ],[
+    "Стена должна быть кирпичной или бетонной; на гипсокартон и тонкие перегородки не вешайте. Используйте анкерные болты.",
+    "Не перепутайте вход (синий) и выход (красный).",
+    "Предохранительный клапан ставится на ВХОД: при превышении давления он сбрасывает воду; к клапану подведите дренажную трубку.",
+    "Не ставьте кран между клапаном и бойлером — система закроется и может взорваться.",
+    "Отдельная заземлённая розетка; рекомендуется УЗО (устройство защитного отключения)."
+  ]], start:[[
+    "AVVAL suv bilan to'ldiring: issiq suv kranini oching, suv oqguncha va havo chiqib bo'lguncha kuting; keyin kranini yoping.",
+    "Shundan so'ng tarmoqqa ulang. Suvsiz yoqish isitgichni (TEN) bir zumda kuydiradi.",
+    "Isish 1,5–3 soat davom etadi (hajmga qarab); termostatni 55–60 °C ga qo'ying."
+  ],[
+    "СНАЧАЛА заполните водой: откройте кран горячей воды и ждите, пока пойдёт вода и выйдет воздух; затем закройте кран.",
+    "После этого включите в сеть. Включение без воды мгновенно сжигает ТЭН.",
+    "Нагрев занимает 1,5–3 часа (в зависимости от объёма); термостат выставьте на 55–60 °C."
+  ]], use:[[
+    "55–60 °C eng yaxshi: energiya tejaladi, nakip kam hosil bo'ladi va kuyish xavfi kam.",
+    "Uzoq safarga ketsangiz (3+ kun) o'chirib qo'ying; kamroq ketsangiz, 30–40 °C ga tushiring.",
+    "Dush paytida avval sovuq, keyin issiq suvni aralashtirib oching."
+  ],[
+    "55–60 °C оптимально: экономит энергию, меньше накипи и риск ожога.",
+    "Если уезжаете более чем на 3 дня — выключите; на меньший срок — снизьте до 30–40 °C.",
+    "Для душа смешивайте горячую и холодную воду."
+  ]], care:[[
+    "Magniy anodni 12 oyda bir marta tekshiring va kerak bo'lsa almashtiring — u zanglashdan baklarni himoya qiladi.",
+    "TEN va bakni nakipdan 1–2 yilda tozalang (suv qattiq bo'lsa tezroq).",
+    "Xavfsizlik klapanidan tomchi chiqishi me'yor (isitishda); suv to'xtovsiz oqsa — klapan nosoz."
+  ],[
+    "Магниевый анод проверяйте раз в 12 месяцев и меняйте при необходимости — он защищает бак от коррозии.",
+    "Чистите ТЭН и бак от накипи раз в 1–2 года (при жёсткой воде чаще).",
+    "Капли из предохранительного клапана при нагреве — норма; если течёт постоянно — клапан неисправен."
+  ]], warn:[[
+    "SUVSIZ YOQMANG!",
+    "Klapanni berkitmang va uning teshigini yopmang.",
+    "Muzlashi mumkin bo'lgan xonada suvni to'ldirib qoldirmang — bak yoriladi.",
+    "Ulanishni faqat mutaxassis qilsin; o'zingiz ichini ochmang."
+  ],[
+    "НЕ ВКЛЮЧАЙТЕ БЕЗ ВОДЫ!",
+    "Не перекрывайте клапан и не затыкайте его отверстие.",
+    "В помещении, где вода может замёрзнуть, не оставляйте бойлер заполненным — бак лопнет.",
+    "Подключение — только мастер; самостоятельно не вскрывайте."
+  ]] };
+
+  GD.komp = { new:[[
+    "Ekran, klaviatura, tugmalar, portlar (USB, HDMI, zaryad), kamera va dinamiklarni tekshiring.",
+    "Noutbukda S/N va kafolat muddatini tekshiring (ishlab chiqaruvchi saytida).",
+    "Yuklash diskida operatsion tizim bor-yo'qligini bilib oling: «DOS/FreeDOS» yoki «Windows yo'q» yozilgan bo'lsa, tizimni o'zingiz o'rnatasiz.",
+    "Zaryadlovchi original va tarmoq kabeli bilan to'liq ekanini tekshiring."
+  ],[
+    "Проверьте экран, клавиатуру, кнопки, порты (USB, HDMI, зарядка), камеру и динамики.",
+    "У ноутбука проверьте S/N и срок гарантии (на сайте производителя).",
+    "Выясните, есть ли ОС: если указано «DOS/FreeDOS» или «без Windows», систему нужно будет установить самому.",
+    "Убедитесь, что есть оригинальное зарядное и сетевой кабель."
+  ]], install:[[
+    "Noutbuk: qattiq, tekis stol; to'shak/divanda ishlatmang — shamollatish teshiklari yopilib, qizib ketadi.",
+    "Monitor ko'z darajasida, 50–70 sm masofada; yorug'lik ekranga aks etmasin.",
+    "Stol kompyuter bloki: shamollatish uchun atrofida 10–15 sm joy; devor tomonga orqa qismi bilan yaqin qo'ymang.",
+    "UPS yoki tarmoq filtri orqali ulang — kuchlanish sakrashidan va to'satdan o'chishdan saqlaydi."
+  ],[
+    "Ноутбук: на жёсткий ровный стол; не используйте на кровати/диване — вентиляция перекроется, он перегреется.",
+    "Монитор на уровне глаз, на расстоянии 50–70 см; свет не должен отражаться в экране.",
+    "Системный блок: оставьте 10–15 см вокруг для вентиляции; не прижимайте задней панелью к стене.",
+    "Подключайте через ИБП или сетевой фильтр — защита от скачков напряжения и внезапного отключения."
+  ]], start:[[
+    "Birinchi yoqishda Windows sozlash: til, mintaqa, Wi-Fi, Microsoft akkaunt yoki mahalliy akkaunt.",
+    "Windows Update orqali barcha yangilanishlarni o'rnating — bir necha marta qayta ishga tushirish kerak bo'lishi mumkin.",
+    "Drayverlarni faqat ishlab chiqaruvchining rasmiy saytidan yuklang (videokarta, Wi-Fi, chipset).",
+    "Antivirus: Windows Defender yetarli; qo'shimcha «uchinchi tomon» antivirus shart emas.",
+    "Muhim ma'lumotlar uchun zaxira nusxa (backup) tizimini darhol sozlang."
+  ],[
+    "При первом включении настройте Windows: язык, регион, Wi-Fi, аккаунт Microsoft или локальный.",
+    "Установите все обновления через Windows Update — может потребоваться несколько перезагрузок.",
+    "Драйверы скачивайте только с официального сайта производителя (видеокарта, Wi-Fi, чипсет).",
+    "Антивирус: достаточно Windows Defender; сторонний не обязателен.",
+    "Сразу настройте резервное копирование важных данных."
+  ]], use:[[
+    "Noutbuk batareyasi uchun optimal: 20–80% oralig'i; doim 100% da, rozetkada qoldirish batareyani eskiradi — «zaryad chegarasi» funksiyasini yoqing (agar bor bo'lsa).",
+    "Faqat original yoki sertifikatlangan zaryadlovchi ishlating.",
+    "Muhim fayllarni 3-2-1 qoidasi bilan saqlang: 3 nusxa, 2 xil tashuvchi, 1 tasi uydan tashqarida (bulut).",
+    "Haroratni kuzating: protsessor 80–85 °C dan oshsa — chang yoki termopasta muammosi.",
+    "Faqat litsenziyali/ishonchli manbadagi dasturlarni o'rnating."
+  ],[
+    "Для батареи ноутбука оптимально 20–80%; постоянно 100% от розетки старит батарею — включите «ограничение заряда» (если есть).",
+    "Используйте только оригинальное или сертифицированное зарядное.",
+    "Храните важные файлы по правилу 3-2-1: 3 копии, 2 типа носителей, 1 вне дома (облако).",
+    "Следите за температурой: процессор выше 80–85 °C — признак пыли или высохшей термопасты.",
+    "Ставьте программы только из лицензионных/надёжных источников."
+  ]], care:[[
+    "Har 6–12 oyda changdan tozalash; har 2–3 yilda termopasta almashtirish (ayniqsa noutbukda).",
+    "Ekranni faqat quruq yoki biroz nam mikrofibra bilan arting; spirt, shisha tozalagich ishlatmang.",
+    "Klaviatura: changyutgich yoki siqilgan havo; suyuqlik sachramasin.",
+    "Diskni tekshiring: SSD/HDD holatini CrystalDiskInfo kabi dastur bilan."
+  ],[
+    "Раз в 6–12 месяцев чистка от пыли; раз в 2–3 года замена термопасты (особенно в ноутбуке).",
+    "Экран протирайте сухой или слегка влажной микрофиброй; не используйте спирт и средство для стекол.",
+    "Клавиатура: пылесос или сжатый воздух; жидкость не лить.",
+    "Проверяйте состояние диска SSD/HDD программой вроде CrystalDiskInfo."
+  ]], warn:[[
+    "Suyuqlik to'kilsa: darhol o'chiring, batareyani/tarmoqni uzing, usta chaqiring — qurimaguncha yoqmang.",
+    "Ishlab turgan noutbukni ko'tarib yurmang va yopiq sumkaga solmang.",
+    "Noma'lum xatlar, havolalar va «crack» dasturlar — viruslar manbai.",
+    "Disk tovushi, to'satdan o'chish, qizish — muhim fayllarni darhol zaxiralang."
+  ],[
+    "Если пролили жидкость: сразу выключите, отключите батарею/сеть, вызовите мастера — не включайте до полной сушки.",
+    "Не носите работающий ноутбук и не кладите его в закрытую сумку.",
+    "Неизвестные письма, ссылки и «крякнутые» программы — источник вирусов.",
+    "Шум диска, внезапные выключения, перегрев — срочно сделайте резервную копию."
+  ]] };
+
+  GD.dux = { new:[[
+    "Ichkarisidagi plyonka, stirofoam, qog'oz va qadoq materiallarini to'liq olib tashlang (shu jumladan eshik/shisha orasidagi).",
+    "Komplekt: panjara, protivenlar (pishirish tabaqalari), ba'zi modellarda grill ushlagichi, qo'llanma.",
+    "O'rnatiladigan (vstraivaemaya) duxovka uchun shkafning mos o'lchamlarini oldindan o'lchang."
+  ],[
+    "Уберите изнутри плёнку, пенопласт, бумагу и упаковку (включая между стёклами дверцы).",
+    "Комплект: решётка, противни, у некоторых моделей держатель гриля, инструкция.",
+    "Для встраиваемой духовки заранее проверьте размеры шкафа-ниши."
+  ]], install:[[
+    "Elektr duxovka quvvati 2–3,5 kVt: alohida kabel (2,5–4 mm² mis) va avtomat (16–25 A) kerak. Mavjud rozetkaga ulash — yong'in xavfi.",
+    "Quvvatli ulanishni elektrik bajarsin, rozetka/ulagich issiqqa chidamli bo'lsin.",
+    "Gazli duxovka: gaz ulanishi va gaz-nazorat tekshiruvini faqat gaz xizmati bajaradi.",
+    "O'rnatiladigan modellarda shkaf orqasida va ostida shamollatish tirqishi bo'lishi shart; atrofdagi mebel issiqqa chidamli bo'lsin.",
+    "Duxovkani tekis, barqaror joyga qo'ying; mahkamlash vintlarini qotiring."
+  ],[
+    "Электрическая духовка 2–3,5 кВт: нужен отдельный кабель (2,5–4 мм² медь) и автомат (16–25 А). Подключать в обычную розетку — риск пожара.",
+    "Мощное подключение делает электрик; розетка/клемма должны быть термостойкими.",
+    "Газовая духовка: подключение газа и проверку выполняет только газовая служба.",
+    "У встраиваемых моделей нужны вентиляционные зазоры сзади и снизу ниши; мебель вокруг — термостойкая.",
+    "Ставьте на ровное устойчивое основание; затяните крепёжные винты."
+  ]], start:[[
+    "Birinchi marta ichi bo'sh holda 200–250 °C da 30–60 daqiqa qizdiring (konveksiya rejimi bo'lsa — bilan) — ishlab chiqarish moyi va qoplamasi kuyib, hid chiqadi.",
+    "Shu vaqt xonani shamollating, bolalar va uy hayvonlarini chiqaring.",
+    "Sovigach ichini nam mato bilan arting; keyin ishlatishga tayyor.",
+    "Soat/taymerni sozlang (qo'llanmadagi tugma ketma-ketligi bo'yicha)."
+  ],[
+    "В первый раз прогрейте пустую духовку при 200–250 °C 30–60 минут (с конвекцией, если есть) — сгорит заводская смазка и покрытие, будет запах.",
+    "Проветривайте комнату, уберите детей и животных.",
+    "После остывания протрите внутри влажной тканью — можно пользоваться.",
+    "Настройте часы/таймер (по последовательности кнопок из инструкции)."
+  ]], use:[[
+    "Ko'pgina retseptlarda oldindan isitish kerak: kerakli haroratga yetguncha 10–15 daqiqa kuting.",
+    "Rejimlar: yuqori-past isitish — an'anaviy; konveksiya — bir tekis pishirish; grill — qovurish; pastki — xamir.",
+    "Faqat issiqqa chidamli idishlar: shisha (Pyrex), keramika, metall, silikon. Oddiy plastmassa va qog'oz — yo'q.",
+    "Eshikni ochganda yuz va qo'lni bug'dan uzoq tuting, qo'lqop ishlating."
+  ],[
+    "Большинство рецептов требуют предварительного нагрева: подождите 10–15 минут до нужной температуры.",
+    "Режимы: верх-низ — классика; конвекция — равномерная выпечка; гриль — запекание; нижний нагрев — тесто.",
+    "Только жаропрочная посуда: стекло (Pyrex), керамика, металл, силикон. Обычный пластик и бумага — нельзя.",
+    "Открывая дверцу, держите лицо и руки подальше от пара, используйте прихватки."
+  ]], care:[[
+    "Har ishlatgandan keyin sovigach ichini yuving — kuygan yog' qotib qolmasin.",
+    "Shisha eshikni maxsus vositalar yoki soda bilan tozalang; abraziv shimgich va metall cho'tka ishlatmang.",
+    "Panjara va protivenlarni iliq sovunli suvda yuving.",
+    "Pirolitik/katalitik modellarda tozalash rejimini qo'llanma bo'yicha ishlating."
+  ],[
+    "После каждого использования мойте остывшую камеру — чтобы жир не пригорал.",
+    "Стекло двери очищайте специальными средствами или содой; не применяйте абразивы и металлические щётки.",
+    "Решётку и противни мойте тёплой водой с мылом.",
+    "В пиролитических/каталитических моделях запускайте режим очистки по инструкции."
+  ]], warn:[[
+    "Gaz hidi sezsangiz: gazni yoping, ochiq olov va elektr tugmalarni ishlatmang, xonani shamollating, 104 ga qo'ng'iroq qiling.",
+    "Eshik oynasi yorilgan bo'lsa ishlatmang.",
+    "Qizigan duxovka ichiga qog'oz, plastmassa, yonuvchan narsa qo'ymang.",
+    "Duxovka tashqi yuzasi qiziydi — bolalarni yaqinlashtirmang."
+  ],[
+    "При запахе газа: перекройте газ, не пользуйтесь огнём и выключателями, проветрите, звоните 104.",
+    "Не используйте духовку с треснувшим стеклом двери.",
+    "Не кладите в горячую духовку бумагу, пластик и горючие предметы.",
+    "Внешние поверхности нагреваются — не подпускайте детей."
+  ]] };
+
+  GD.mikro = { new:[[
+    "Ichkaridagi karton, stirofoam va plyonkalarni olib tashlang; aylanuvchi shisha plita va roller halqasini joyiga qo'ying.",
+    "Eshik yopilishi, ichki chiroq va tugmalarni tekshiring.",
+    "Eshik zichlagichida (rezinada) yoriq yoki deformatsiya bo'lmasligi kerak."
+  ],[
+    "Удалите изнутри картон, пенопласт и плёнки; поставьте на место стеклянную вращающуюся тарелку и роллер-кольцо.",
+    "Проверьте закрывание дверцы, подсветку и кнопки.",
+    "Уплотнитель двери не должен быть треснувшим или деформированным."
+  ]], install:[[
+    "Tekis, barqaror joyga qo'ying; tepasida 20 sm, yonlari va orqasida 10 sm bo'sh joy qoldiring.",
+    "Issiqlik manbai (plita), nam joy va televizor/radio yaqinidan uzoq turing — xalaqit berishi mumkin.",
+    "Alohida rozetka (erga ulangan); boshqa quvvatli uskunalar bilan bitta uzaytirgichda ishlatmang.",
+    "Shamollatish teshiklarini yopmang."
+  ],[
+    "Ставьте на ровную устойчивую поверхность; оставьте 20 см сверху и по 10 см по бокам и сзади.",
+    "Подальше от плиты, влажных мест, телевизора/радио — возможны помехи.",
+    "Отдельная заземлённая розетка; не включайте в один удлинитель с другой мощной техникой.",
+    "Не закрывайте вентиляционные отверстия."
+  ]], start:[[
+    "Ulab, soat va taymerni sozlang.",
+    "Birinchi sinov: ichiga yarim stakan suv qo'yib, 1 daqiqa to'liq quvvatda ishlating — suv issiq bo'lishi kerak.",
+    "BO'SH holda hech qachon yoqmang."
+  ],[
+    "Подключите, настройте часы и таймер.",
+    "Первый тест: поставьте полстакана воды и включите на 1 минуту на полной мощности — вода должна нагреться.",
+    "НИКОГДА не включайте пустую."
+  ]], use:[[
+    "Faqat mikroto'lqinga mos idish: shisha, keramika, «microwave safe» belgili plastik. Metall, folga, oltin/kumush naqshli idish, qisman yopiq idish — mumkin emas.",
+    "Idishga qopqoq qo'ying, lekin tirqish qoldiring; bug' chiqishi kerak.",
+    "Tuxumni qobig'ida isitmang — portlaydi; sosiska, kartoshka, pomidorni teshib qo'ying.",
+    "Ovqatni vaqti-vaqti bilan aralashtiring — bir tekis isishi uchun.",
+    "Suvni yoki sutni qizdirganda ichiga qoshiq/cho'p qo'ying, aks holda keskin qaynab chiqib kuydirishi mumkin."
+  ],[
+    "Только посуда для СВЧ: стекло, керамика, пластик с маркировкой «microwave safe». Металл, фольга, посуда с золотом/серебром, частично закрытые ёмкости — нельзя.",
+    "Накрывайте крышкой с отверстием — пар должен выходить.",
+    "Яйца в скорлупе не греть — взорвутся; сосиски, картофель, помидоры — проколоть.",
+    "Периодически перемешивайте еду — для равномерного нагрева.",
+    "При нагреве воды/молока кладите ложку/палочку, иначе возможно резкое вскипание и ожог."
+  ]], care:[[
+    "Ichini har ishlatgandan keyin nam mato bilan arting; qotib qolgan dog'lar uchun limonli suvni 2–3 daqiqa qaynatib, bug'da yumshating.",
+    "Eshik rezinasi va unga tegadigan yuza toza bo'lsin — aks holda mahkam yopilmaydi.",
+    "Aylanuvchi plitani suvda yuving (sovigach)."
+  ],[
+    "Протирайте камеру влажной тканью после каждого использования; присохшие пятна размягчите паром от воды с лимоном (2–3 минуты).",
+    "Уплотнитель двери и прилегающая поверхность должны быть чистыми — иначе дверь не закроется плотно.",
+    "Вращающуюся тарелку мойте в воде после остывания."
+  ]], warn:[[
+    "Eshigi zichligi buzilgan yoki zanjiri sinadigan pechni ishlatmang — nurlanish xavfi.",
+    "Ichkarida uchqun chiqsa (metall) — darhol o'chiring.",
+    "Bolalarga yolg'iz ishlatishga ruxsat bermang; idish va ovqat juda issiq bo'ladi.",
+    "Yopiq bankalarni, tuxumni va muhrlangan qadoqlarni isitmang."
+  ],[
+    "Не используйте печь с нарушенным уплотнением двери или сломанным замком — риск излучения.",
+    "Если внутри искрит (металл) — немедленно выключите.",
+    "Не разрешайте детям пользоваться без присмотра; посуда и еда очень горячие.",
+    "Не греть закрытые банки, яйца и запаянные упаковки."
+  ]] };
+
+  GD.piles = { new:[[
+    "Komplektni tekshiring: shlang, trubka, nasadkalar (pol/gilam, tirqish, mebel), filtrlar, chang yig'gich yoki konteyner.",
+    "Robot changyutgichda: dok-stansiya, batareya, yon cho'tkalar, namlovchi mato (agar mavjud).",
+    "Filtr o'z joyida ekanini tekshiring — filtrsiz ishga tushirmang."
+  ],[
+    "Проверьте комплект: шланг, трубка, насадки (пол/ковёр, щелевая, мебель), фильтры, пылесборник или контейнер.",
+    "У робота-пылесоса: док-станция, батарея, боковые щётки, влажная салфетка (если есть).",
+    "Убедитесь, что фильтр на месте — без фильтра не включайте."
+  ]], install:[[
+    "Oddiy: shlang va trubkani biriktiring, kerakli nasadkani tanlang.",
+    "Robot: dok-stansiyani devor yoniga, yon tomonlarida 0,5 m va old tomonda 1,5 m bo'sh joy qoldirib qo'ying; rozetkaga ulang.",
+    "Robotni ishga tushirishdan oldin yerdagi simlar, ip, mayda narsalarni yig'ib oling."
+  ],[
+    "Обычный: соедините шланг и трубку, выберите нужную насадку.",
+    "Робот: поставьте док-станцию у стены, оставив 0,5 м по бокам и 1,5 м спереди; подключите к розетке.",
+    "Перед запуском робота уберите с пола провода, шнурки, мелкие предметы."
+  ]], start:[[
+    "Robot batareyasini birinchi marta 100% gacha to'liq zaryad qiling (3–5 soat).",
+    "Robotni ilovaga ulang: 2,4 GHz Wi-Fi (5 GHz bo'lmasligi mumkin), akkaunt, xarita tuzish uchun birinchi yurishni ruxsat bering.",
+    "Taqiqlangan zonalar (virtual devor) va jadvalni xaritada belgilang."
+  ],[
+    "Батарею робота при первом использовании зарядите до 100% (3–5 часов).",
+    "Подключите робота к приложению: Wi-Fi 2,4 ГГц (5 ГГц может не поддерживаться), аккаунт, разрешите первый проход для построения карты.",
+    "Отметьте на карте запретные зоны (виртуальные стены) и расписание."
+  ]], use:[[
+    "Gilam uchun yuqori, silliq pol uchun past/o'rta quvvatni tanlang.",
+    "Katta chiqindi (shisha, tosh)ni oldin qo'lda yig'ing.",
+    "Chang yig'gich 2/3 to'lganda bo'shating — to'la bo'lsa so'rish quvvati tushadi.",
+    "Robot: haftasiga 3–4 marta jadval bo'yicha ishlatish yetarli; eshik chegarasi 2 sm dan baland bo'lsa chiqib ketolmasligi mumkin."
+  ],[
+    "Для ковра — высокая мощность, для гладкого пола — низкая/средняя.",
+    "Крупный мусор (стекло, камни) сначала уберите вручную.",
+    "Опорожняйте пылесборник, когда он заполнен на 2/3 — иначе падает мощность.",
+    "Робот: достаточно 3–4 раза в неделю по расписанию; пороги выше 2 см он может не преодолеть."
+  ]], care:[[
+    "HEPA va mator oldi filtrlarini qo'llanmaga ko'ra yuving (ba'zi HEPA filtr yuvilmaydi — faqat almashtiriladi) va to'liq quriting.",
+    "Cho'tka va rolikdan soch, ipni olib tashlang — oyda 1–2 marta.",
+    "Robot: yon cho'tka, g'ildirak va sensorlarni quruq mato bilan arting.",
+    "Filtrlarni 3–6 oyda, cho'tkalarni 6–12 oyda almashtiring."
+  ],[
+    "HEPA и предмоторные фильтры мойте по инструкции (некоторые HEPA не моются — только замена) и полностью сушите.",
+    "Очищайте щётку и ролик от волос и ниток — 1–2 раза в месяц.",
+    "Робот: протирайте боковую щётку, колёса и датчики сухой тканью.",
+    "Фильтры меняйте раз в 3–6 месяцев, щётки — раз в 6–12 месяцев."
+  ]], warn:[[
+    "Ho'l narsalar va suyuqliklarni oddiy changyutgich bilan so'rmang (suv so'rish funksiyasi bo'lmasa).",
+    "Kul, gips changi, cement, issiq cho'g'ni so'rmang — filtr va dvigatel buziladi.",
+    "Dvigatel qizib ketsa, qizish himoyasi o'chiradi — 30–40 daqiqa sovishini kuting.",
+    "Robotni zinapoya, balkon va ochiq akvarium yonida nazoratsiz qoldirmang."
+  ],[
+    "Не собирайте обычным пылесосом воду и жидкости (если нет функции влажной уборки).",
+    "Не пылесосьте золу, гипсовую/цементную пыль, горячие угли — выйдут из строя фильтр и двигатель.",
+    "При перегреве сработает защита — подождите 30–40 минут до остывания.",
+    "Не оставляйте робот без присмотра у лестниц, балконов и открытых аквариумов."
+  ]] };
+
+  GD.dazmol = { new:[[
+    "Dazmolni qutidan oling, tag'idagi himoya plyonkasi/stikerni olib tashlang.",
+    "Bug'li dazmol: suv idishi, o'lchov stakani va komplektni tekshiring.",
+    "Kabel, vilka va pastki yuzada chizilish yoki yoriq bo'lmasligini ko'ring."
+  ],[
+    "Достаньте утюг, снимите защитную плёнку/стикер с подошвы.",
+    "Паровой утюг: проверьте ёмкость для воды, мерный стаканчик и комплект.",
+    "Убедитесь, что на кабеле, вилке и подошве нет царапин и трещин."
+  ]], install:[[
+    "Barqaror dazmol taxtasi yoki issiqqa chidamli tekis yuza.",
+    "Rozetka dazmol taxtasi yaqinida bo'lsin; kabel o'tkir burchaklardan va qizigan yuzadan uzoq turishi kerak."
+  ],[
+    "Устойчивая гладильная доска или ровная термостойкая поверхность.",
+    "Розетка рядом с доской; кабель не должен касаться острых углов и горячих поверхностей."
+  ]], start:[[
+    "Bug'li dazmol: tozalangan/distillangan yoki yumshatilgan suv quying (maksimal belgigacha).",
+    "Birinchi marta eski, keraksiz mato ustida ishlating — ishlab chiqarish hidi/tutuni chiqishi mumkin; bu normal.",
+    "Haroratni tegishli matoga qarab qo'ying va isishini kuting (chiroq o'chishi)."
+  ],[
+    "Паровой утюг: заливайте очищенную/дистиллированную или смягчённую воду (до максимальной отметки).",
+    "В первый раз проглаживайте ненужную ткань — возможен запах/дым от заводской смазки; это нормально.",
+    "Выставьте температуру по ткани и дождитесь нагрева (погаснет индикатор)."
+  ]], use:[[
+    "Mato belgisi: bir nuqta • — ipak, sintetika (110 °C); ikki nuqta •• — jun, poliester (150 °C); uch nuqta ••• — paxta, zig'ir (200 °C).",
+    "Avval kam qizdiriladigan matolarni, oxirida paxta/zig'irni dazmollang — dazmolning isishini kutmaysiz.",
+    "Ipak, sintetika va qora matoni teskari tomonidan yoki mato orqali dazmollang — yaltiroq iz qolmasin.",
+    "Bug' tugmasini kerak bo'lganda ishlating; vertikal bug' (parlash) osilgan kiyimga yaxshi."
+  ],[
+    "Значки на ткани: одна точка • — шёлк, синтетика (110 °C); две точки •• — шерсть, полиэстер (150 °C); три точки ••• — хлопок, лён (200 °C).",
+    "Сначала гладьте ткани, требующие низкой температуры, в конце — хлопок/лён: не придётся ждать остывания.",
+    "Шёлк, синтетику и тёмные вещи гладьте с изнанки или через ткань — не останется блестящих следов.",
+    "Пар используйте по необходимости; вертикальное отпаривание хорошо для вещей на вешалке."
+  ]], care:[[
+    "Tag'ini sovigan holda nam mato yoki maxsus vosita bilan tozalang; metall cho'tka ishlatmang.",
+    "Nakipdan tozalash: Self-clean funksiyasi bo'lsa — ishlating; aks holda 1 oyda bir marta qo'llanmadagi vosita yoki suv + limon kislotasi.",
+    "Foydalangandan keyin suvni to'kib, dazmolni vertikal holda saqlang."
+  ],[
+    "Очищайте подошву остывшей, влажной тканью или специальным средством; металлическую щётку не используйте.",
+    "От накипи: если есть Self-clean — используйте; иначе раз в месяц средство по инструкции или вода + лимонная кислота.",
+    "После использования слейте воду и храните утюг вертикально."
+  ]], warn:[[
+    "Ulangan dazmolni qarovsiz qoldirmang — yong'in va kuyish xavfi.",
+    "Suvsiz bug' rejimini yoqmang.",
+    "Kabel osilib yoki ilinib qolmasin — dazmol tushib ketishi mumkin.",
+    "Kabel shikastlansa yoki dazmol tushib ketgan bo'lsa — ishlatmang, ustaga ko'rsating."
+  ],[
+    "Не оставляйте включённый утюг без присмотра — риск пожара и ожога.",
+    "Не включайте паровой режим без воды.",
+    "Следите, чтобы кабель не свисал и не цеплялся — утюг может упасть.",
+    "Если кабель повреждён или утюг падал — не пользуйтесь, покажите мастеру."
+  ]] };
+
+  GD.vent = { new:[[
+    "Qutidan chiqarib, komplektni tekshiring: pichoqlar (parraklar), himoya panjarasi, taglik/oyoq, vintlar.",
+    "Qismlarda yoriq yoki egilish bo'lmasligi kerak — aylanayotganda titrash va shovqin beradi.",
+    "Qo'llanmadagi sxema bo'yicha yig'ing; ba'zi modellarda parrak tekis o'rnatilmasa teng aylanmaydi."
+  ],[
+    "Достаньте из коробки и проверьте комплект: лопасти, защитная решётка, подставка/ножка, винты.",
+    "На деталях не должно быть трещин и деформаций — иначе при вращении будет вибрация и шум.",
+    "Собирайте по схеме из инструкции; лопасти должны быть установлены ровно, иначе вращение неравномерное."
+  ]], install:[[
+    "Tekis va barqaror yuzaga qo'ying (taglikli) yoki devorga/shiftga mustahkam mahkamlang.",
+    "Himoya panjarasi vintlari qotirilgan bo'lsin — barmoq parrakka tegmasligi kerak.",
+    "Kabel o'tish joyidan chetda bo'lsin — odam oyog'iga ilinmasin."
+  ],[
+    "Поставьте на ровную устойчивую поверхность (напольный) или надёжно закрепите на стене/потолке.",
+    "Винты защитной решётки должны быть затянуты — пальцы не должны доставать до лопастей.",
+    "Кабель не должен лежать на проходе — чтобы не зацепиться ногой."
+  ]], start:[[
+    "Ulab, eng past tezlikdan boshlang va ovoz/tebranishni tinglang.",
+    "Burilish (oscillation) funksiyasi borligini tekshiring.",
+    "Aylanish markazi kuchli titrasa — o'chirib, parrak va panjarani qayta o'rnating."
+  ],[
+    "Включите на минимальной скорости и прислушайтесь к шуму/вибрации.",
+    "Проверьте работу поворота (осцилляции), если он есть.",
+    "Если центр сильно вибрирует — выключите, переустановите лопасти и решётку."
+  ]], use:[[
+    "Ochiq oyna yoki eshik oldida ishlatsangiz, havo aylanishi yaxshilanadi.",
+    "Yozda yotishdan oldin to'g'ridan-to'g'ri yuzga/tanaga qaratmang; taymerdan foydalaning.",
+    "Uzoq vaqt to'xtovsiz ishlatmang — motor 6–8 soatdan keyin dam olishi kerak."
+  ],[
+    "У открытого окна или двери воздух циркулирует лучше.",
+    "Летом на ночь не направляйте поток прямо на лицо/тело; используйте таймер.",
+    "Не работайте непрерывно слишком долго — мотору нужен отдых после 6–8 часов."
+  ]], care:[[
+    "Oyda bir marta panjara va parraklarni ajratib, nam mato bilan arting.",
+    "Motor teshiklarini changyutgich bilan tozalang.",
+    "Ishlatmaydigan mavsumda qutiga yoki g'ilofga solib saqlang."
+  ],[
+    "Раз в месяц снимайте решётку и лопасти и протирайте влажной тканью.",
+    "Очищайте вентиляционные отверстия мотора пылесосом.",
+    "В несезон храните в коробке или чехле."
+  ]], warn:[[
+    "Ishlab turganda panjarani olmang va qo'lingizni tiqmang.",
+    "Bolalar va uy hayvonlaridan uzoq tuting.",
+    "Motordan hid, tutun, dag'al ovoz kelsa — darhol o'chiring."
+  ],[
+    "Не снимайте решётку и не суйте руки при работающем вентиляторе.",
+    "Держите вдали от детей и животных.",
+    "Запах, дым или грубый шум мотора — сразу выключайте."
+  ]] };
+
+  GD.stab = { new:[[
+    "Quvvatni to'g'ri tanlang: ulaydigan barcha uskunalar quvvatini qo'shib, 30–50% zaxira qo'shing.",
+    "Kompressorli uskunalar (xolodilnik, konditsioner, kir yuvish mashinasi) ishga tushishda 3–5 barobar ko'p tok oladi — buni hisobga oling.",
+    "Rele turi (tez-tez «klik»), servo yoki elektron (simistor) stabilizator: servo aniqroq, rele arzon, elektron jim va tez.",
+    "Komplektni tekshiring: ulash kabeli, qo'llanma, kafolat talon."
+  ],[
+    "Правильно выберите мощность: сложите мощность подключаемой техники и добавьте запас 30–50%.",
+    "Компрессорная техника (холодильник, кондиционер, стиральная машина) при пуске потребляет в 3–5 раз больше — учитывайте это.",
+    "Тип: релейный (щёлкает), сервоприводный или электронный (симисторный): серво точнее, реле дешевле, электронный тихий и быстрый.",
+    "Проверьте комплект: кабель, инструкция, гарантийный талон."
+  ]], install:[[
+    "Quruq, shamollatiladigan joyga, devordan 10 sm masofada qo'ying; ustini yopmang.",
+    "Vannaxona, hovli, nam yoki quyosh tushadigan joyga qo'ymang.",
+    "Katta quvvatli stabilizatorni alohida avtomat orqali ulang (masalan, 5 kVA uchun 25–32 A).",
+    "Erga ulangan rozetka/shina ishlating."
+  ],[
+    "Ставьте в сухом проветриваемом месте, в 10 см от стены; не накрывайте.",
+    "Не ставьте в ванной, во дворе, во влажных и солнечных местах.",
+    "Мощный стабилизатор подключайте через отдельный автомат (например, для 5 кВА — 25–32 А).",
+    "Используйте заземлённую розетку/шину."
+  ]], start:[[
+    "Tartib: 1) Stabilizatorni yuksiz tarmoqqa ulang va yoqing; 2) 5–10 soniya kuting (kechikish); 3) chiqish kuchlanishi 220 V ga yaqin ekanini ko'ring; 4) keyin uskunani ulang.",
+    "Uskunalarni birin-ketin ulang, barchasini bir vaqtda emas.",
+    "O'chirishda avval uskunalarni, keyin stabilizatorni o'chiring."
+  ],[
+    "Порядок: 1) включите стабилизатор в сеть без нагрузки; 2) подождите 5–10 секунд (задержка); 3) убедитесь, что на выходе около 220 В; 4) затем подключайте технику.",
+    "Подключайте технику по одной, а не всё сразу.",
+    "При выключении сначала отключите технику, затем стабилизатор."
+  ]], use:[[
+    "Kirish kuchlanishi ruxsat etilgan chegarada bo'lsa (masalan 140–260 V) ishlaydi; undan past/baland bo'lsa, o'zi o'chadi.",
+    "Dastlabki shovqin: rele «klik»i va past gumburlash — me'yor.",
+    "Sezgir uskunalar (kompyuter, televizor) uchun UPS bilan birga ishlatish yaxshi."
+  ],[
+    "Работает, если входное напряжение в допустимых пределах (например 140–260 В); вне диапазона — сам отключится.",
+    "Щелчки реле и тихий гул — норма.",
+    "Для чувствительной техники (компьютер, телевизор) хорошо использовать вместе с ИБП."
+  ]], care:[[
+    "Havo teshiklarini 6 oyda bir marta changyutgich bilan tozalang.",
+    "Yuklamani nominalning 80% dan oshirmang.",
+    "Yozda qizib ketmasligi uchun ventilyatori ochiq ekanini ko'rib turing."
+  ],[
+    "Раз в 6 месяцев очищайте вентиляционные отверстия пылесосом.",
+    "Не превышайте 80% номинальной нагрузки.",
+    "Летом следите, чтобы вентилятор не был заблокирован — иначе перегрев."
+  ]], warn:[[
+    "Yuk quvvati stabilizator limitidan oshmasin — himoya o'chadi yoki issiqdan buziladi.",
+    "Stabilizator ichini ochmang — ichida xavfli kuchlanish bor.",
+    "Ho'l qo'l bilan tegmang; yonida suv qo'ymang."
+  ],[
+    "Мощность нагрузки не должна превышать лимит стабилизатора — сработает защита или он сгорит от перегрева.",
+    "Не вскрывайте стабилизатор — внутри опасное напряжение.",
+    "Не трогайте мокрыми руками; не ставьте рядом воду."
+  ]] };
+
+  GD.ups = { new:[[
+    "UPS turini tanlang: Offline/Line-interactive (kompyuter, router uchun), Online (server, tibbiy, nozik uskuna).",
+    "Quvvat (VA/Vt): kompyuter ~300–500 VA, router + modem ~100–150 VA; gaz qozon uchun maxsus sof sinusli (pure sine) UPS kerak.",
+    "Akkumulyator yangi bo'lsa — qutidan chiqqach to'liq zaryad qiling.",
+    "Komplektni tekshiring: tarmoq kabeli, USB kabeli, qo'llanma."
+  ],[
+    "Определитесь с типом ИБП: Offline/Line-interactive (компьютер, роутер), Online (сервер, медицина, чувствительная техника).",
+    "Мощность (ВА/Вт): компьютер ~300–500 ВА, роутер + модем ~100–150 ВА; для газового котла нужен ИБП с чистой синусоидой (pure sine).",
+    "Если аккумулятор новый — после распаковки полностью зарядите.",
+    "Проверьте комплект: сетевой кабель, USB-кабель, инструкция."
+  ]], install:[[
+    "Quruq, salqin, shamollanadigan joyga qo'ying; quyosh va isitgichdan uzoq (ideal 20–25 °C).",
+    "Yon va orqa tomonda 10 sm bo'sh joy qoldiring.",
+    "Erga ulangan rozetkaga ulang, uzaytirgichsiz.",
+    "Lazerli printer, konditsioner, nasos, kuchli isitgichni UPS ga ULAMANG — ular juda ko'p tok oladi va UPS ni buzadi."
+  ],[
+    "Ставьте в сухом, прохладном, проветриваемом месте; вдали от солнца и обогревателей (идеально 20–25 °C).",
+    "Оставьте 10 см по бокам и сзади.",
+    "Подключайте в заземлённую розетку, без удлинителя.",
+    "НЕ подключайте лазерный принтер, кондиционер, насос, мощные обогреватели — они потребляют слишком много и выведут ИБП из строя."
+  ]], start:[[
+    "Ulang va 8–12 soat zaryad qiling; shundan keyin yukni ulang.",
+    "Yukni ulang: avval eng muhim uskunalar (kompyuter, router).",
+    "USB kabel bilan kompyuterga ulab, dasturini (Power Panel va sh.k.) o'rnating — tok o'chganda kompyuter o'zi saqlab o'chadi.",
+    "Sinov: UPS ni tarmoqdan uzib, uskunalar ishlashda davom etayotganini tekshiring (bir daqiqaga)."
+  ],[
+    "Подключите и заряжайте 8–12 часов; затем подключайте нагрузку.",
+    "Нагрузка: сначала самое важное (компьютер, роутер).",
+    "Подключите по USB к компьютеру и установите ПО (Power Panel и т.п.) — при отключении питания компьютер сам сохранится и выключится.",
+    "Тест: отключите ИБП от сети и проверьте, что техника продолжает работать (на минуту)."
+  ]], use:[[
+    "Tok o'chganda UPS 5–15 daqiqa ishlaydi — fayllarni saqlab, kompyuterni to'g'ri o'chirishga shuncha vaqt yetadi.",
+    "Qisqa uzilishlarda router va modemni ishlatib turish uchun ham yaxshi.",
+    "Signal tovushi: tok yo'q, batareya past yoki ortiqcha yuk haqida ogohlantiradi — qo'llanmadagi jadval bo'yicha o'qing."
+  ],[
+    "При пропадании света ИБП работает 5–15 минут — этого хватит, чтобы сохранить файлы и корректно выключить компьютер.",
+    "Хорош и для работы роутера/модема при кратких отключениях.",
+    "Звуковые сигналы предупреждают об отсутствии сети, низком заряде или перегрузке — читайте по таблице в инструкции."
+  ]], care:[[
+    "Akkumulyator 2–4 yilda eskiradi — vaqt-vaqti bilan sinab ko'ring va almashtiring (bir xil turdagisini oling).",
+    "3–6 oyda UPS ni tarmoqdan uzib, batareya sinovini o'tkazing.",
+    "Uzoq vaqt ishlatilmasa, har 3 oyda zaryad qilib turing — to'liq razryadlangan batareya tez o'ladi."
+  ],[
+    "Аккумулятор стареет за 2–4 года — периодически проверяйте и меняйте (берите такой же тип).",
+    "Раз в 3–6 месяцев делайте тест батареи: отключите от сети.",
+    "Если не используется долго — подзаряжайте каждые 3 месяца: полностью разряженная батарея быстро умирает."
+  ]], warn:[[
+    "UPS ichini ochmang — akkumulyator va yuqori kuchlanish xavfli.",
+    "Nam joyga qo'ymang va uskunalar ustiga suyuqlik qo'ymang.",
+    "Bo'shatilgan/shishgan akkumulyatorni ishlatmang — darhol almashtiring.",
+    "Eski batareyalarni oddiy chiqindiga tashlamang — qabul punktiga topshiring."
+  ],[
+    "Не вскрывайте ИБП — аккумулятор и высокое напряжение опасны.",
+    "Не ставьте во влажных местах и не ставьте жидкости на технику.",
+    "Не используйте разряженный/вздувшийся аккумулятор — немедленно замените.",
+    "Старые аккумуляторы не выбрасывайте в мусор — сдайте в пункт приёма."
+  ]] };
+
+  GD.printer = { new:[[
+    "Qutidan oling va barcha transport lentalari, plyonkalari, stirofoamni (printer ichida ham) olib tashlang — ba'zilari rangli lenta bilan belgilangan.",
+    "Kartrij ustidagi himoya plyonkasi/qopqoqni ham olib tashlang; purkagich printerda kartrij ustidagi lenta/qopqoq olinishi shart, aks holda bo'yoq chiqmaydi.",
+    "Turini bilib oling: Lazerli (toner) — ko'p chop etish uchun, kam xarajat; Purkagichli (siyoh) — rangli rasm va hujjat; CISS (doimiy siyoh ta'minoti) — tejamkor.",
+    "Komplekt: tarmoq kabeli, USB kabeli (ba'zida yo'q), starter kartrij (to'liq emas bo'lishi mumkin), disk/qo'llanma."
+  ],[
+    "Достаньте и снимите все транспортировочные ленты, плёнки, пенопласт (в том числе внутри принтера) — часть помечена цветной лентой.",
+    "Снимите защитную плёнку/колпачок с картриджа; в струйном принтере лента/колпачок обязательно должны быть сняты, иначе чернила не пойдут.",
+    "Узнайте тип: лазерный (тонер) — для большого объёма, дёшево в расходниках; струйный (чернила) — для цветных фото и документов; СНПЧ (система непрерывной подачи чернил) — экономичнее.",
+    "Комплект: сетевой кабель, USB-кабель (иногда нет), стартовый картридж (может быть неполным), диск/инструкция."
+  ]], install:[[
+    "Printerni tekis, barqaror joyga qo'ying; atrofida 10 sm joy qoldiring, quyosh va issiq joydan uzoq.",
+    "Kompyuterga USB, Wi-Fi yoki Ethernet orqali ulang.",
+    "Drayverni faqat ishlab chiqaruvchining rasmiy saytidan yuklang (Canon, HP, Epson, Brother, Pantum va h.k.) — model nomini to'g'ri tanlang.",
+    "Qog'oz lotokini o'rnating, qog'ozni qo'yib, yo'naltirgichlarni qog'oz kengligiga moslang."
+  ],[
+    "Поставьте принтер на ровное устойчивое место; оставьте 10 см вокруг, вдали от солнца и тепла.",
+    "Подключите к компьютеру по USB, Wi-Fi или Ethernet.",
+    "Драйвер скачивайте только на официальном сайте производителя (Canon, HP, Epson, Brother, Pantum и др.) — выбирайте точную модель.",
+    "Установите лоток для бумаги, загрузите бумагу и подвиньте направляющие по ширине листа."
+  ]], start:[[
+    "Ulang va kartrijni o'rnating; purkagichda kallakni to'ldirish (initsializatsiya) 3–10 daqiqa davom etadi — bu vaqtda o'chirmang.",
+    "Sinov sahifasini chop eting (printer tugmasi yoki drayver orqali): chiziqlar uzilmasligi kerak.",
+    "Purkagichda kallakni to'g'rilash (alignment) dasturini ishga tushiring, kerak bo'lsa soplo tozalashni 1–2 marta bajaring.",
+    "Wi-Fi printer: panelda tarmoqni tanlab parol kiriting yoki WPS tugmasini bosing; keyin kompyuter/telefondan qo'shing."
+  ],[
+    "Включите и установите картридж; в струйном принтере инициализация головки занимает 3–10 минут — не выключайте в это время.",
+    "Распечатайте пробную страницу (кнопкой принтера или через драйвер): линии не должны прерываться.",
+    "В струйном запустите выравнивание головки (alignment), при необходимости 1–2 раза прочистите сопла.",
+    "Wi-Fi принтер: выберите сеть и введите пароль на панели или нажмите WPS; затем добавьте с компьютера/телефона."
+  ]], use:[[
+    "Printerni faqat o'z tugmasi bilan o'chiring — rozetkadan emas: kallak to'g'ri «parkovka» qilinadi.",
+    "Purkagichli printer haftasiga kamida 1 marta chop etsin — siyoh va soplolar qurib qolmasin.",
+    "Qog'oz 70–90 g/m² bo'lsin; nam, burilgan qog'ozdan foydalanmang; lazerli printerda qalin yoki yopishqoq qog'oz yaramaydi.",
+    "Qayta to'ldirilgan yoki sertifikatsiz kartrij ishlatganda sifat va kafolat o'zgaradi — ishonchli joydan oling.",
+    "Chop etishda «Qoralama» (Draft) rejimi siyoh/tonerni tejaydi."
+  ],[
+    "Выключайте принтер только его кнопкой — не из розетки: головка корректно «паркуется».",
+    "Струйный принтер нужно использовать хотя бы раз в неделю — чтобы чернила и сопла не засохли.",
+    "Бумага 70–90 г/м²; не используйте влажную, скрученную; в лазерном принтере не подходит слишком плотная или липкая.",
+    "Заправленные или несертифицированные картриджи меняют качество и гарантию — берите в надёжном месте.",
+    "Режим «Черновик» (Draft) экономит чернила/тонер."
+  ]], care:[[
+    "Lazerli: toner changini changyutgich bilan emas, quruq mato yoki maxsus changyutgich bilan oling; ichki rolik va linzalarni toza tuting.",
+    "Purkagich: soplolar tiqilsa dasturdan «Kallak tozalash» ni ishga tushiring; 2–3 martadan ko'p emas, keyin tanaffus qiling.",
+    "Qog'oz yo'lini va rolikni yumshoq nam mato bilan arting.",
+    "Siyoh/toner tugamasdan oldin yangi kartrij tayyorlab qo'ying; bo'sh kartrijni uzoq qoldirmang."
+  ],[
+    "Лазерный: тонерную пыль не убирайте обычным пылесосом — только сухой тканью или специальным пылесосом; следите за чистотой роликов и линз.",
+    "Струйный: при засохших соплах запустите «Прочистку головки» из драйвера; не более 2–3 раз подряд, затем перерыв.",
+    "Протирайте тракт подачи бумаги и ролик мягкой влажной тканью.",
+    "Заранее готовьте новый картридж до окончания чернил/тонера; пустой картридж не оставляйте надолго."
+  ]], warn:[[
+    "Qog'oz tiqilib qolsa — majburlab tortmang; qo'llanma bo'yicha yo'nalishda sekin torting.",
+    "Lazerli printerning ichi (fuser/pech) qizigan — chop etgandan keyin darhol tegmang.",
+    "Printerni to'g'ridan-to'g'ri tarmoqdan o'chirish, kartrijni ishlab turgan paytda olish kallak va drayverni buzadi.",
+    "Siyoh va tonerni bolalardan uzoq tuting; kiyimdan ketmaydi, terini sovunli suv bilan yuving."
+  ],[
+    "При замятии бумаги не дёргайте силой; вытягивайте медленно по ходу движения, по инструкции.",
+    "Внутри лазерного принтера печка (фьюзер) очень горячая — не трогайте сразу после печати.",
+    "Выключение из розетки и снятие картриджа во время работы повреждают головку и драйвер.",
+    "Держите чернила и тонер вдали от детей; с одежды не отстирываются, кожу мойте с мылом."
+  ]] };
+
+  // ============================================================
+  //  📖 QO'LLANMA — yangi texnikani qanday olish, o'rnatish,
+  //  ishga tushirish va foydalanish bo'yicha yo'riqnomalar
+  // ============================================================
+  var GD_SECS = [
+    { k:'new',     ic:'📦', uz:"Yangi olingach",  ru:"После покупки" },
+    { k:'install', ic:'🔧', uz:"O'rnatish",       ru:"Установка" },
+    { k:'start',   ic:'▶️', uz:"Ishga tushirish", ru:"Запуск" },
+    { k:'use',     ic:'📖', uz:"Foydalanish",     ru:"Использование" },
+    { k:'care',    ic:'🧹', uz:"Parvarish",       ru:"Уход" },
+    { k:'warn',    ic:'⚠️', uz:"Ehtiyot bo'ling", ru:"Осторожно" }
+  ];
+  var gdDone = {};
+
+  function gdIds(){
+    var ids = ['gen'];
+    CATS.slice().sort(function(a,b){ return (b.id === 'printer') - (a.id === 'printer'); })
+      .forEach(function(c){ if (GD[c.id]) ids.push(c.id); });
+    return ids;
+  }
+  function gdMeta(id){
+    if (id === 'gen') return { icon:'📋', name:L('Har qanday yangi texnika','Любая новая техника') };
+    var c = catById(id);
+    return { icon:c ? c.icon : '📖', name:c ? pick(c, 'name') : id };
+  }
+  function gdLang(){ return state.lang === 'uz' ? 0 : 1; }
+  function gdSteps(id, sec){
+    var g = GD[id]; return (g && g[sec]) ? (g[sec][gdLang()] || g[sec][1] || []) : [];
+  }
+  function gdCount(id){
+    var n = 0; GD_SECS.forEach(function(s){ n += gdSteps(id, s.k).length; }); return n;
+  }
+  function gdText(s){
+    var m = /^([^:]{3,34}):\s+([\s\S]+)$/.exec(s);
+    return m ? '<strong>' + esc(m[1]) + ':</strong> ' + esc(m[2]) : esc(s);
+  }
+
+  function renderGuide(){
+    var q = (state.guideQuery || '').trim().toLowerCase();
+    var ids = gdIds().filter(function(id){ return !q || gdMeta(id).name.toLowerCase().indexOf(q) > -1; });
+    var items = ids.map(function(id, i){
+      var m = gdMeta(id);
+      var wide = id === 'gen' || id === 'printer' || (i === ids.length - 1 && (ids.length - (ids[0] === 'gen' ? 1 : 0)) % 2 === 1);
+      return { pal: id === 'gen' ? 'g-sun' : palOf(id), wide:wide, icon:m.icon, title:m.name,
+        count: L(gdCount(id) + " ta maslahat", gdCount(id) + " советов"), brand:L("Qo'llanma","Руководство"), gid:id };
+    });
+    mainView.innerHTML =
+      '<div class="view"><div class="hero v2"><h1>' + L("Yangi texnika <em>qo'llanmasi</em>", "Руководство по <em>новой технике</em>") + '</h1>' +
+      '<p>' + L("Qutidan chiqarishdan to ishga tushirish va parvarishgacha — barcha qadamlar bir joyda.",
+                "От распаковки до запуска и ухода — все шаги в одном месте.") + '</p></div>' +
+      '<div class="search-wrap"><span class="sic">🔎</span><input id="guideSearch" placeholder="' + t().searchPh + '" value="' + esc(state.guideQuery || '') + '"></div>' +
+      (items.length ? '<div class="tiles">' + items.map(tileHTML).join('') + '</div>' : '<div class="empty">' + t().notFound + '</div>') + '</div>';
+    var search = document.getElementById('guideSearch');
+    search.addEventListener('input', function(){
+      state.guideQuery = search.value; renderGuide(); search.focus(); search.setSelectionRange(search.value.length, search.value.length);
+    });
+    mainView.querySelectorAll('[data-ti]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        haptic('select');
+        var it = items[parseInt(btn.getAttribute('data-ti'), 10)];
+        push({ view:'guideTech', gid:it.gid, sec:'new', catId: it.gid === 'gen' ? null : it.gid });
+      });
+    });
+  }
+
+  function renderGuideTech(entry){
+    var id = entry.gid, m = gdMeta(id), sec = entry.sec || 'new';
+    var si = 0; GD_SECS.forEach(function(s, i){ if (s.k === sec) si = i; });
+    var cur = GD_SECS[si];
+    var steps = gdSteps(id, sec);
+    var chips = GD_SECS.map(function(s){
+      var n = gdSteps(id, s.k).length;
+      return '<button type="button" class="gd-chip' + (s.k === sec ? ' on' : '') + (s.k === 'warn' ? ' warn' : '') + '" data-sec="' + s.k + '">' +
+        '<span>' + s.ic + '</span> ' + L(s.uz, s.ru) + ' <i>' + n + '</i></button>';
+    }).join('');
+    var list = steps.map(function(s, i){
+      var key = id + ':' + sec + ':' + i;
+      return '<li class="gd-step' + (gdDone[key] ? ' done' : '') + (sec === 'warn' ? ' warn' : '') + '" data-k="' + key + '">' +
+        '<span class="gd-num">' + (sec === 'warn' ? '!' : (i + 1)) + '</span><span class="gd-txt">' + gdText(s) + '</span></li>';
+    }).join('');
+    var prev = si > 0 ? GD_SECS[si - 1] : null, next = si < GD_SECS.length - 1 ? GD_SECS[si + 1] : null;
+    var nav = '<div class="gd-nav">' +
+      (prev ? '<button type="button" class="btn-ghost gd-nb" data-sec="' + prev.k + '">‹ ' + L(prev.uz, prev.ru) + '</button>' : '<span></span>') +
+      (next ? '<button type="button" class="btn-primary gd-nb" data-sec="' + next.k + '">' + L(next.uz, next.ru) + ' ›</button>' : '<span></span>') + '</div>';
+    var diag = (id !== 'gen' && catById(id)) ?
+      '<button type="button" class="btn-ghost gd-diag" id="gdDiag">🛠 ' + L("Nosozlik bormi? Diagnostikaga o'tish", "Есть неисправность? Перейти к диагностике") + ' ›</button>' : '';
+    mainView.innerHTML =
+      '<div class="view"><div class="detail-head gd-head"><div class="gd-ico">' + m.icon + '</div>' +
+      '<div><div class="eyebrow gd-eb">' + L("QO'LLANMA", 'РУКОВОДСТВО') + '</div><h2>' + esc(m.name) + '</h2></div></div>' +
+      '<div class="gd-chips" id="gdChips">' + chips + '</div>' +
+      '<div class="gd-sec-title"><span>' + cur.ic + '</span> ' + L(cur.uz, cur.ru) + '</div>' +
+      '<ol class="gd-steps">' + list + '</ol>' +
+      (sec === 'warn' ? '' : '<p class="gd-hint">' + L("Bajarilgan qadamni belgilash uchun ustiga bosing.", "Нажмите на пункт, чтобы отметить его выполненным.") + '</p>') +
+      nav + diag + '</div>';
+    mainView.querySelectorAll('[data-sec]').forEach(function(b){
+      b.addEventListener('click', function(){
+        haptic('select'); entry.sec = b.getAttribute('data-sec'); render();
+      });
+    });
+    mainView.querySelectorAll('.gd-step').forEach(function(li){
+      li.addEventListener('click', function(){
+        var k = li.getAttribute('data-k'); gdDone[k] = !gdDone[k];
+        li.classList.toggle('done', !!gdDone[k]); haptic('tap');
+      });
+    });
+    var d = document.getElementById('gdDiag');
+    if (d) d.addEventListener('click', function(){ haptic('select'); openCategory(id); });
+    var on = mainView.querySelector('.gd-chip.on');
+    if (on && on.scrollIntoView) { try { on.scrollIntoView({ inline:'center', block:'nearest' }); } catch(e){} window.scrollTo(0,0); }
+  }
 
   // ---------- Til tanlagich (bayroqli ochiladigan menyu) ----------
   (function(){
