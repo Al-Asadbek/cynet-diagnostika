@@ -7558,6 +7558,7 @@
           '<div class="mk-chips" id="adjChips"></div></div>' +
         '<div class="mk-head"><div class="tt"><span>🖨️</span>' + 'Chip reset' + '</div><div class="cn" id="adjCnt"></div></div>' +
         '<div class="mk-hint" style="margin:0 2px 12px">' + L("Printer modelini tanlang — to'lovdan so'ng chip reset dasturi darhol shu bot chatiga yuboriladi.","Выберите модель принтера — после оплаты программа сброса (Chip reset) сразу придёт в чат с ботом.") + '</div>' +
+        '<div id="adjFree"></div>' +
         '<div class="mk-list fx" id="adjList"><div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div></div>' +
         '<div class="mk-actions" style="margin-top:16px"><button class="mk-btn ghost" id="adjMy">📥 ' + L('Xaridlarim','Мои покупки') + '</button></div>' +
       '</div>';
@@ -7628,7 +7629,104 @@
     clearBtn.addEventListener('click', function(){ input.value = ''; a.q = ''; paint(); input.focus(); });
     document.getElementById('adjMy').addEventListener('click', function(){ haptic('select'); push({ view:'marketAdjOrders' }); });
     drawChips(); paint(); load(false);
+    adjFreeLoad(function(f){ var box = document.getElementById('adjFree'); if (box) adjFreeDrawBanner(box, f); });
     adjCheckPending();
+  }
+
+
+  // ============================================================
+  //  🎁 TEKIN EPSON ADJUSTMENT — botga 50 ta do'st taklif qilganlarga
+  // ============================================================
+  (function(){
+    if (document.getElementById('afCss')) return;
+    var css = [
+      '.af-box{margin:0 0 14px;padding:14px;border-radius:18px;background:linear-gradient(135deg,rgba(25,230,160,.18),rgba(255,200,61,.14));border:1px solid rgba(25,230,160,.45)}',
+      '.af-t{font-weight:800;font-size:15px;margin-bottom:4px}',
+      '.af-s{font-size:12.5px;line-height:1.45;opacity:.85}',
+      '.af-bar{height:10px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;margin:10px 0 4px}',
+      '.af-bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#19e6a0,#ffc83d);transition:width .5s}',
+      '.af-n{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:8px}',
+      '.af-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}',
+      '.af-acts button{flex:1;min-width:130px;padding:11px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:inherit;font-weight:700;font-size:13px}',
+      '.af-acts button.pri{background:linear-gradient(135deg,#19e6a0,#0aa37a);color:#06231a;border-color:transparent}',
+      '.af-ok{color:#5ee08a;font-weight:800}'
+    ].join('\n');
+    var st = document.createElement('style'); st.id = 'afCss'; st.textContent = css; document.head.appendChild(st);
+  })();
+
+  function adjFreeLoad(cb, force){
+    var a = state.mk.adj;
+    if (!getInitData() || !API_BASE) { cb(null); return; }
+    if (!force && a.free && (Date.now() - (a.freeAt || 0)) < 20000) { cb(a.free); return; }
+    apiGet('/api/public/adj/free/status?init_data=' + encodeURIComponent(getInitData())).then(function(d){
+      if (d && d.ok) { a.free = d; a.freeAt = Date.now(); cb(d); } else cb(null);
+    }).catch(function(){ cb(null); });
+  }
+  function adjFreeShare(f){
+    if (!f || !f.link) return;
+    var text = L("Online Ustaxona botiga qo'shiling — texnika ta'miri, ehtiyot qismlar va ustalar!","Присоединяйтесь к боту Online Ustaxona — ремонт техники, запчасти и мастера!");
+    var url = 'https://t.me/share/url?url=' + encodeURIComponent(f.link) + '&text=' + encodeURIComponent(text);
+    if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
+  }
+  function adjFreeCopy(f){
+    if (!f || !f.link) return;
+    var done = function(){ mkToast(L('Havola nusxalandi','Ссылка скопирована')); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(f.link).then(done, function(){ window.prompt('', f.link); });
+    else window.prompt('', f.link);
+  }
+  function adjFreeBoxHTML(f, compact){
+    if (!f || !f.enabled) return '';
+    var need = f.required, have = Math.min(f.invited, need), pct = Math.round(have * 100 / need);
+    if (f.claimed) return '<div class="af-box"><div class="af-t af-ok">✅ ' + L("Tekin adjustment olingan","Бесплатный adjustment получен") + '</div><div class="af-s">' + L("Taklif uchun sovg'a faqat bir marta beriladi. Fayl bot chatida.","Подарок за приглашения выдаётся один раз. Файл — в чате с ботом.") + '</div></div>';
+    var title = f.eligible ? '🎁 ' + L("Tabriklaymiz! Tekin Epson adjustment sizniki","Поздравляем! Бесплатный Epson adjustment ваш")
+                           : '🎁 ' + L("Epson adjustment — TEKIN!","Epson adjustment — БЕСПЛАТНО!");
+    var sub = f.eligible ? L("Pastdagi Epson modellardan bittasini tanlang — «Tekin olish» tugmasi chiqadi (faqat bitta beriladi).","Выберите одну из моделей Epson ниже — появится кнопка «Получить бесплатно» (выдаётся только один).")
+                         : L("Botga kamida " + need + " ta do'stingizni taklif qiling. Ular sizning havolangiz orqali botga qo'shilgan bo'lishi kerak. " + need + " ta bo'lgach bitta Epson adjustment tekin beriladi.","Пригласите в бот минимум " + need + " друзей. Они должны зайти в бот по вашей ссылке. Когда наберётся " + need + " — один Epson adjustment бесплатно.");
+    return '<div class="af-box"><div class="af-t">' + title + '</div>' + (compact ? '' : '<div class="af-s">' + sub + '</div>') +
+      '<div class="af-bar"><i style="width:' + pct + '%"></i></div><div class="af-n"><span>' + L("Qo'shilganlar","Присоединились") + ': ' + f.invited + '</span><span>' + need + '</span></div>' +
+      (f.eligible ? '' : '<div class="af-acts"><button type="button" class="pri" data-af="share">📤 ' + L("Do'stlarni taklif qilish","Пригласить друзей") + '</button><button type="button" data-af="copy">🔗 ' + L("Havolani nusxalash","Копировать ссылку") + '</button></div>') + '</div>';
+  }
+  function adjFreeBind(box, f){
+    box.querySelectorAll('[data-af]').forEach(function(b){
+      b.addEventListener('click', function(){ haptic('select'); if (b.getAttribute('data-af') === 'share') adjFreeShare(f); else adjFreeCopy(f); });
+    });
+  }
+  function adjFreeDrawBanner(box, f){
+    box.innerHTML = adjFreeBoxHTML(f, false);
+    adjFreeBind(box, f);
+  }
+
+  // Epson modeli sahifasida: tekin olish tugmasi yoki progress
+  function adjFreeInitItem(p){
+    if (String(p.brend || '').toLowerCase() !== 'epson') return;
+    var box = document.getElementById('adjFreeItem'); if (!box) return;
+    adjFreeLoad(function(f){
+      box = document.getElementById('adjFreeItem'); if (!box || !f || !f.enabled) return;
+      var a = state.mk.adj;
+      if (f.eligible) {
+        box.innerHTML = '<div class="af-box"><div class="af-t">🎁 ' + L("Bu adjustment sizga TEKIN","Этот adjustment для вас БЕСПЛАТНО") + '</div>' +
+          '<div class="af-s">' + L("Siz " + f.invited + " ta do'st taklif qildingiz. Faqat bitta adjustment tekin beriladi — shu modelni tanlaysizmi?","Вы пригласили " + f.invited + " друзей. Бесплатно выдаётся только один adjustment — выбираете эту модель?") + '</div>' +
+          '<div class="af-acts"><button type="button" class="pri" id="afClaim">🎁 ' + L("Tekin olish","Получить бесплатно") + '</button></div>' +
+          '<div class="af-s" id="afErr" style="color:#ffb3ae;margin-top:6px"></div></div>';
+        document.getElementById('afClaim').addEventListener('click', function(){
+          var btn = this, errEl = document.getElementById('afErr');
+          if (a.claiming) return;
+          if (!confirm(L("Diqqat: tekin adjustment faqat BIR MARTA beriladi. " + p.brend + " " + p.model + " ni olasizmi?","Внимание: бесплатный adjustment выдаётся только ОДИН раз. Получить " + p.brend + " " + p.model + "?"))) return;
+          a.claiming = true; haptic('tap'); btn.disabled = true; btn.textContent = L('⏳ Yuborilmoqda...','⏳ Отправка...');
+          apiPost('/api/public/adj/free/claim', { init_data:getInitData(), lang:srvLang(), product_id:p.id }).then(function(res){
+            a.claiming = false; var d = res.data || {};
+            if (d.ok) {
+              haptic('ok'); a.free = null; a.freeAt = 0;
+              box.innerHTML = '<div class="af-box"><div class="af-t af-ok">✅ ' + L("Adjustment botga yuborildi!","Adjustment отправлен в бот!") + '</div><div class="af-s">' + L("Faylni bot chatidan oling. Topilmasa «Xaridlarim» bo'limidan qayta yuboriladi.","Файл — в чате с ботом. Если не нашли — отправим снова из раздела «Мои покупки».") + '</div></div>';
+              var buy = document.getElementById('adjBuy'); if (buy) buy.style.display = 'none';
+            } else { btn.disabled = false; btn.innerHTML = '🎁 ' + L("Tekin olish","Получить бесплатно"); errEl.textContent = d.error || L("Xatolik yuz berdi","Произошла ошибка"); }
+          }).catch(function(){ a.claiming = false; btn.disabled = false; btn.innerHTML = '🎁 ' + L("Tekin olish","Получить бесплатно"); errEl.textContent = L("Ulanib bo'lmadi. Internetni tekshiring.","Нет соединения. Проверьте интернет."); });
+        });
+      } else {
+        box.innerHTML = adjFreeBoxHTML(f, true);
+        adjFreeBind(box, f);
+      }
+    });
   }
 
   // ---------- Model sahifasi ----------
@@ -7657,11 +7755,13 @@
           '<div class="adj-li"><i>🔁</i><span>' + L("Fayl yo'qolsa «Xaridlarim» bo'limidan qayta yuboriladi","Если файл потеряется — отправим снова из раздела «Мои покупки»") + '</span></div>' +
         '</div></div></div>' +
         (desc ? '<div class="mk-sec"><h3>' + L('Tavsif','Описание') + '</h3><div class="mk-box"><div class="mk-desc">' + esc(desc) + '</div></div></div>' : '') +
+        '<div id="adjFreeItem"></div>' +
         '<div class="mk-hint" id="adjErr" style="color:#ffb3ae;margin:0 2px 8px"></div>' +
         '<div class="mk-actions"><button class="mk-btn pri" id="adjBuy">💳 ' + L("Sotib olish","Купить") + ' · ' + mkFmt(p.narx) + ' ' + adjSoM() + '</button></div>' +
         '<div class="mk-contact" id="adjContact"></div>' +
       '</div>';
 
+    adjFreeInitItem(p);
     var meta = a.meta || {};
     var phone = String(meta.phone || t().contactPhone || '').replace(/[^\d+]/g, '');
     var tgUser = String(meta.tg || 'online_ustaxona').replace(/^@/, '');
