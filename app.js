@@ -3678,6 +3678,20 @@
   // "tekshirish" sxemasi biriktirilishi mumkin. Yangi bandlar uchun shu
   // formatda qo'shib borish mumkin — key = last.py'dagi D lug'ati kaliti.
   var ILLUSTRATIONS = {
+    "printer_canon_p07": {
+      device: "🖨️",
+      scene: "p07",
+      steps: [
+        { icon:"🔌", caption_uz:"P07 chiqdi: printerni o'chiring (kabel rozetkada tursin)", caption_ru:"Появилась P07: выключите принтер (кабель оставьте в розетке)" },
+        { icon:"⏻", caption_uz:"POWER tugmasini 5 soniya bosib turing", caption_ru:"Удерживайте кнопку POWER 5 секунд" },
+        { icon:"⏹️", caption_uz:"STOP tugmasini (qizil doira ichidagi uchburchak) 5 marta bosing", caption_ru:"Нажмите кнопку STOP (треугольник в красном круге) 5 раз" },
+        { icon:"⏳", caption_uz:"Biroz kuting — POWER yonidagi chiroq yonguncha", caption_ru:"Немного подождите — пока загорится индикатор у POWER" },
+        { icon:"⏹️", caption_uz:"Chiroq yonganidan so'ng STOP ni yana 5 marta bosing", caption_ru:"Когда индикатор загорится, снова нажмите STOP 5 раз" },
+        { icon:"⏻", caption_uz:"POWER tugmasini 1 marta bosing", caption_ru:"Нажмите POWER один раз" },
+        { icon:"📄", caption_uz:"Qog'oz bo'lsa — displeyda P.0.0 chiqadi va qog'oz chiqib keladi", caption_ru:"Если есть бумага — на дисплее P.0.0 и бумага выходит" },
+        { icon:"🔄", caption_uz:"Printerni o'chirib qayta yoqing — tayyor!", caption_ru:"Выключите и снова включите принтер — готово!" },
+      ],
+    },
     "tv_0": {
       device: "📺",
       steps: [
@@ -4862,6 +4876,35 @@
     }
     return s;
   }
+
+  // ---- P07 sahnasi uchun maxsus CSS (qadam raqami .vp[data-step] bo'yicha almashadi) ----
+  function p7InjectCss(){
+    if (document.getElementById('p7Css')) return;
+    var hide = [];
+    for (var i = 0; i < 8; i++) hide.push('.vp:not([data-step="' + i + '"]) .p7-' + i);
+    var css = hide.join(',') + '{display:none}\n' +
+      '.p7n{opacity:0;animation:p7show 3.4s linear infinite}\n' +
+      '@keyframes p7show{0%{opacity:0}2%{opacity:1}19%{opacity:1}21%{opacity:0}100%{opacity:0}}\n' +
+      '.p7f{transform-box:fill-box;transform-origin:center;animation:p7tap .68s ease-in-out 5}\n' +
+      '.p7f.p7-tap1{animation:p7tap .68s ease-in-out 2 .3s}\n' +
+      '.p7f.p7-hold{animation:p7hold .5s ease-out forwards}\n' +
+      '@keyframes p7tap{0%,100%{transform:translateY(0)}45%{transform:translateY(-9px)}}\n' +
+      '@keyframes p7hold{to{transform:translateY(-9px)}}\n' +
+      '.p7-ring{stroke-dasharray:100;stroke-dashoffset:100;animation:p7ring 3.4s linear forwards}\n' +
+      '@keyframes p7ring{to{stroke-dashoffset:0}}\n' +
+      '.p7-led-late{opacity:0;animation:p7led 3.4s linear forwards}\n' +
+      '@keyframes p7led{0%,60%{opacity:0}66%,100%{opacity:1}}\n' +
+      '.p7-onoff{animation:p7onoff 3.4s linear infinite}\n' +
+      '@keyframes p7onoff{0%,12%{opacity:1}14%,52%{opacity:0}54%,100%{opacity:1}}\n' +
+      '.vp[data-step="1"] .p7-pw{transform-box:fill-box;transform-origin:center;animation:p7holdbtn 3.4s ease-out forwards}\n' +
+      '@keyframes p7holdbtn{0%{transform:scale(1)}8%,100%{transform:scale(.88)}}\n' +
+      '.vp[data-step="2"] .p7-st,.vp[data-step="4"] .p7-st{transform-box:fill-box;transform-origin:center;animation:p7push .68s ease-in-out 5}\n' +
+      '.vp[data-step="5"] .p7-pw{transform-box:fill-box;transform-origin:center;animation:p7push .68s ease-in-out 2 .3s}\n' +
+      '.vp[data-step="7"] .p7-pw{transform-box:fill-box;transform-origin:center;animation:p7push .68s ease-in-out 2 .2s}\n' +
+      '@keyframes p7push{0%,100%{transform:scale(1)}45%{transform:scale(.84)}}\n';
+    var st = document.createElement('style'); st.id = 'p7Css'; st.textContent = css; document.head.appendChild(st);
+  }
+
   var SCENES = {
     tv: function(){
       var bars = ['#fff','#ffe14a','#2be4e4','#3be15b','#ff4bd8','#ff4040','#3a5bff'].map(function(c,i){
@@ -5023,6 +5066,49 @@
         '<g class="only0"><circle class="sv-fall" cx="100" cy="116" r="5" fill="#00d1ff"/><circle class="sv-fall" cx="120" cy="116" r="5" fill="#ff3fa8" style="animation-delay:.4s"/><circle class="sv-fall" cx="140" cy="116" r="5" fill="#ffe14a" style="animation-delay:.8s"/></g>' +
         '<g class="only1"><text class="sv-wrench" x="150" y="112" font-size="40">🔧</text></g>' +
         '<g class="only2"><g class="sv-pulse"><circle cx="196" cy="60" r="16" fill="#2fd27a"/><path d="M188 60 l6 7 l12 -15" stroke="#fff" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>';
+    },
+    p07: function(){
+      var nums = function(arr, x, y, cls, fill){
+        return arr.map(function(n, i){
+          return '<text class="p7n ' + cls + '" style="animation-delay:' + (i * 0.68).toFixed(2) + 's" x="' + x + '" y="' + y + '" text-anchor="middle" font-size="34" font-weight="900" fill="' + fill + '">' + n + '</text>';
+        }).join('');
+      };
+      var finger = function(x, cls, extra){
+        return '<text class="p7f ' + cls + '" x="' + x + '" y="166" font-size="30" text-anchor="middle" ' + (extra || '') + '>👆</text>';
+      };
+      return '<ellipse cx="115" cy="198" rx="96" ry="7" fill="rgba(0,0,0,.28)"/>' +
+        '<rect x="62" y="18" width="106" height="58" rx="6" fill="#fff"/><g stroke="#cfd5ea" stroke-width="3"><path d="M72 34 h86 M72 46 h86 M72 58 h60"/></g>' +
+        '<rect x="10" y="72" width="210" height="106" rx="20" fill="#eef1fa"/><rect x="10" y="72" width="210" height="106" rx="20" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2"/>' +
+        '<rect x="22" y="82" width="186" height="58" rx="10" fill="#d9deef"/>' +
+        /* displey */
+        '<rect x="30" y="90" width="64" height="42" rx="6" fill="#0b1226"/>' +
+        '<g class="p7-0"><text class="sv-blink" x="62" y="119" text-anchor="middle" font-size="24" font-weight="800" fill="#ff5a5a" font-family="JetBrains Mono,monospace">P07</text></g>' +
+        '<g class="p7-6"><text x="62" y="119" text-anchor="middle" font-size="18" font-weight="800" fill="#4dff88" font-family="JetBrains Mono,monospace">P.0.0</text></g>' +
+        '<g class="p7-7"><text class="p7-onoff" x="62" y="119" text-anchor="middle" font-size="18" font-weight="800" fill="#4dff88" font-family="JetBrains Mono,monospace">P.0.0</text></g>' +
+        /* chiroq (POWER yonida) */
+        '<circle cx="125" cy="94" r="4" fill="#9aa3bd"/>' +
+        '<g class="p7-3"><circle class="p7-led-late" cx="125" cy="94" r="4.5" fill="#34e07a"/></g>' +
+        '<g class="p7-4"><circle cx="125" cy="94" r="4.5" fill="#34e07a"/></g><g class="p7-5"><circle cx="125" cy="94" r="4.5" fill="#34e07a"/></g><g class="p7-6"><circle cx="125" cy="94" r="4.5" fill="#34e07a"/></g>' +
+        '<g class="p7-7"><circle class="p7-onoff" cx="125" cy="94" r="4.5" fill="#34e07a"/></g>' +
+        /* POWER tugmasi */
+        '<g class="p7-pw"><circle cx="125" cy="113" r="14" fill="#2a2f45" stroke="#8892b8" stroke-width="2"/>' +
+        '<path d="M120 108.5 A7.5 7.5 0 1 0 130 108.5" fill="none" stroke="#e8ecff" stroke-width="2.2" stroke-linecap="round"/><path d="M125 105 V113" stroke="#e8ecff" stroke-width="2.2" stroke-linecap="round"/></g>' +
+        '<text x="125" y="136" text-anchor="middle" font-size="6.5" font-weight="800" fill="#5b6488">POWER</text>' +
+        /* STOP tugmasi */
+        '<g class="p7-st"><circle cx="178" cy="113" r="14" fill="#e53935" stroke="#ff9a97" stroke-width="2"/>' +
+        '<path d="M178 105.5 L186 119 L170 119 Z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></g>' +
+        '<text x="178" y="136" text-anchor="middle" font-size="6.5" font-weight="800" fill="#5b6488">STOP</text>' +
+        /* qadamlar */
+        '<g class="p7-1">' + finger(125, 'p7-hold') + '<circle class="p7-ring" cx="125" cy="113" r="19" pathLength="100" transform="rotate(-90 125 113)" fill="none" stroke="#47f0ff" stroke-width="3.5" stroke-linecap="round"/>' +
+          nums([5,4,3,2,1], 192, 56, 'p7-cd', '#47f0ff') + '<text x="192" y="70" text-anchor="middle" font-size="9" font-weight="800" fill="#7a86b0">' + L("soniya","сек") + '</text></g>' +
+        '<g class="p7-2">' + finger(178, 'p7-tap5') + nums([1,2,3,4,5], 192, 56, 'p7-cd', '#ff7a76') + '</g>' +
+        '<g class="p7-3"><text class="sv-bob" x="190" y="54" font-size="30">⏳</text></g>' +
+        '<g class="p7-4">' + finger(178, 'p7-tap5') + nums([1,2,3,4,5], 192, 56, 'p7-cd', '#ff7a76') + '</g>' +
+        '<g class="p7-5">' + finger(125, 'p7-tap1') + '<text class="sv-pulse" x="192" y="56" text-anchor="middle" font-size="30" font-weight="900" fill="#47f0ff">×1</text></g>' +
+        '<g class="p7-6"><clipPath id="p7c"><rect x="30" y="150" width="170" height="50"/></clipPath>' +
+          '<rect x="30" y="146" width="170" height="8" rx="4" fill="#1b1f33"/>' +
+          '<g clip-path="url(#p7c)"><g class="sv-feed"><rect x="62" y="128" width="106" height="60" fill="#fff" rx="3"/><path d="M72 142 h86 M72 154 h70 M72 166 h86" stroke="#4a5bd0" stroke-width="3.5"/></g></g></g>' +
+        '<g class="p7-7"><g class="sv-pulse"><circle cx="192" cy="50" r="16" fill="#2fd27a"/><path d="M184 50 l6 7 l12 -15" stroke="#fff" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>';
     },
     _gen: function(){
       return '<g class="sv-spin slow" style="transform-origin:115px 100px"><text x="115" y="140" text-anchor="middle" font-size="130">⚙️</text></g><text class="sv-wrench" x="140" y="180" font-size="52">🔧</text>';
@@ -5644,7 +5730,9 @@
     var conf = ILLUSTRATIONS[diagKey];
     var steps = conf ? conf.steps : genericSteps();
     var cid = cat ? cat.id : '';
-    curIllus = { steps: steps, scene: SCENES[cid] ? cid : '_gen' };
+    var sc = (conf && conf.scene && SCENES[conf.scene]) ? conf.scene : (SCENES[cid] ? cid : '_gen');
+    if (sc === 'p07') p7InjectCss();
+    curIllus = { steps: steps, scene: sc };
     var segs = steps.map(function(s, i){ return '<div class="vp-seg" data-i="' + i + '"><i></i></div>'; }).join('');
     return '<div class="vp playing" id="vp" data-step="0" style="--dur:' + (STEP_MS/1000) + 's">' +
       '<div class="vp-stage"><div class="vp-grid"></div><div class="vp-live"><i></i>' + L('ANIMATSIYA','АНИМАЦИЯ') + '</div>' +
