@@ -5942,7 +5942,9 @@
       ph_uz:'Usta ismi yoki xizmat...', ph_ru:'Имя мастера или услуга...',
       unit_uz:'ta usta', unit_ru:'мастеров' }
   ];
-  var MAP_DEFAULT = { lat: 41.3111, lon: 69.2797, zoom: 11 }; // Toshkent
+  var MAP_DEFAULT = { lat: 41.3111, lon: 69.2797, zoom: 11 }; // Toshkent (profil joylashuv xaritasi uchun zaxira)
+  // Ustalar xaritasi dastlab BUTUN O'ZBEKISTONni ko'rsatadi (joylashuvga ruxsat berilsa — foydalanuvchi atrofiga o'tadi)
+  var MAP_UZ = { lat: 41.2, lon: 64.6, zoom: 5, bounds: [[37.1, 55.9], [45.6, 73.2]] };
   var MAP_LIB = {
     css: [
       ['https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css', 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'],
@@ -6114,7 +6116,7 @@
       '<div class="mc-actions">' +
       '<a class="tel" href="tel:' + mapEsc(m.telefon) + '">📞 ' + mapEsc(m.telefon) + '</a>' +
       '<a class="tg" href="' + mapEsc(link) + '" target="_blank">✈️ ' + t().topishWrite + '</a></div>' +
-      '<div class="mapx-hint">📍 ' + (where ? where + ' · ' : '') + L('Taxminiy joylashuv', 'Примерное местоположение') + '</div>' +
+      '<div class="mapx-hint">📍 ' + (where ? where + ' · ' : '') + (m.approx ? L('Aniq joylashuv kiritilmagan — viloyat/tuman bo\'yicha taxminiy nuqta', 'Точное место не указано — примерная точка по области/району') : L('Taxminiy joylashuv', 'Примерное местоположение')) + '</div>' +
       '</div>';
     card.hidden = false;
     card.querySelector('#mapxClose').addEventListener('click', function(){ haptic('tap'); mapCloseCard(); });
@@ -6357,7 +6359,7 @@
       LF.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
       }).addTo(map);
-      map.setView([MAP_DEFAULT.lat, MAP_DEFAULT.lon], MAP_DEFAULT.zoom);
+      map.setView([MAP_UZ.lat, MAP_UZ.lon], MAP_UZ.zoom);
       rt.map = map;
       rt.group = LF.markerClusterGroup ? LF.markerClusterGroup({
         showCoverageOnHover: false, maxClusterRadius: 45, spiderfyOnMaxZoom: true,
@@ -6373,6 +6375,7 @@
         if (mapKm(rt.lastCenter, { lat: c.lat, lon: c.lng }) > 2) rt.hereBtn.hidden = false;
       });
       fit();
+      try { rt.progUntil = Date.now() + 1200; map.fitBounds(MAP_UZ.bounds, { padding: [10, 10], animate: false }); } catch (e) {}
       mapBadge('');
       mapFetch({ refit: false });
       mapLocate(true);
