@@ -6390,7 +6390,7 @@
   // ================= MARKET =================
   // Market bo'limi: Ehtiyot qismlar (faol), Eski texnika va B/U texnika (tez orada).
   // Ma'lumotlar jonli API'dan (/api/public/market/*) olinadi — admin_panel.py orqali kiritiladi.
-  state.mk = { overview:null, ovAt:0, parts:{}, partsAt:{}, q:{}, holat:{}, stock:{}, scroll:{} };
+  state.mk = { overview:null, ovAt:0, parts:{}, partsAt:{}, q:{}, holat:{}, stock:{}, scroll:{}, secs:{}, sec:{} };
   var MK_TTL = 60000;
   var MK_CART_KEY = 'cynet_mk_cart', MK_PROFILE_KEY = 'cynet_mk_profile', MK_PENDING_KEY = 'cynet_mk_pending';
   function mkStoreGet(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }
@@ -6582,7 +6582,7 @@
     if (fresh) { cb(m.parts[cat], null); return; }
     if (!API_BASE) { cb(null, 'NO_API'); return; }
     apiGet('/api/public/market/parts?cat=' + encodeURIComponent(cat) + (getInitData() ? '&init_data=' + encodeURIComponent(getInitData()) : '')).then(function(d){
-      if (d && d.ok) { m.parts[cat] = d.items || []; m.partsAt[cat] = Date.now(); cb(m.parts[cat], null); }
+      if (d && d.ok) { m.parts[cat] = d.items || []; m.secs[cat] = d.sections || []; m.partsAt[cat] = Date.now(); cb(m.parts[cat], null); }
       else cb(m.parts[cat] || null, 'ERR');
     }).catch(function(){ cb(m.parts[cat] || null, 'ERR'); });
   }
@@ -6697,6 +6697,7 @@
           '<span class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></span>' +
           '<input id="mkQ" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + esc(L("Nomi, model yoki qism raqami...","Название, модель или номер детали...")) + '">' +
           '<button class="mk-clear" id="mkClear" aria-label="clear">✕</button></div>' +
+          '<div class="mk-chips mk-secs" id="mkSecs" style="display:none"></div>' +
           '<div class="mk-chips" id="mkChips">' + chips.map(function(ch){ return '<button class="mk-chip" data-h="' + ch[0] + '">' + ch[1] + '</button>'; }).join('') + '</div></div>' +
         (cat === 'printer' ? '<button class="adj-main" id="mkOpenChipReset"><span class="tag">' + L('YANGI','НОВОЕ') + '</span><span class="ico">🔄</span><span class="tx"><b>Chip reset</b><span>' + L("Printer «Service required» yoki ink pad to'lgan deb to'xtab qolsa — tiklash dasturi. To'lovdan so'ng darhol chatga yuboriladi","Принтер остановился с ошибкой «Service required» или памперс переполнен — программа сброса. После оплаты сразу приходит в чат") + '</span></span><span class="go">→</span></button>' : '') +
         '<div class="mk-head"><div class="tt"><span>' + c.icon + '</span>' + esc(pick(c,'name')) + '</div><div class="cn" id="mkCnt"></div></div>' +
@@ -6713,8 +6714,37 @@
 
     function setChips(){
       var cur = m.stock[cat] ? 'stock' : (m.holat[cat] || 'all');
-      mainView.querySelectorAll('.mk-chip').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-h') === cur); });
+      mainView.querySelectorAll('#mkChips .mk-chip').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-h') === cur); });
       clearBtn.classList.toggle('show', !!input.value);
+    }
+
+    // Bo'limlar: texnika ichidagi turkumlar (admin panel → Market → Bo'limlar). Bo'lim yo'q bo'lsa qator ko'rinmaydi.
+    function drawSecs(){
+      var box = document.getElementById('mkSecs'); if (!box) return;
+      var secs = m.secs[cat] || [], items = m.parts[cat] || [];
+      if (!secs.length) { box.style.display = 'none'; box.innerHTML = ''; m.sec[cat] = 0; return; }
+      var known = {}; secs.forEach(function(sc){ known[sc.id] = 1; });
+      var rest = items.filter(function(p){ return !p.section_id || !known[p.section_id]; }).length;
+      var cur = m.sec[cat] || 0;
+      if (cur > 0 && !known[cur]) cur = m.sec[cat] = 0;
+      if (cur === -1 && !rest) cur = m.sec[cat] = 0;
+      var h = '<button class="mk-chip sec' + (cur === 0 ? ' on' : '') + '" data-s="0">📂 ' + L('Barchasi','Все') + ' <small>' + items.length + '</small></button>';
+      secs.forEach(function(sc){
+        h += '<button class="mk-chip sec' + (cur === sc.id ? ' on' : '') + '" data-s="' + sc.id + '">' + esc(pick(sc,'nomi')) + ' <small>' + sc.count + '</small></button>';
+      });
+      if (rest) h += '<button class="mk-chip sec' + (cur === -1 ? ' on' : '') + '" data-s="-1">' + L('Boshqa','Прочее') + ' <small>' + rest + '</small></button>';
+      var sl = box.scrollLeft;
+      box.innerHTML = h; box.style.display = ''; box.scrollLeft = sl;
+      var onEl = box.querySelector('.on');   // tanlangan chip ko'rinmay qolmasin
+      if (onEl && (onEl.offsetLeft < box.scrollLeft || onEl.offsetLeft + onEl.offsetWidth > box.scrollLeft + box.clientWidth)) box.scrollLeft = Math.max(0, onEl.offsetLeft - 16);
+      box.querySelectorAll('[data-s]').forEach(function(b){
+        b.addEventListener('click', function(){
+          haptic('select');
+          m.sec[cat] = parseInt(b.getAttribute('data-s'), 10) || 0;
+          if (b.getAttribute('data-s') === '-1') m.sec[cat] = -1;
+          drawSecs(); paint();
+        });
+      });
     }
 
     function paint(){
@@ -6726,16 +6756,20 @@
         }
         return;
       }
+      drawSecs();
       var tokens = mkNorm(input.value).split(/\s+/).filter(Boolean);
-      var hol = m.holat[cat] || 'all', st = !!m.stock[cat];
+      var hol = m.holat[cat] || 'all', st = !!m.stock[cat], sec = m.sec[cat] || 0;
+      var knownSec = {}; (m.secs[cat] || []).forEach(function(sc){ knownSec[sc.id] = 1; });
       var res = items.filter(function(p){
+        if (sec > 0 && p.section_id !== sec) return false;
+        if (sec === -1 && p.section_id && knownSec[p.section_id]) return false;
         if (hol !== 'all' && p.holat !== hol) return false;
         if (st && !(p.qoldiq > 0)) return false;
         return tokens.length ? mkMatch(p, tokens) : true;
       });
       var re = tokens.length ? new RegExp('(' + tokens.map(mkReEsc).join('|') + ')', 'gi') : null;
 
-      var label = res.length + ' ' + (tokens.length || hol !== 'all' || st ? L('ta natija','рез.') : L('ta qism','дет.'));
+      var label = res.length + ' ' + (tokens.length || hol !== 'all' || st || sec ? L('ta natija','рез.') : L('ta qism','дет.'));
       if (cntEl.textContent !== label) { cntEl.textContent = label; cntEl.classList.remove('pop'); void cntEl.offsetWidth; cntEl.classList.add('pop'); }
 
       if (!items.length) {
@@ -6748,7 +6782,7 @@
         listEl.innerHTML = '<div class="mk-empty"><span class="big">🔍</span><b>' + t().notFound + '</b>' +
           L("Model yoki qism raqamining bir qismini yozib ko'ring.","Попробуйте часть модели или номера детали.") + '<br><span class="act" id="mkReset">' + L('Tozalash','Сбросить') + '</span></div>';
         var rs = document.getElementById('mkReset');
-        if (rs) rs.addEventListener('click', function(){ input.value = ''; m.q[cat] = ''; m.holat[cat] = 'all'; m.stock[cat] = false; setChips(); paint(); });
+        if (rs) rs.addEventListener('click', function(){ input.value = ''; m.q[cat] = ''; m.holat[cat] = 'all'; m.stock[cat] = false; m.sec[cat] = 0; setChips(); paint(); });
         return;
       }
       listEl.className = 'mk-list' + (firstPaint ? ' fx' : '');
@@ -6806,7 +6840,7 @@
     input.addEventListener('input', function(){ m.q[cat] = input.value; setChips(); paint(); });
     input.addEventListener('keydown', function(e){ if (e.key === 'Enter') input.blur(); });
     clearBtn.addEventListener('click', function(){ haptic('tap'); input.value = ''; m.q[cat] = ''; setChips(); paint(); input.focus(); });
-    mainView.querySelectorAll('.mk-chip').forEach(function(b){
+    mainView.querySelectorAll('#mkChips .mk-chip').forEach(function(b){
       b.addEventListener('click', function(){
         haptic('select');
         var h = b.getAttribute('data-h');
