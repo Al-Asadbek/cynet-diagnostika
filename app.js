@@ -334,13 +334,13 @@
         "Televizor, konditsioner, xolodilnik, kir yuvish mashinasi, printer, kompyuter va noutbuk hamda boshqa uy texnikalari.\n" +
         "\n" +
         "📋 Qanday foydalaniladi?\n" +
-        "1️⃣ «Buyurtma qilish» ni bosing va nosozlik haqida yozing\n" +
+        "1️⃣ «Ustaxona» bo'limidan «Buyurtma qilish» ni bosing va nosozlik haqida yozing\n" +
         "2️⃣ Hududingizdagi ustalar buyurtmani oladi\n" +
         "3️⃣ Usta siz bilan bog'lanib, uyingizga keladi\n" +
         "4️⃣ Ish tugagach, ustani baholang\n" +
         "\n" +
         "🛠 Usta bo'lsangiz\n" +
-        "«Anketani to'ldirish» orqali ro'yxatdan o'ting. Anketa admin tomonidan ko'rib chiqiladi, tasdiqlangach buyurtmalar sizga keladi va o'z profilingizni boshqarasiz.\n" +
+        "«Profil» bo'limidagi «Anketani to'ldirish» orqali ro'yxatdan o'ting. Anketa admin tomonidan ko'rib chiqiladi, tasdiqlangach buyurtmalar sizga keladi va o'z profilingizni boshqarasiz.\n" +
         "\n" +
         "⚡ Afzalliklarimiz:\n" +
         "• Tez va qulay — hammasi Telegram ichida\n" +
@@ -610,13 +610,13 @@
         "Телевизоры, кондиционеры, холодильники, стиральные машины, принтеры, компьютеры и ноутбуки, а также другая бытовая техника.\n" +
         "\n" +
         "📋 Как пользоваться?\n" +
-        "1️⃣ Нажмите «Оставить заявку» и опишите неисправность\n" +
+        "1️⃣ В разделе «Мастерская» нажмите «Оставить заявку» и опишите неисправность\n" +
         "2️⃣ Мастера вашего региона получают заявку\n" +
         "3️⃣ Мастер связывается с вами и приезжает на дом\n" +
         "4️⃣ После работы оцените мастера\n" +
         "\n" +
         "🛠 Если вы мастер\n" +
-        "Зарегистрируйтесь через «Заполнить анкету». Анкета рассматривается администратором, после одобрения заявки начнут поступать вам, а профилем вы управляете сами.\n" +
+        "Зарегистрируйтесь через «Заполнить анкету» в разделе «Профиль». Анкета рассматривается администратором, после одобрения заявки начнут поступать вам, а профилем вы управляете сами.\n" +
         "\n" +
         "⚡ Наши преимущества:\n" +
         "• Быстро и удобно — всё внутри Telegram\n" +
@@ -1106,6 +1106,9 @@
   function crumbLabel(entry){
     if (entry.view === 'oferta') return t().ofertaTitle;
     if (entry.view === 'mainMenu') return t().home;
+    if (entry.view === 'hubUstaxona') return L('Ustaxona','Мастерская');
+    if (entry.view === 'hubProfil') return L('Profil','Профиль');
+    if (entry.view === 'hubUskuna') return L('Uskunalarim','Моя техника');
     if (entry.view === 'home') return t().menuTechs;
     if (entry.view === 'category') {
       var c = catById(entry.catId);
@@ -5653,6 +5656,66 @@
     if (!fvDone()) fvStartCamera();
   }
 
+  // ---------- Birlashtirilgan bo'limlar (hub) ----------
+  // Asosiy menyuni soddalashtirish uchun 9 ta alohida plitka 3 ta bo'limga jamlandi:
+  //   Ustaxona  = Ustaxona topish + Xarita + Buyurtma qilish
+  //   Profil    = Mening profilim + Anketani to'ldirish
+  //   Uskunalarim = Mening uskunalarim + Narx kalkulyatori + Sotib olish maslahatchisi + Qo'llanma
+  function hubClean(s){ return s.replace(/^\S+\s?/, ''); }
+  function hubDef(id){
+    if (id === 'hubUstaxona') return {
+      title: L('Ustaxona','Мастерская'),
+      sub: L('Ustaxona topish, xarita va buyurtma — bir joyda','Поиск мастерской, карта и заказ — в одном месте'),
+      items: [
+        { pal:'g-night', wide:true, icon:'🔍', title:hubClean(t().menuTopish), sub:t().menuTopishSub, cta:'🔎 ' + L('Qidirish','Искать') + ' ›',
+          brand:L('Ustaxona','Мастерская'), action:function(el){ pzOpen('find', el, function(){ push({ view:'topishViloyat' }); }); } },
+        { pal:'g-teal', icon:'🗺️', title:L('Xarita','Карта'), sub:L('Yaqin atrofdagi ustalar','Мастера рядом'),
+          brand:L('Xarita','Карта'), action:function(el){ pzOpen('map', el, function(){ push({ view:'map' }); }); } },
+        { pal:'g-pink', icon:'📋', title:hubClean(t().menuOrder), sub:t().menuOrderSub,
+          brand:L('Buyurtma','Заказ'), action:function(el){ pzOpen('order', el, function(){ push({ view:'orderGate' }); }); } }
+      ]
+    };
+    if (id === 'hubProfil') return {
+      title: L('Profil','Профиль'),
+      sub: L('Mening profilim va usta bo\'lish anketasi','Мой профиль и анкета мастера'),
+      items: [
+        { pal:'g-sky', icon:'👤', title:hubClean(t().menuProfile), sub:t().menuProfileSub,
+          brand:L('Profil','Профиль'), action:function(el){ pzOpen('prof', el, function(){ push({ view:'profileGate' }); }); } },
+        { pal:'g-lime', icon:'📝', title:hubClean(t().menuAnketa), sub:t().menuAnketaSub,
+          brand:L('Usta bo\'l','Стать мастером'), action:function(el){ pzOpen('anketa', el, function(){ push({ view:'anketaGate' }); }); } }
+      ]
+    };
+    if (id === 'hubUskuna') return {
+      title: L('Uskunalarim','Моя техника'),
+      sub: L('Uskunalar, narx kalkulyatori, maslahatchi va qo\'llanma','Техника, калькулятор цен, советчик и руководство'),
+      items: [
+        { pal:'g-lime', wide:true, icon:'🏠', title:L('Mening uskunalarim','Моя техника'), sub:L('Kafolat, ta\'mirlash tarixi va eslatmalar','Гарантия, история ремонта и напоминания'),
+          cta:'🏠 ' + L('Uskunalarimni ochish','Открыть мою технику') + ' ›', brand:L('Uy pasporti','Паспорт дома'),
+          action:function(el){ state.dv.items = null; push({ view:'devices' }); } },
+        { pal:'g-fire', icon:'💰', title:L('Narx kalkulyatori','Калькулятор цен'), sub:L('Ta\'mirlash narxini oldindan biling','Узнайте цену ремонта заранее'), brand:L('Narxlar','Цены'),
+          action:function(el){ state.calc.tur = ''; state.calc.sel = {}; push({ view:'calc' }); } },
+        { pal:'g-sky', icon:'🧭', title:L('Sotib olish maslahatchisi','Советчик по покупке'), sub:L('Qaysi texnika sizga mos?','Какая техника вам подойдёт?'), brand:L('Maslahat','Совет'),
+          action:function(el){ state.adv.tur = ''; state.adv.step = 0; state.adv.ans = {}; push({ view:'advisor' }); } },
+        { pal:'g-gold', wide:true, icon:'📖', title:L("Qo'llanma",'Руководство'), sub:L("Yangi texnikani o'rnatish, ishga tushirish va foydalanish — rasm va video bilan","Установка, запуск и использование новой техники — с фото и видео"),
+          cta:'📖 ' + L("Qo'llanmani ochish","Открыть руководство") + ' ›', brand:L("Qo'llanma","Руководство"),
+          action:function(el){ state.guideQuery = ''; push({ view:'guide' }); } }
+      ]
+    };
+    return null;
+  }
+
+  function renderHub(entry){
+    var d = hubDef(entry.view);
+    if (!d) { resetHome(); return; }
+    var items = d.items;
+    mainView.innerHTML =
+      '<div class="view"><div class="hello"><h1>' + d.title + '</h1><p>' + d.sub + '</p></div>' +
+      '<div class="tiles">' + items.map(tileHTML).join('') + '</div></div>';
+    mainView.querySelectorAll('[data-ti]').forEach(function(btn){
+      btn.addEventListener('click', function(){ haptic('select'); items[parseInt(btn.getAttribute('data-ti'), 10)].action(btn); });
+    });
+  }
+
   function renderMainMenu(){
     var cl = function(s){ return s.replace(/^\S+\s?/, ''); };
     var items = [
@@ -5660,23 +5723,14 @@
         count:t().itemsCount(totalIssues()), brand:L('Texnika','Техника'), action:function(el){ pzOpen('tech', el, function(){ push({ view:'home' }); }); } },
       { pal:'g-market', wide:true, icon:'🛒', title:'Market', sub:L('Ehtiyot qismlar, eski va B/U texnika','Запчасти, старая и Б/У техника'), badge:'🔥 ' + L('YANGI','НОВОЕ'),
         cta:'🛒 ' + L('Marketga kirish','В маркет') + ' ›', brand:'Market', action:function(el){ mkOpenPortal(el); } },
-      { pal:'g-night', wide:true, icon:'🔍', title:cl(t().menuTopish), sub:t().menuTopishSub, cta:'🔎 ' + L('Qidirish','Искать') + ' ›',
-        brand:L('Ustaxona','Мастерская'), action:function(el){ pzOpen('find', el, function(){ push({ view:'topishViloyat' }); }); } },
-      { pal:'g-teal', wide:true, icon:'🗺️', title:L('Xarita','Карта'), sub:L('Yaqin atrofdagi ustalarni xaritada toping','Найдите мастеров рядом на карте'),
-        cta:'🗺 ' + L('Xaritani ochish','Открыть карту') + ' ›', brand:L('Xarita','Карта'), action:function(el){ pzOpen('map', el, function(){ push({ view:'map' }); }); } },
-      { pal:'g-sky', icon:'👤', title:cl(t().menuProfile), sub:t().menuProfileSub, brand:L('Profil','Профиль'), action:function(el){ pzOpen('prof', el, function(){ push({ view:'profileGate' }); }); } },
-      { pal:'g-pink', icon:'📋', title:cl(t().menuOrder), sub:t().menuOrderSub, brand:L('Buyurtma','Заказ'), action:function(el){ pzOpen('order', el, function(){ push({ view:'orderGate' }); }); } },
-      { pal:'g-fire', icon:'💰', title:L('Narx kalkulyatori','Калькулятор цен'), sub:L('Ta\'mirlash narxini oldindan biling','Узнайте цену ремонта заранее'), brand:L('Narxlar','Цены'),
-        action:function(el){ state.calc.tur = ''; state.calc.sel = {}; push({ view:'calc' }); } },
-      { pal:'g-sky', icon:'🧭', title:L('Sotib olish maslahatchisi','Советчик по покупке'), sub:L('Qaysi texnika sizga mos?','Какая техника вам подойдёт?'), brand:L('Maslahat','Совет'),
-        action:function(el){ state.adv.tur = ''; state.adv.step = 0; state.adv.ans = {}; push({ view:'advisor' }); } },
-      { pal:'g-lime', wide:true, icon:'🏠', title:L('Mening uskunalarim','Моя техника'), sub:L('Kafolat, ta\'mirlash tarixi va eslatmalar','Гарантия, история ремонта и напоминания'), badge:'✨ ' + L('YANGI','НОВОЕ'),
-        cta:'🏠 ' + L('Uskunalarimni ochish','Открыть мою технику') + ' ›', brand:L('Uy pasporti','Паспорт дома'), action:function(el){ state.dv.items = null; push({ view:'devices' }); } },
-      { pal:'g-lime', icon:'📝', title:cl(t().menuAnketa), sub:t().menuAnketaSub, brand:L('Usta bo\'l','Стать мастером'), action:function(el){ pzOpen('anketa', el, function(){ push({ view:'anketaGate' }); }); } },
+      { pal:'g-night', wide:true, icon:'🔍', title:L('Ustaxona','Мастерская'), sub:L('Ustaxona topish, xarita va buyurtma','Поиск мастерской, карта и заказ'),
+        cta:'🔎 ' + L('Ochish','Открыть') + ' ›', brand:L('Ustaxona','Мастерская'), action:function(el){ push({ view:'hubUstaxona' }); } },
+      { pal:'g-sky', icon:'👤', title:L('Profil','Профиль'), sub:L('Profil va usta anketasi','Профиль и анкета мастера'), brand:L('Profil','Профиль'),
+        action:function(el){ push({ view:'hubProfil' }); } },
+      { pal:'g-lime', icon:'🏠', title:L('Uskunalarim','Моя техника'), sub:L('Narx, maslahat va qo\'llanma','Цены, советы и руководство'), brand:L('Uy pasporti','Паспорт дома'),
+        action:function(el){ push({ view:'hubUskuna' }); } },
       { pal:'g-fire', icon:'🏆', title:cl(t().menuAbout), sub:t().menuAboutSub, brand:L('Biz','Мы'), action:function(el){ pzOpen('about', el, function(){ push({ view:'about' }); }); } },
-      { pal:'g-violet', wide:true, icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, cta:'+998 50 071 5242', brand:L('Aloqa','Связь'), action:function(el){ pzOpen('call', el, function(){ push({ view:'contact' }); }); } },
-      { pal:'g-gold', wide:true, icon:'📖', title:L("Qo'llanma",'Руководство'), sub:L("Yangi texnikani o'rnatish, ishga tushirish va foydalanish — rasm va video bilan","Установка, запуск и использование новой техники — с фото и видео"), badge:'✨ ' + L('YANGI','НОВОЕ'),
-        cta:'📖 ' + L("Qo'llanmani ochish","Открыть руководство") + ' ›', brand:L("Qo'llanma","Руководство"), action:function(el){ state.guideQuery = ''; push({ view:'guide' }); } },
+      { pal:'g-violet', icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, brand:L('Aloqa','Связь'), action:function(el){ pzOpen('call', el, function(){ push({ view:'contact' }); }); } },
       { pal:'g-night', wide:true, icon:'💬', title:L("Taklif va e'tirozlar","Предложения и претензии"), sub:L("Fikringiz yoki shikoyatingizni bevosita adminga yuboring","Отправьте идею или жалобу напрямую администратору"),
         cta:'💬 ' + L("Yozish","Написать") + ' ›', brand:L("Fikr-mulohaza","Обратная связь"), action:function(el){ state.fb = { type:'taklif', text:'', sent:false }; push({ view:'feedback' }); } }
     ];
@@ -8981,6 +9035,7 @@
 
     if (entry.view === 'oferta') renderOferta();
     else if (entry.view === 'mainMenu') renderMainMenu();
+    else if (entry.view === 'hubUstaxona' || entry.view === 'hubProfil' || entry.view === 'hubUskuna') renderHub(entry);
     else if (entry.view === 'home') renderHome();
     else if (entry.view === 'category') renderCategory(entry);
     else if (entry.view === 'printerType') renderPrinterType(entry);
