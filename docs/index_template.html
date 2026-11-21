@@ -1210,6 +1210,21 @@ body.in-market #mkBg{ opacity:1; }
 .mk-chip.sec small{ font-size:10.5px; font-weight:800; opacity:.75; padding:1px 6px; border-radius:999px; background:rgba(255,255,255,.1); }
 .mk-chip.sec.on{ color:#02140f; background:linear-gradient(135deg,var(--mk-em),#7df5cf); border-color:transparent; }
 .mk-chip.sec.on small{ background:rgba(2,20,15,.18); opacity:1; }
+.mk-models{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+.mk-models #mkModelRows{ display:flex; flex-direction:column; gap:10px; }
+.mk-modelq{ width:100%; box-sizing:border-box; padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:inherit; font:inherit; font-size:14px; outline:none; }
+.mk-model{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:15px 16px; border-radius:16px; color:inherit; font:inherit; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); transition:.18s; animation:mk-slide-in .4s both; }
+.mk-model:active{ transform:scale(.98); }
+.mk-model.all{ background:rgba(25,230,160,.09); border-color:rgba(25,230,160,.35); }
+.mk-model .nm{ flex:1; font-weight:700; font-size:15px; line-height:1.25; }
+.mk-model .ct{ font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; color:var(--mk-em); border:1px solid var(--mk-line); }
+.mk-model .go{ opacity:.55; font-size:20px; line-height:1; }
+.mk-modelbar{ display:flex; align-items:center; gap:10px; width:100%; margin:10px 0 2px; padding:10px 14px; border-radius:14px; color:inherit; font:inherit; text-align:left; background:rgba(25,230,160,.08); border:1px solid rgba(25,230,160,.3); }
+.mk-modelbar .ic{ font-size:18px; }
+.mk-modelbar .tx{ flex:1; display:flex; flex-direction:column; line-height:1.2; min-width:0; }
+.mk-modelbar .tx small{ font-size:10.5px; opacity:.65; letter-spacing:.04em; text-transform:uppercase; }
+.mk-modelbar .tx b{ font-size:14.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mk-modelbar .ch{ font-size:12px; font-weight:700; color:var(--mk-em); white-space:nowrap; }
 .mk-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 2px 12px; }
 .mk-head .tt{ font-family:var(--f-big); font-weight:800; font-size:19px; display:flex; align-items:center; gap:8px; }
 .mk-head .cn{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; color:var(--mk-em); border:1px solid var(--mk-line); padding:4px 9px; border-radius:999px; }
@@ -1611,6 +1626,6 @@ body.mk-has-cart .mk-view{ padding-bottom:84px; }
 
 <script id="APP_DATA" type="application/json">__DATA_PLACEHOLDER__</script>
 <script id="API_BASE" type="application/json">"__API_BASE_URL__"</script>
-<script src="app.js?v=20261120sec1"></script>
+<script src="app.js?v=20261120mod1"></script>
 </body>
 </html>
