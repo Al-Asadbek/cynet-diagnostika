@@ -6390,7 +6390,7 @@
   // ================= MARKET =================
   // Market bo'limi: Ehtiyot qismlar (faol), Eski texnika va B/U texnika (tez orada).
   // Ma'lumotlar jonli API'dan (/api/public/market/*) olinadi — admin_panel.py orqali kiritiladi.
-  state.mk = { overview:null, ovAt:0, parts:{}, partsAt:{}, q:{}, holat:{}, stock:{}, scroll:{}, secs:{}, sec:{} };
+  state.mk = { overview:null, ovAt:0, parts:{}, partsAt:{}, q:{}, holat:{}, stock:{}, scroll:{}, secs:{}, sec:{}, models:{}, model:{} };
   var MK_TTL = 60000;
   var MK_CART_KEY = 'cynet_mk_cart', MK_PROFILE_KEY = 'cynet_mk_profile', MK_PENDING_KEY = 'cynet_mk_pending';
   function mkStoreGet(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ return null; } }
@@ -6582,7 +6582,7 @@
     if (fresh) { cb(m.parts[cat], null); return; }
     if (!API_BASE) { cb(null, 'NO_API'); return; }
     apiGet('/api/public/market/parts?cat=' + encodeURIComponent(cat) + (getInitData() ? '&init_data=' + encodeURIComponent(getInitData()) : '')).then(function(d){
-      if (d && d.ok) { m.parts[cat] = d.items || []; m.secs[cat] = d.sections || []; m.partsAt[cat] = Date.now(); cb(m.parts[cat], null); }
+      if (d && d.ok) { m.parts[cat] = d.items || []; m.secs[cat] = d.sections || []; m.models[cat] = d.models || []; m.partsAt[cat] = Date.now(); cb(m.parts[cat], null); }
       else cb(m.parts[cat] || null, 'ERR');
     }).catch(function(){ cb(m.parts[cat] || null, 'ERR'); });
   }
@@ -6643,7 +6643,7 @@
           '<span class="ct">' + (o.c.id === 'printer' ? (o.n ? o.n + ' ' + L('ta qism','дет.') + ' · ' : '') + '🔄 Chip reset' : (o.n ? o.n + ' ' + L('ta qism','дет.') : L('Tez orada','Скоро'))) + '</span></button>';
       }).join('');
       grid.querySelectorAll('[data-cat]').forEach(function(b){
-        b.addEventListener('click', function(){ haptic('select'); push({ view:'marketParts', cat:b.getAttribute('data-cat') }); });
+        b.addEventListener('click', function(){ haptic('select'); var cc = b.getAttribute('data-cat'); delete state.mk.model[cc]; state.mk.sec[cc] = 0; push({ view:'marketParts', cat:cc }); });
       });
     }
     draw();
@@ -6659,6 +6659,10 @@
   }
 
   // ---------- Ehtiyot qismlar ro'yxati (yuqorida qidiruv) ----------
+  function mkChipResetBanner(){
+    return '<button class="adj-main" id="mkOpenChipReset"><span class="tag">' + L('YANGI','НОВОЕ') + '</span><span class="ico">🔄</span><span class="tx"><b>Chip reset</b><span>' + L("Printer «Service required» yoki ink pad to'lgan deb to'xtab qolsa — tiklash dasturi. To'lovdan so'ng darhol chatga yuboriladi","Принтер остановился с ошибкой «Service required» или памперс переполнен — программа сброса. После оплаты сразу приходит в чат") + '</span></span><span class="go">→</span></button>';
+  }
+
   function mkNorm(s){ return String(s || '').toLowerCase().replace(/[ʻʼ’‘`´']/g, ''); }
   function mkCompact(s){ return mkNorm(s).replace(/[\s\-_\/.,()]+/g, ''); }
   function mkHay(p){
@@ -6689,6 +6693,7 @@
     var cat = entry.cat, c = catById(cat);
     if (!c) { state.stack.pop(); render(); return; }
     var m = state.mk;
+    if (m.model[cat] === undefined) { renderMarketModelPick(entry); return; }   // 1-qadam: texnika modeli
     var q0 = m.q[cat] || '';
     var chips = [['all', L('Barchasi','Все')], ['yangi', L('Yangi','Новые')], ['bu', 'B/U'], ['demontaj', L('Demontaj','Демонтаж')], ['stock', L('Mavjud','В наличии')]];
     mainView.innerHTML =
@@ -6699,7 +6704,8 @@
           '<button class="mk-clear" id="mkClear" aria-label="clear">✕</button></div>' +
           '<div class="mk-chips mk-secs" id="mkSecs" style="display:none"></div>' +
           '<div class="mk-chips" id="mkChips">' + chips.map(function(ch){ return '<button class="mk-chip" data-h="' + ch[0] + '">' + ch[1] + '</button>'; }).join('') + '</div></div>' +
-        (cat === 'printer' ? '<button class="adj-main" id="mkOpenChipReset"><span class="tag">' + L('YANGI','НОВОЕ') + '</span><span class="ico">🔄</span><span class="tx"><b>Chip reset</b><span>' + L("Printer «Service required» yoki ink pad to'lgan deb to'xtab qolsa — tiklash dasturi. To'lovdan so'ng darhol chatga yuboriladi","Принтер остановился с ошибкой «Service required» или памперс переполнен — программа сброса. После оплаты сразу приходит в чат") + '</span></span><span class="go">→</span></button>' : '') +
+        (cat === 'printer' ? mkChipResetBanner() : '') +
+        '<button class="mk-modelbar" id="mkModelBar" style="display:none"></button>' +
         '<div class="mk-head"><div class="tt"><span>' + c.icon + '</span>' + esc(pick(c,'name')) + '</div><div class="cn" id="mkCnt"></div></div>' +
         '<div class="mk-list fx" id="mkList"><div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div></div>' +
       '</div>';
@@ -6721,7 +6727,10 @@
     // Bo'limlar: texnika ichidagi turkumlar (admin panel → Market → Bo'limlar). Bo'lim yo'q bo'lsa qator ko'rinmaydi.
     function drawSecs(){
       var box = document.getElementById('mkSecs'); if (!box) return;
-      var secs = m.secs[cat] || [], items = m.parts[cat] || [];
+      var mod = m.model[cat] || 0;
+      var items = (m.parts[cat] || []).filter(function(p){ return !(mod > 0 && p.model_id && p.model_id !== mod); });   // tanlangan model (+ umumiy qismlar)
+      var cnt = {}; items.forEach(function(p){ if (p.section_id) cnt[p.section_id] = (cnt[p.section_id] || 0) + 1; });
+      var secs = (m.secs[cat] || []).filter(function(sc){ return cnt[sc.id] > 0; }).map(function(sc){ return { id:sc.id, nomi:sc.nomi, nomi_ru:sc.nomi_ru, count:cnt[sc.id] }; });
       if (!secs.length) { box.style.display = 'none'; box.innerHTML = ''; m.sec[cat] = 0; return; }
       var known = {}; secs.forEach(function(sc){ known[sc.id] = 1; });
       var rest = items.filter(function(p){ return !p.section_id || !known[p.section_id]; }).length;
@@ -6760,7 +6769,9 @@
       var tokens = mkNorm(input.value).split(/\s+/).filter(Boolean);
       var hol = m.holat[cat] || 'all', st = !!m.stock[cat], sec = m.sec[cat] || 0;
       var knownSec = {}; (m.secs[cat] || []).forEach(function(sc){ knownSec[sc.id] = 1; });
+      var mod = m.model[cat] || 0;
       var res = items.filter(function(p){
+        if (mod > 0 && p.model_id && p.model_id !== mod) return false;
         if (sec > 0 && p.section_id !== sec) return false;
         if (sec === -1 && p.section_id && knownSec[p.section_id]) return false;
         if (hol !== 'all' && p.holat !== hol) return false;
@@ -6769,7 +6780,7 @@
       });
       var re = tokens.length ? new RegExp('(' + tokens.map(mkReEsc).join('|') + ')', 'gi') : null;
 
-      var label = res.length + ' ' + (tokens.length || hol !== 'all' || st || sec ? L('ta natija','рез.') : L('ta qism','дет.'));
+      var label = res.length + ' ' + (tokens.length || hol !== 'all' || st || sec || mod ? L('ta natija','рез.') : L('ta qism','дет.'));
       if (cntEl.textContent !== label) { cntEl.textContent = label; cntEl.classList.remove('pop'); void cntEl.offsetWidth; cntEl.classList.add('pop'); }
 
       if (!items.length) {
@@ -6849,9 +6860,69 @@
         setChips(); paint();
       });
     });
+    // Tanlangan model paneli (bosilsa — modelni almashtirish)
+    var mbar = document.getElementById('mkModelBar');
+    function drawModelBar(){
+      var models = m.models[cat] || [];
+      if (!mbar || !models.length) { if (mbar) mbar.style.display = 'none'; return; }
+      var mo = models.find(function(x){ return x.id === m.model[cat]; });
+      mbar.innerHTML = '<span class="ic">🔧</span><span class="tx"><small>' + L('Texnika modeli','Модель техники') + '</small><b>' + (mo ? esc(pick(mo,'nomi')) : L('Barcha modellar','Все модели')) + '</b></span><span class="ch">' + L("O'zgartirish","Изменить") + ' ›</span>';
+      mbar.style.display = '';
+    }
+    if (mbar) mbar.addEventListener('click', function(){ haptic('select'); delete m.model[cat]; m.sec[cat] = 0; renderMarketParts(entry); window.scrollTo(0, 0); });
+    drawModelBar();
     setChips();
     if (m.parts[cat]) paint();
     load(false);
+  }
+
+  // ---------- 1-qadam: texnika modelini tanlash (Texnika → Model → Bo'lim → Qismlar) ----------
+  function renderMarketModelPick(entry){
+    var cat = entry.cat, c = catById(cat), m = state.mk;
+    mainView.innerHTML = '<div class="view mk-view">' +
+      '<div class="mk-title"><span>' + c.icon + '</span> ' + esc(pick(c,'name')) + '</div>' +
+      '<div class="mk-sub">' + L("Texnika modelini tanlang","Выберите модель техники") + '</div>' +
+      (cat === 'printer' ? mkChipResetBanner() : '') +
+      '<div class="mk-models" id="mkModels"><div class="mk-skel"></div><div class="mk-skel"></div><div class="mk-skel"></div></div></div>';
+    var chipBtn = document.getElementById('mkOpenChipReset');
+    if (chipBtn) chipBtn.addEventListener('click', function(){ haptic('select'); push({ view:'marketAdj' }); });
+    function isTop(){ var t = state.stack[state.stack.length-1]; return t.view === 'marketParts' && t.cat === cat; }
+    function choose(id){ m.model[cat] = id; m.sec[cat] = 0; renderMarketParts(entry); window.scrollTo(0, 0); }
+    function draw(items){
+      var box = document.getElementById('mkModels'); if (!box) return;
+      var models = (m.models[cat] || []);
+      var uni = items.filter(function(p){ return !p.model_id; }).length;
+      var rows = models.map(function(mo){
+        return { mo:mo, n: items.filter(function(p){ return p.model_id === mo.id; }).length + uni };
+      }).filter(function(r){ return r.n > 0; });
+      if (!rows.length) { m.model[cat] = 0; renderMarketParts(entry); return; }   // model yo'q — to'g'ridan-to'g'ri qismlar
+      var h = '<input id="mkModelQ" class="mk-modelq" type="search" autocomplete="off" placeholder="' + esc(L("Model nomini qidiring...","Поиск модели...")) + '" style="' + (rows.length > 7 ? '' : 'display:none') + '">' +
+        '<button class="mk-model all" data-mid="0"><span class="nm">' + L('Barcha modellar','Все модели') + '</span><span class="ct">' + items.length + '</span><span class="go">›</span></button>' +
+        '<div id="mkModelRows">' + rows.map(function(r){
+          return '<button class="mk-model" data-mid="' + r.mo.id + '" data-n="' + esc(mkNorm(r.mo.nomi + ' ' + (r.mo.nomi_ru || ''))) + '"><span class="nm">' + esc(pick(r.mo,'nomi')) + '</span><span class="ct">' + r.n + '</span><span class="go">›</span></button>';
+        }).join('') + '</div>';
+      box.innerHTML = h;
+      box.querySelectorAll('[data-mid]').forEach(function(b){
+        b.addEventListener('click', function(){ haptic('select'); choose(parseInt(b.getAttribute('data-mid'), 10) || 0); });
+      });
+      var q = document.getElementById('mkModelQ');
+      if (q) q.addEventListener('input', function(){
+        var t = mkNorm(q.value).trim();
+        box.querySelectorAll('#mkModelRows [data-mid]').forEach(function(b){ b.style.display = (!t || b.getAttribute('data-n').indexOf(t) >= 0) ? '' : 'none'; });
+      });
+    }
+    mkLoadParts(cat, function(items, err){
+      if (!isTop()) return;
+      if (!items) {
+        var box = document.getElementById('mkModels');
+        if (box) {
+          box.innerHTML = '<div class="mk-empty"><span class="big">📡</span><b>' + L("Ulanib bo'lmadi","Не удалось подключиться") + '</b>' + L("Internetni tekshirib, qayta urinib ko'ring.","Проверьте интернет и повторите.") + '<br><span class="act" id="mkRetryM">' + L('Qayta urinish','Повторить') + '</span></div>';
+          var rb = document.getElementById('mkRetryM'); if (rb) rb.addEventListener('click', function(){ m.partsAt[cat] = 0; renderMarketModelPick(entry); });
+        }
+        return;
+      }
+      draw(items);
+    });
   }
 
   // ---------- Qism sahifasi ----------
