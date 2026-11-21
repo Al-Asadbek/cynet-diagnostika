@@ -5724,11 +5724,11 @@
       { pal:'g-market', wide:true, icon:'🛒', title:'Market', sub:L('Ehtiyot qismlar, eski va B/U texnika','Запчасти, старая и Б/У техника'), badge:'🔥 ' + L('YANGI','НОВОЕ'),
         cta:'🛒 ' + L('Marketga kirish','В маркет') + ' ›', brand:'Market', action:function(el){ mkOpenPortal(el); } },
       { pal:'g-night', wide:true, icon:'🔍', title:L('Ustaxona','Мастерская'), sub:L('Ustaxona topish, xarita va buyurtma','Поиск мастерской, карта и заказ'),
-        cta:'🔎 ' + L('Ochish','Открыть') + ' ›', brand:L('Ustaxona','Мастерская'), action:function(el){ push({ view:'hubUstaxona' }); } },
+        cta:'🔎 ' + L('Ochish','Открыть') + ' ›', brand:L('Ustaxona','Мастерская'), action:function(el){ pzOpen('hubU', el, function(){ push({ view:'hubUstaxona' }); }); } },
       { pal:'g-sky', icon:'👤', title:L('Profil','Профиль'), sub:L('Profil va usta anketasi','Профиль и анкета мастера'), brand:L('Profil','Профиль'),
-        action:function(el){ push({ view:'hubProfil' }); } },
+        action:function(el){ pzOpen('hubP', el, function(){ push({ view:'hubProfil' }); }); } },
       { pal:'g-lime', icon:'🏠', title:L('Uskunalarim','Моя техника'), sub:L('Narx, maslahat va qo\'llanma','Цены, советы и руководство'), brand:L('Uy pasporti','Паспорт дома'),
-        action:function(el){ push({ view:'hubUskuna' }); } },
+        action:function(el){ pzOpen('hubK', el, function(){ push({ view:'hubUskuna' }); }); } },
       { pal:'g-fire', icon:'🏆', title:cl(t().menuAbout), sub:t().menuAboutSub, brand:L('Biz','Мы'), action:function(el){ pzOpen('about', el, function(){ push({ view:'about' }); }); } },
       { pal:'g-violet', icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, brand:L('Aloqa','Связь'), action:function(el){ pzOpen('call', el, function(){ push({ view:'contact' }); }); } },
       { pal:'g-night', wide:true, icon:'💬', title:L("Taklif va e'tirozlar","Предложения и претензии"), sub:L("Fikringiz yoki shikoyatingizni bevosita adminga yuboring","Отправьте идею или жалобу напрямую администратору"),
@@ -6598,6 +6598,18 @@
       svg:'<path class="dr" pathLength="1" d="M30 26c-8 6-8 18 2 36s24 32 40 40c10 4 20 0 24-10l-14-12-10 6c-8-4-16-12-20-20l6-10-12-14z"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M66 24a30 30 0 0 1 30 30M66 40a14 14 0 0 1 14 14"/>' }
   };
   PZ.about.fx = pzConfetti();
+
+  PZ.hubU = { a:'#3be1ff', b:'#ffb52e', p1:'#0b4a6e', p2:'#040b18', ln:'pz-lb', r0:'inset(0 0 100% 0)', r1:'inset(0 0 0 0)',
+    uz:'USTAXONA', ru:'МАСТЕРСКАЯ', tu:'TOPISH · XARITA · BUYURTMA', tr:'ПОИСК · КАРТА · ЗАКАЗ',
+    fx:'<b style="left:28%;top:30%;--d:.5s"></b><b style="left:72%;top:55%;--d:.9s"></b><b style="left:42%;top:74%;--d:1.3s"></b>',
+    svg:'<path class="dr" pathLength="1" d="M12 58 60 16l48 42M22 52v52h76V52"/><circle class="dr d2" pathLength="1" style="stroke:var(--b)" cx="52" cy="72" r="13"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M62 82l14 14"/><ellipse class="rip" cx="86" cy="78" rx="8" ry="3"/><g class="pin"><path d="M86 46c-7 0-12 5-12 11 0 8 12 19 12 19s12-11 12-19c0-6-5-11-12-11z"/><circle cx="86" cy="57" r="4" fill="#06101f"/></g>' };
+  PZ.hubP = { a:'#4fb4ff', b:'#9be83a', p1:'#17407a', p2:'#050d22', ln:'pz-lf', r0:'inset(50% 50% 50% 50% round 50%)', r1:'inset(0% 0% 0% 0% round 0%)',
+    uz:'PROFIL', ru:'ПРОФИЛЬ', tu:"PROFIL · USTA BO'LISH ANKETASI", tr:'ПРОФИЛЬ · АНКЕТА МАСТЕРА', fx:'',
+    svg:'<rect class="dr" pathLength="1" x="12" y="26" width="96" height="68" rx="10"/><circle class="dr d2" pathLength="1" cx="40" cy="54" r="10"/><path class="dr d2" pathLength="1" d="M22 82c0-9 8-15 18-15s18 6 18 15"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M70 46h28M70 58h22M70 70h14"/><g class="stamp"><circle cx="92" cy="84" r="14" fill="rgba(0,0,0,.45)" stroke="var(--b)"/><path d="M85 84l5 5 9-10" stroke="var(--b)"/></g>' };
+  PZ.hubK = { a:'#ffb52e', b:'#6ff0c4', p1:'#6b3b08', p2:'#190d03', ln:'pz-lu',
+    uz:'USKUNALARIM', ru:'МОЯ ТЕХНИКА', tu:"USKUNALAR · NARX · MASLAHAT · QO'LLANMA", tr:'ТЕХНИКА · ЦЕНЫ · СОВЕТЫ · РУКОВОДСТВО',
+    fx:'<i style="left:14%;--d:.4s">$</i><i style="left:34%;--d:1.1s">%</i><i style="left:58%;--d:.1s">?</i><i style="left:80%;--d:.8s">✓</i>',
+    svg:'<g class="gear"><circle class="dr" pathLength="1" cx="60" cy="60" r="13"/><circle class="dr d2" pathLength="1" cx="60" cy="60" r="25"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M60 28v7M60 85v7M28 60h7M85 60h7M37.4 37.4l5 5M77.6 77.6l5 5M82.6 37.4l-5 5M42.4 77.6l-5 5"/></g><g class="orb"><circle cx="60" cy="10" r="4"/><circle cx="60" cy="110" r="3"/></g>' };
 
   function pzOpen(key, srcEl, go){
     var c = PZ[key];
@@ -9016,6 +9028,35 @@
     go();
   }
 
+
+  // ---------- Reklama paneli (tepada, har doim ko'rinib turadi) ----------
+  // Tayyor reklama bo'lsa: image ga rasm manzilini (URL) yozing, link ga bosilganda ochiladigan havolani.
+  var AD_BANNER = {
+    link: 'https://t.me/online_ustaxona',
+    image: '',
+    uz: { title:"Reklamangiz uchun joy", sub:"Bu yerda sizning reklamangiz ko'rinadi", cta:"Joylash ›" },
+    ru: { title:"Место для вашей рекламы", sub:"Здесь будет ваша реклама", cta:"Разместить ›" }
+  };
+  function adbarSync(){
+    var el = document.getElementById('adBar'); if (!el) return;
+    var set = function(id, v){ var n = document.getElementById(id); if (n && n.textContent !== v) n.textContent = v; };
+    set('adTitle', L(AD_BANNER.uz.title, AD_BANNER.ru.title));
+    set('adSub', L(AD_BANNER.uz.sub, AD_BANNER.ru.sub));
+    set('adCta', L(AD_BANNER.uz.cta, AD_BANNER.ru.cta));
+    el.classList.toggle('img', !!AD_BANNER.image);
+    if (AD_BANNER.image) el.style.setProperty('--adimg', 'url("' + AD_BANNER.image + '")');
+  }
+  (function(){
+    var el = document.getElementById('adBar'); if (!el) return;
+    el.addEventListener('click', function(){
+      haptic('select');
+      try {
+        if (tg && tg.openTelegramLink && /^https:\/\/t\.me\//.test(AD_BANNER.link)) tg.openTelegramLink(AD_BANNER.link);
+        else window.open(AD_BANNER.link, '_blank');
+      } catch(e){}
+    });
+  })();
+
   function render(){
     var entry = state.stack[state.stack.length - 1];
     mapCleanup();
@@ -9024,12 +9065,14 @@
     mkPayCleanup();
     backBtn.classList.toggle('show', state.stack.length > 1);
     renderCrumb();
+    adbarSync();
     var inMk = /^market/.test(entry.view);
     document.body.classList.toggle('in-market', inMk);
     mkUpdateCartBar();
     document.getElementById('brandSub').textContent = inMk ? 'MARKET · ' + (/^marketAdj/.test(entry.view) ? 'CHIP RESET' : L('EHTIYOT QISMLAR','ЗАПЧАСТИ')) : t().subtitle;
     var tbEl = document.querySelector('.topbar');
-    if (tbEl) document.documentElement.style.setProperty('--tb', tbEl.offsetHeight + 'px');
+    var adEl = document.getElementById('adBar');
+    if (tbEl) document.documentElement.style.setProperty('--tb', (tbEl.offsetHeight + (adEl ? adEl.offsetHeight : 0)) + 'px');
     window.scrollTo(0,0);
     mainView.className = entry.catId ? palOf(entry.catId) : '';
 
