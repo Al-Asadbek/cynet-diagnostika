@@ -1129,6 +1129,7 @@
     if (entry.view === 'orderXizmat' || entry.view === 'orderForm' || entry.view === 'orderConfirm') return entry.viloyat;
     if (entry.view === 'orderGate' || entry.view === 'orderSuccess') return t().menuOrder;
     if (entry.view === 'map') return L('Xarita','Карта');
+    if (entry.view === 'info') return L('Biz haqimizda','О нас');
     if (entry.view === 'about') return t().menuAbout;
     if (entry.view === 'contact') return t().menuContact;
     if (entry.view === 'profileGate' || entry.view === 'profileMaster' || entry.view === 'profileUser') return t().menuProfile;
@@ -1156,6 +1157,7 @@
     if (entry.view === 'marketBu') return L('B/U texnika','Б/У техника');
     if (entry.view === 'marketBuForm') return L("E'lon berish",'Подать объявление');
     if (entry.view === 'marketBuMy') return L("Mening e'lonlarim",'Мои объявления');
+    if (entry.view === 'foyd') return L('Foydali ilovalar','Полезные приложения');
     if (entry.view === 'marketCats') return L('Ehtiyot qismlar','Запчасти');
     if (entry.view === 'marketParts') { var mc = catById(entry.cat); return mc ? pick(mc, 'name') : ''; }
     if (entry.view === 'marketPart') return null;
@@ -1683,8 +1685,39 @@
 
   // ================= BIZ HAQIMIZDA / BOG'LANISH =================
 
-  function renderAbout(){
+  var infoHost = null;
+  function ihost(){ return (infoHost && infoHost.isConnected) ? infoHost : mainView; }
+
+  function renderInfo(entry){
+    var tab = state.infoTab || 'about';
+    var tabs = [['about','🏆',L('Biz haqimizda','О нас')],['contact','📞',L("Bog'lanish",'Связь')],['feedback','💬',L("Taklif",'Отзыв')]];
+    var idx = Math.max(0, tabs.map(function(x){ return x[0]; }).indexOf(tab));
     mainView.innerHTML =
+      '<div class="view info-view">' +
+      '<div class="info-hero"><div class="info-orb"><i></i><i></i><span>' + tabs[idx][1] + '</span></div>' +
+      '<div class="info-ht"><b>Online Ustaxona</b><span>' + L("Ishonchli ustalar — bir joyda",'Надёжные мастера — в одном месте') + '</span></div></div>' +
+      '<div class="info-tabs" data-i="' + idx + '"><u></u>' +
+      tabs.map(function(x, i){ return '<button type="button" data-it="' + x[0] + '" class="' + (i === idx ? 'on' : '') + '"><em>' + x[1] + '</em><span>' + x[2] + '</span></button>'; }).join('') +
+      '</div><div class="info-body" id="infoBody"></div></div>';
+    var body = document.getElementById('infoBody');
+    infoHost = body;
+    function show(k){
+      state.infoTab = k;
+      var i = Math.max(0, tabs.map(function(x){ return x[0]; }).indexOf(k));
+      var bar = mainView.querySelector('.info-tabs'); if (bar) bar.setAttribute('data-i', i);
+      mainView.querySelectorAll('[data-it]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-it') === k); });
+      var orb = mainView.querySelector('.info-orb span'); if (orb) orb.textContent = tabs[i][1];
+      body.classList.remove('swap'); void body.offsetWidth; body.classList.add('swap');
+      if (k === 'contact') renderContact(); else if (k === 'feedback') renderFeedback(); else renderAbout();
+    }
+    mainView.querySelectorAll('[data-it]').forEach(function(b){
+      b.addEventListener('click', function(){ if (b.classList.contains('on')) return; haptic('select'); show(b.getAttribute('data-it')); });
+    });
+    show(tabs[idx][0]);
+  }
+
+  function renderAbout(){
+    ihost().innerHTML =
       '<div class="view"><div class="detail-head"><h2>' + t().aboutTitle + '</h2></div>' +
       '<div class="panel"><p class="ptext" style="white-space:pre-line">' + esc(t().aboutText) + '</p></div>' +
       '<div class="panel dashed"><p class="ptext">' + esc(t().contactAddress) + '<br>📞 ' + esc(t().contactPhone) + '<br>✈️ @online_ustaxona<br>📸 @online_ustaxona</p></div>' +
@@ -1692,7 +1725,7 @@
   }
 
   function renderContact(){
-    mainView.innerHTML =
+    ihost().innerHTML =
       '<div class="view"><div class="detail-head"><h2>' + t().contactTitle + '</h2></div>' +
       '<div class="panel">' +
       '<p class="ptext" style="font-size:16px;color:var(--text-1);font-weight:600;margin-bottom:10px">' +
@@ -5414,7 +5447,6 @@
   }
   function mxStop(){
     mxState.alive = false;
-    if (typeof lvStop === 'function') lvStop();
     if (mxState.timer) { clearInterval(mxState.timer); mxState.timer = null; }
     if (mxState.wxTimer) { clearInterval(mxState.wxTimer); mxState.wxTimer = null; }
     if (mxState.fx) { mxState.fx.stop(); mxState.fx = null; }
@@ -5463,15 +5495,8 @@
   var lv = { timer:null, shown:null, last:null, raf:0 };
   function lvFmt(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
   function lvPaint(){
-    var el = document.getElementById('lvCard');
-    if (!el || !lv.last) return;
-    if (!el.firstChild) {
-      el.innerHTML = '<div class="lv-ic">👥</div><div class="lv-main"><div class="lv-label"><span>' + L('Obunachilar','Подписчики') +
-        '</span><span class="lv-live"><i></i>' + L('jonli','live') + '</span></div><div class="lv-num" id="lvNum">0</div></div>' +
-        '<div class="lv-side">' + L('Ustalar','Мастера') + '<b id="lvMasters">0</b></div>';
-    }
-    var numEl = el.querySelector('#lvNum'), mEl = el.querySelector('#lvMasters');
-    mEl.textContent = lvFmt(lv.last.masters_active || 0);
+    var numEl = document.getElementById('subsNum');
+    if (!numEl || !lv.last) return;
     var from = (lv.shown == null) ? 0 : lv.shown, to = lv.last.users_total || 0;
     if (lv.raf) cancelAnimationFrame(lv.raf);
     if (from === to) { numEl.textContent = lvFmt(to); lv.shown = to; return; }
@@ -5479,7 +5504,7 @@
     (function step(now){
       var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
       lv.shown = from + (to - from) * e;
-      var n2 = document.getElementById('lvNum'); if (n2) n2.textContent = lvFmt(lv.shown);
+      var n2 = document.getElementById('subsNum'); if (n2) n2.textContent = lvFmt(lv.shown);
       if (p < 1) lv.raf = requestAnimationFrame(step); else { lv.shown = to; lv.raf = 0; }
     })(t0);
   }
@@ -5729,22 +5754,19 @@
         action:function(el){ pzOpen('hubP', el, function(){ push({ view:'hubProfil' }); }); } },
       { pal:'g-lime', icon:'🏠', title:L('Uskunalarim','Моя техника'), sub:L('Narx, maslahat va qo\'llanma','Цены, советы и руководство'), brand:L('Uy pasporti','Паспорт дома'),
         action:function(el){ pzOpen('hubK', el, function(){ push({ view:'hubUskuna' }); }); } },
-      { pal:'g-fire', icon:'🏆', title:cl(t().menuAbout), sub:t().menuAboutSub, brand:L('Biz','Мы'), action:function(el){ pzOpen('about', el, function(){ push({ view:'about' }); }); } },
-      { pal:'g-violet', icon:'📞', title:cl(t().menuContact), sub:t().menuContactSub, brand:L('Aloqa','Связь'), action:function(el){ pzOpen('call', el, function(){ push({ view:'contact' }); }); } },
-      { pal:'g-night', wide:true, icon:'💬', title:L("Taklif va e'tirozlar","Предложения и претензии"), sub:L("Fikringiz yoki shikoyatingizni bevosita adminga yuboring","Отправьте идею или жалобу напрямую администратору"),
-        cta:'💬 ' + L("Yozish","Написать") + ' ›', brand:L("Fikr-mulohaza","Обратная связь"), action:function(el){ state.fb = { type:'taklif', text:'', sent:false }; push({ view:'feedback' }); } }
+      { pal:'g-teal', wide:true, icon:'🧩', title:L('Foydali ilovalar','Полезные приложения'), sub:L('Texnika bo\'yicha kerakli ilovalar — bir joyda','Нужные приложения по технике — в одном месте'),
+        cta:'🧩 ' + L('Ochish','Открыть') + ' ›', brand:L('Ilovalar','Приложения'), action:function(el){ foydOpen(); } },
+      { pal:'g-fire', wide:true, icon:'🏆', title:L('Biz haqimizda','О нас'), sub:L("Biz haqimizda · Bog'lanish · Taklif va e'tirozlar",'О нас · Связь · Предложения и претензии'),
+        cta:'✨ ' + L('Ochish','Открыть') + ' ›', brand:L('Biz','Мы'), action:function(el){ state.infoTab = 'about'; state.fb = { type:'taklif', text:'', sent:false }; pzOpen('info', el, function(){ push({ view:'info' }); }); } }
     ];
     mainView.innerHTML =
-      '<div class="view"><div class="mx-ticker" id="mxTicker"></div><div class="hello"><h1>' + L('Salom','Привет') + ', <span class="gr">' + userName() + '</span> <span class="wave">👋</span></h1>' +
+      '<div class="view"><div class="mx-ticker" id="mxTicker"></div><div class="wx-card cmp" id="wxCard"></div><div class="hello"><h1>' + L('Salom','Привет') + ', <span class="gr">' + userName() + '</span> <span class="wave">👋</span></h1>' +
       '<p>' + L('Barcha bo\'limlar shu yerda — tanlang','Все разделы здесь — выбирайте') + '</p></div>' +
-      '<div class="wx-card" id="wxCard"></div>' +
-      '<div class="lv-card" id="lvCard"></div>' +
       '<div class="tiles">' + items.map(tileHTML).join('') + '</div></div>';
     mainView.querySelectorAll('[data-ti]').forEach(function(btn){
       btn.addEventListener('click', function(){ haptic('select'); items[parseInt(btn.getAttribute('data-ti'), 10)].action(btn); });
     });
   mxStart();
-  lvStart();
   }
 
   function renderHome(){
@@ -6598,6 +6620,8 @@
       svg:'<path class="dr" pathLength="1" d="M30 26c-8 6-8 18 2 36s24 32 40 40c10 4 20 0 24-10l-14-12-10 6c-8-4-16-12-20-20l6-10-12-14z"/><path class="dr d2" pathLength="1" style="stroke:var(--b)" d="M66 24a30 30 0 0 1 30 30M66 40a14 14 0 0 1 14 14"/>' }
   };
   PZ.about.fx = pzConfetti();
+  PZ.info = { a:'#ffb52e', b:'#27e0c0', p1:'#6b2a0a', p2:'#1c0a10', ln:'pz-ld', cls:'about', fx:pzConfetti(),
+    uz:'BIZ', ru:'МЫ', tu:"BIZ HAQIMIZDA · ALOQA · FIKR-MULOHAZA", tr:'О НАС · СВЯЗЬ · ОБРАТНАЯ СВЯЗЬ', svg:PZ.about.svg };
 
   PZ.hubU = { a:'#3be1ff', b:'#ffb52e', p1:'#0b4a6e', p2:'#040b18', ln:'pz-lb', r0:'inset(0 0 100% 0)', r1:'inset(0 0 0 0)',
     uz:'USTAXONA', ru:'МАСТЕРСКАЯ', tu:'TOPISH · XARITA · BUYURTMA', tr:'ПОИСК · КАРТА · ЗАКАЗ',
@@ -6618,7 +6642,7 @@
     if (mkBusy) return;
     mkBusy = true;
     var r = srcEl ? srcEl.getBoundingClientRect() : { left: innerWidth/2, top: innerHeight/2, width: 0, height: 0 };
-    var o = document.createElement('div'); o.className = 'pz pz-' + key;
+    var o = document.createElement('div'); o.className = 'pz pz-' + (c.cls || key);
     o.style.cssText = '--a:' + c.a + ';--b:' + c.b + ';--p1:' + c.p1 + ';--p2:' + c.p2 + ';--ln:' + c.ln +
       ';--px:' + Math.round(r.left + r.width/2) + 'px;--py:' + Math.round(r.top + r.height/2) + 'px' +
       (c.r0 ? ';--r0:' + c.r0 + ';--r1:' + c.r1 : '');
@@ -9099,6 +9123,7 @@
     else if (entry.view === 'orderForm') renderOrderForm(entry);
     else if (entry.view === 'orderConfirm') renderOrderConfirm(entry);
     else if (entry.view === 'orderSuccess') renderOrderSuccess(entry);
+    else if (entry.view === 'info') renderInfo(entry);
     else if (entry.view === 'about') renderAbout();
     else if (entry.view === 'contact') renderContact();
     else if (entry.view === 'profileGate') renderProfileGate();
@@ -9122,6 +9147,7 @@
     else if (entry.view === 'marketBu') renderBu();
     else if (entry.view === 'marketBuForm') renderBuForm();
     else if (entry.view === 'marketBuMy') renderBuMy();
+    else if (entry.view === 'foyd') renderFoyd();
     else if (entry.view === 'marketCats') renderMarketCats();
     else if (entry.view === 'marketParts') renderMarketParts(entry);
     else if (entry.view === 'marketPart') renderMarketPart(entry);
@@ -10253,13 +10279,13 @@
     gdInjectCss();
     var f = state.fb || (state.fb = { type:'taklif', text:'', sent:false });
     if (f.sent) {
-      mainView.innerHTML = '<div class="view"><div class="detail-head"><h2>' + L("Rahmat!","Спасибо!") + '</h2></div>' +
+      ihost().innerHTML = '<div class="view"><div class="detail-head"><h2>' + L("Rahmat!","Спасибо!") + '</h2></div>' +
         '<div class="panel"><p class="ptext" style="font-size:15px">✅ ' + L("Xabaringiz adminga yuborildi. Ko'rib chiqamiz.","Ваше сообщение отправлено администратору. Мы рассмотрим его.") + '</p></div>' +
         '<button class="btn-primary" id="fbBack" style="width:100%;padding:13px;border-radius:11px">' + L("Asosiy menyuga","В главное меню") + '</button></div>';
       document.getElementById('fbBack').addEventListener('click', function(){ haptic('select'); state.stack = [{ view:'mainMenu' }]; render(); });
       return;
     }
-    mainView.innerHTML =
+    ihost().innerHTML =
       '<div class="view"><div class="detail-head"><h2>💬 ' + L("Taklif va e'tirozlar","Предложения и претензии") + '</h2></div>' +
       '<p class="ptext">' + L("Ilovani yaxshilash uchun taklifingiz yoki e'tirozingiz bormi? Yozing — to'g'ridan-to'g'ri adminga boradi.","Есть идея или претензия? Напишите — это уйдёт напрямую администратору.") + '</p>' +
       '<div class="fb-types"><button type="button" data-ft="taklif" class="' + (f.type === 'taklif' ? 'on' : '') + '">💡 ' + L("Taklif","Предложение") + '</button>' +
@@ -10269,10 +10295,10 @@
       '<button class="btn-primary" id="fbSend" style="width:100%;padding:13px;border-radius:11px">📨 ' + L("Yuborish","Отправить") + '</button></div>';
     var ta = document.getElementById('fbText'), msg = document.getElementById('fbMsg'), btn = document.getElementById('fbSend');
     ta.addEventListener('input', function(){ f.text = ta.value; });
-    mainView.querySelectorAll('[data-ft]').forEach(function(b){
+    ihost().querySelectorAll('[data-ft]').forEach(function(b){
       b.addEventListener('click', function(){
         haptic('select'); f.type = b.getAttribute('data-ft');
-        mainView.querySelectorAll('[data-ft]').forEach(function(x){ x.classList.toggle('on', x === b); });
+        ihost().querySelectorAll('[data-ft]').forEach(function(x){ x.classList.toggle('on', x === b); });
       });
     });
     btn.addEventListener('click', function(){
@@ -10300,6 +10326,162 @@
   var BU_CATS = ['tv','kond','xolod','kir','suv','komp','dux','mikro','piles','dazmol','vent','stab','ups','printer'];
   var BU_MIN = 3, BU_MAX = 6;
   state.bu = { regions:null, f:{ cat:'', viloyat:'', tuman:'' }, items:null, loading:false, my:null, form:null };
+
+  // ============================================================
+  //  FOYDALI ILOVALAR — texnika bo'yicha tavsiya etilgan ilovalar
+  //  Texnikalar va ilovalar admin paneldan (Foydali ilovalar tabi) to'ldiriladi.
+  //  Ilova ichida filtr: «Texnika» tugmasi → texnikalar ro'yxati → tanlangan texnika ilovalari.
+  // ============================================================
+  state.fy = { data:null, sel:'', err:'' };
+
+  function fyInjectCss(){
+    if (document.getElementById('fyCss')) return;
+    var st = document.createElement('style'); st.id = 'fyCss';
+    st.textContent = [
+      '.fy-filter{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;min-height:58px;padding:10px 16px;margin:4px 0 12px;border-radius:18px;border:1.5px solid var(--border,rgba(255,255,255,.2));background:rgba(255,255,255,.08);color:inherit;font-size:16px;font-weight:800;text-align:left;cursor:pointer}',
+      '.fy-filter .fy-fi{font-size:26px;line-height:1}',
+      '.fy-filter .fy-ft{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}',
+      '.fy-filter .fy-ft small{font-size:12px;font-weight:600;opacity:.65}',
+      '.fy-filter .fy-ft b{font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.fy-filter .fy-fc{font-size:13px;opacity:.7}',
+      '.fy-filter.on{border-color:#19e6a0;background:rgba(25,230,160,.12)}',
+      '.fy-clear{margin:-4px 0 12px;padding:8px 14px;border-radius:14px;border:0;background:rgba(255,255,255,.08);color:inherit;font-size:13px;font-weight:700}',
+      '.fy-cnt{font-size:13px;opacity:.7;margin:0 2px 10px}',
+      '.fy-list{display:flex;flex-direction:column;gap:16px}',
+      '.fy-card{display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:24px;background:rgba(255,255,255,.07);border:1px solid var(--border,rgba(255,255,255,.14));box-shadow:0 8px 26px rgba(0,0,0,.22)}',
+      '.fy-head{display:flex;gap:16px;align-items:center}',
+      '.fy-ic{flex:0 0 88px;width:88px;height:88px;border-radius:24px;background:linear-gradient(135deg,#22e3c4,#0b7f9e) center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 6px 18px rgba(0,0,0,.3)}',
+      '.fy-inf{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}',
+      '.fy-nm{font-size:20px;font-weight:800;line-height:1.2;word-break:break-word}',
+      '.fy-tags{display:flex;flex-wrap:wrap;gap:6px}',
+      '.fy-tag{padding:4px 10px;border-radius:12px;background:rgba(255,255,255,.1);font-size:12.5px;font-weight:700}',
+      '.fy-tag.pf{background:rgba(25,230,160,.16)}',
+      '.fy-ds{font-size:15px;line-height:1.5;opacity:.9;white-space:pre-line;word-break:break-word}',
+      '.fy-go{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;min-height:54px;border:0;border-radius:16px;font-size:17px;font-weight:800;color:#06231a;background:linear-gradient(135deg,#19e6a0,#0aa37a);box-shadow:0 6px 18px rgba(25,230,160,.35);cursor:pointer;text-decoration:none}',
+      '.fy-go.off{background:rgba(255,255,255,.1);color:inherit;box-shadow:none;opacity:.6}',
+      '.fy-empty{text-align:center;padding:34px 18px;opacity:.85;font-size:15px;line-height:1.5}',
+      '.fy-empty b{display:block;font-size:44px;margin-bottom:8px}',
+      '.fy-ov{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}',
+      '.fy-sheet{width:100%;max-width:560px;max-height:82vh;overflow-y:auto;box-sizing:border-box;padding:18px 16px 26px;border-radius:26px 26px 0 0;background:var(--bg2,#14181f);color:#fff;box-shadow:0 -10px 40px rgba(0,0,0,.5)}',
+      '.fy-sh-t{display:flex;align-items:center;justify-content:space-between;font-size:19px;font-weight:800;margin-bottom:12px}',
+      '.fy-sh-x{width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.1);color:inherit;font-size:18px}',
+      '.fy-opt{display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;min-height:62px;padding:10px 14px;margin-bottom:8px;border-radius:16px;border:1.5px solid transparent;background:rgba(255,255,255,.07);color:inherit;font-size:17px;font-weight:700;text-align:left;cursor:pointer}',
+      '.fy-opt .fy-oe{font-size:28px;line-height:1}',
+      '.fy-opt .fy-on{flex:1}',
+      '.fy-opt .fy-oc{min-width:30px;padding:4px 10px;border-radius:12px;background:rgba(255,255,255,.12);font-size:13px;text-align:center}',
+      '.fy-opt.sel{border-color:#19e6a0;background:rgba(25,230,160,.14)}'
+    ].join('');
+    document.head.appendChild(st);
+  }
+
+  function fyIconUrl(it){ return API_BASE + '/api/public/foyd/icon?id=' + it.id + '&v=' + (it.rasm_v || 0); }
+  function fyTechName(tx){ return state.lang === 'uz' ? tx.nomi : (tx.nomi_ru || tx.nomi); }
+  function fyItemName(it){ return state.lang === 'uz' ? it.nomi : (it.nomi_ru || it.nomi); }
+  function fyItemDesc(it){ return state.lang === 'uz' ? it.tavsif : (it.tavsif_ru || it.tavsif); }
+  function fyPlatLabel(p){
+    var m = { android:'🤖 Android', web:'🌐 Web', pc:'💻 PC', boshqa:'📱 ' + L('Ilova','Приложение') };
+    if (p === 'ios') return '🍎 iOS';
+    return m[p] || m.boshqa;
+  }
+  function fyTechOf(key){
+    var d = state.fy.data; if (!d) return null;
+    for (var i = 0; i < d.texnikalar.length; i++) if (d.texnikalar[i].nomi.trim().toLowerCase() === key) return d.texnikalar[i];
+    return null;
+  }
+
+  function foydOpen(){
+    fyInjectCss();
+    state.fy.data = null; state.fy.err = ''; state.fy.sel = '';
+    push({ view:'foyd' });
+  }
+
+  function renderFoyd(){
+    fyInjectCss();
+    var D = state.fy.data;
+    var head = '<div class="mk-title">🧩 ' + L('Foydali ilovalar','Полезные приложения') + '</div>';
+    if (!D) {
+      mainView.innerHTML = '<div class="view mk-view">' + head + '<div class="mk-skel"></div><div class="mk-skel"></div></div>';
+      if (!API_BASE) { state.fy.err = L("Server ulanmagan",'Сервер не подключён'); }
+      var p = API_BASE ? apiGet('/api/public/foyd') : Promise.reject(new Error('NO_API'));
+      p.then(function(r){
+        if (state.stack[state.stack.length-1].view !== 'foyd') return;
+        if (r && r.ok) { state.fy.data = { texnikalar: r.texnikalar || [], items: r.items || [] }; state.fy.err = ''; }
+        else { state.fy.data = { texnikalar:[], items:[] }; state.fy.err = (r && r.error) || L("Ilovalarni yuklab bo'lmadi",'Не удалось загрузить'); }
+        renderFoyd();
+      }).catch(function(){
+        if (state.stack[state.stack.length-1].view !== 'foyd') return;
+        state.fy.data = { texnikalar:[], items:[] };
+        state.fy.err = L("Internetni tekshirib, qayta urinib ko'ring",'Проверьте интернет и повторите');
+        renderFoyd();
+      });
+      return;
+    }
+    var sel = state.fy.sel;
+    if (sel && !fyTechOf(sel)) sel = state.fy.sel = '';
+    var tx = sel ? fyTechOf(sel) : null;
+    var items = D.items.filter(function(it){ return !sel || it.tex_key === sel; });
+    var filterHtml = '<button type="button" class="fy-filter' + (tx ? ' on' : '') + '" id="fyFilter">' +
+      '<span class="fy-fi">' + (tx ? esc(tx.emoji || '📱') : '🔽') + '</span>' +
+      '<span class="fy-ft"><small>' + L('Texnika bo\'yicha filtr','Фильтр по технике') + '</small>' +
+      '<b>' + (tx ? esc(fyTechName(tx)) : L('Barcha texnikalar','Вся техника')) + '</b></span>' +
+      '<span class="fy-fc">' + D.texnikalar.length + ' ▾</span></button>' +
+      (tx ? '<button type="button" class="fy-clear" id="fyClear">✕ ' + L('Filtrni tozalash','Сбросить фильтр') + '</button>' : '');
+    var body;
+    if (state.fy.err) body = '<div class="fy-empty"><b>⚠️</b>' + esc(state.fy.err) + '</div>';
+    else if (!items.length) body = '<div class="fy-empty"><b>🧩</b>' + L("Hozircha bu texnika uchun ilova qo'shilmagan.",'Для этой техники пока нет приложений.') + '</div>';
+    else body = '<div class="fy-cnt">' + L('Ilovalar: ','Приложений: ') + items.length + '</div><div class="fy-list">' + items.map(fyCardHTML).join('') + '</div>';
+    mainView.innerHTML = '<div class="view mk-view">' + head + (D.texnikalar.length ? filterHtml : '') + body + '</div>';
+
+    var fb = document.getElementById('fyFilter');
+    if (fb) fb.addEventListener('click', function(){ haptic('select'); fyOpenSheet(); });
+    var cl = document.getElementById('fyClear');
+    if (cl) cl.addEventListener('click', function(){ haptic('tap'); state.fy.sel = ''; renderFoyd(); });
+    mainView.querySelectorAll('[data-fy]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var it = items[parseInt(b.getAttribute('data-fy'), 10)];
+        if (!it || !it.havola) return;
+        haptic('select'); mkOpenExternal(it.havola);
+      });
+    });
+  }
+
+  function fyCardHTML(it, idx){
+    var ic = it.has_icon
+      ? '<span class="fy-ic" style="background-image:url(\'' + esc(fyIconUrl(it)) + '\')"></span>'
+      : '<span class="fy-ic">' + esc((fyTechOf(it.tex_key) || {}).emoji || '📱') + '</span>';
+    var tx = fyTechOf(it.tex_key);
+    var ds = fyItemDesc(it);
+    return '<div class="fy-card"><div class="fy-head">' + ic + '<div class="fy-inf"><div class="fy-nm">' + esc(fyItemName(it)) + '</div>' +
+      '<div class="fy-tags"><span class="fy-tag">' + esc(tx ? ((tx.emoji || '') + ' ' + fyTechName(tx)) : it.texnika) + '</span>' +
+      '<span class="fy-tag pf">' + fyPlatLabel(it.platforma) + '</span></div></div></div>' +
+      (ds ? '<div class="fy-ds">' + esc(ds) + '</div>' : '') +
+      (it.havola
+        ? '<button type="button" class="fy-go" data-fy="' + idx + '">⬇️ ' + L('Ochish / Yuklab olish','Открыть / Скачать') + '</button>'
+        : '<div class="fy-go off">' + L('Havola hali qo\'shilmagan','Ссылка пока не добавлена') + '</div>') +
+      '</div>';
+  }
+
+  function fyOpenSheet(){
+    var D = state.fy.data; if (!D) return;
+    var ov = document.createElement('div'); ov.className = 'fy-ov';
+    var opts = '<button type="button" class="fy-opt' + (!state.fy.sel ? ' sel' : '') + '" data-k=""><span class="fy-oe">🧩</span><span class="fy-on">' +
+      L('Barcha texnikalar','Вся техника') + '</span><span class="fy-oc">' + D.items.length + '</span></button>';
+    D.texnikalar.forEach(function(tx){
+      var k = tx.nomi.trim().toLowerCase();
+      opts += '<button type="button" class="fy-opt' + (state.fy.sel === k ? ' sel' : '') + '" data-k="' + esc(k) + '"><span class="fy-oe">' + esc(tx.emoji || '📱') +
+        '</span><span class="fy-on">' + esc(fyTechName(tx)) + '</span><span class="fy-oc">' + tx.soni + '</span></button>';
+    });
+    ov.innerHTML = '<div class="fy-sheet"><div class="fy-sh-t"><span>' + L('Texnikani tanlang','Выберите технику') + '</span><button type="button" class="fy-sh-x" aria-label="close">✕</button></div>' + opts + '</div>';
+    document.body.appendChild(ov);
+    var close = function(){ ov.remove(); };
+    ov.addEventListener('click', function(e){ if (e.target === ov) close(); });
+    ov.querySelector('.fy-sh-x').addEventListener('click', close);
+    ov.querySelectorAll('[data-k]').forEach(function(b){
+      b.addEventListener('click', function(){
+        haptic('select'); state.fy.sel = b.getAttribute('data-k'); close(); renderFoyd(); window.scrollTo(0, 0);
+      });
+    });
+  }
 
   function buInjectCss(){
     if (document.getElementById('buCss')) return;
@@ -10645,6 +10827,71 @@
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') setOpen(false); });
     paint();
     document.getElementById('brandSub').textContent = t().subtitle;
+  })();
+
+
+  // ---------- Obunachilar chipi (bayroq ostida) + ixcham ob-havo + "Biz haqimizda" bo'limi ----------
+  (function(){
+    var st = document.createElement('style'); st.id = 'infoUiCss';
+    st.textContent = [
+      '.lang-sw{display:flex;flex-direction:column;align-items:center;gap:3px}',
+      '.subs-chip{display:inline-flex;align-items:center;gap:3px;height:16px;padding:0 6px 0 4px;border-radius:9px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font:600 10px/1 var(--font-mono,monospace);color:var(--text-2,#9aa4b5);font-variant-numeric:tabular-nums;white-space:nowrap;animation:subs-in .6s .4s both}',
+      '.subs-chip .si{font-size:10px;line-height:1;filter:saturate(1.2)}',
+      '.subs-chip b{font-weight:700;color:var(--text,#fff);letter-spacing:.2px}',
+      '.subs-chip::after{content:"";width:5px;height:5px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:lv-pulse 1.8s infinite}',
+      '@keyframes subs-in{from{opacity:0;transform:translateY(-4px) scale(.9)}to{opacity:1;transform:none}}',
+      /* ixcham ob-havo */
+      '.wx-card.cmp{margin:0 0 10px;padding:8px 12px;border-radius:14px}',
+      '.wx-card.cmp .wx-main{margin-top:4px;gap:9px}',
+      '.wx-card.cmp .wx-ic{font-size:26px}',
+      '.wx-card.cmp .wx-temp{font-size:26px}',
+      '.wx-card.cmp .wx-temp sup{font-size:11px}',
+      '.wx-card.cmp .wx-desc{gap:2px}',
+      '.wx-card.cmp .wx-desc b{font-size:12.5px}',
+      '.wx-card.cmp .wx-desc span{font-size:11px}',
+      '.wx-card.cmp .wx-meta{margin-top:4px;font-size:11px;gap:10px}',
+      '.wx-card.cmp .wx-top select,.wx-card.cmp .wx-loc{padding:4px 9px;font-size:11.5px;border-radius:9px}',
+      '.wx-card.cmp .wx-ask{gap:9px;padding:0}',
+      '.wx-card.cmp .wx-ask-ic{font-size:24px}',
+      '.wx-card.cmp .wx-ask-tx b{font-size:13px}',
+      '.wx-card.cmp .wx-ask-tx span{font-size:11px;line-height:1.25}',
+      /* Biz haqimizda / Bog'lanish / Taklif */
+      '.info-hero{display:flex;align-items:center;gap:14px;margin:2px 0 14px;animation:info-rise .6s cubic-bezier(.2,.9,.3,1) both}',
+      '.info-orb{position:relative;flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:27px;background:linear-gradient(145deg,#ffb52e,#ff5fa8);box-shadow:0 8px 26px rgba(255,150,60,.4);animation:info-pop .8s .1s cubic-bezier(.2,1.4,.3,1) both}',
+      '.info-orb span{position:relative;z-index:1;animation:info-bob 3s 1s ease-in-out infinite}',
+      '.info-orb i{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,181,46,.6);animation:info-ring 2.4s ease-out infinite}',
+      '.info-orb i:nth-child(2){animation-delay:1.2s}',
+      '.info-ht{display:flex;flex-direction:column;gap:3px;min-width:0}',
+      '.info-ht b{font:800 21px/1.1 var(--f-big,var(--font-display,inherit));background:linear-gradient(100deg,#fff 30%,#ffe2b0 65%,#ffb52e);-webkit-background-clip:text;background-clip:text;color:transparent}',
+      '.info-ht span{font-size:12.5px;color:var(--text-2,#9aa4b5)}',
+      '.info-tabs{position:relative;display:grid;grid-template-columns:repeat(3,1fr);padding:4px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid var(--border,rgba(255,255,255,.12));margin-bottom:14px;animation:info-rise .6s .12s cubic-bezier(.2,.9,.3,1) both}',
+      '.info-tabs u{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px)/3);border-radius:12px;background:linear-gradient(135deg,#ffb52e,#ff8a3d);box-shadow:0 4px 16px rgba(255,150,60,.4);transition:transform .42s cubic-bezier(.3,1.3,.5,1);transform:translateX(calc(var(--i,0) * 100%));text-decoration:none}',
+      '.info-tabs[data-i="0"] u{--i:0}.info-tabs[data-i="1"] u{--i:1}.info-tabs[data-i="2"] u{--i:2}',
+      '.info-tabs button{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 7px;background:none;border:0;color:var(--text-2,#9aa4b5);font:700 11.5px/1.1 var(--font-body,inherit);cursor:pointer;transition:color .25s;-webkit-tap-highlight-color:transparent}',
+      '.info-tabs button em{font-style:normal;font-size:17px;line-height:1;transition:transform .3s}',
+      '.info-tabs button.on{color:#1d0f02}',
+      '.info-tabs button.on em{transform:scale(1.18) translateY(-1px)}',
+      '.info-tabs button span{white-space:nowrap}',
+      '.info-body.swap .view>*{animation:info-rise .5s cubic-bezier(.2,.9,.3,1) both}',
+      '.info-body.swap .view>*:nth-child(2){animation-delay:.08s}.info-body.swap .view>*:nth-child(3){animation-delay:.16s}.info-body.swap .view>*:nth-child(4){animation-delay:.24s}',
+      '.info-body .detail-head{display:none}',
+      '.info-body .view{padding:0}',
+      '.info-body .panel{border-radius:16px}',
+      '@keyframes info-rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}',
+      '@keyframes info-pop{from{opacity:0;transform:scale(.3) rotate(-30deg)}to{opacity:1;transform:none}}',
+      '@keyframes info-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px) rotate(-5deg)}}',
+      '@keyframes info-ring{from{transform:scale(1);opacity:.7}to{transform:scale(1.7);opacity:0}}',
+      '@media (prefers-reduced-motion:reduce){.info-hero,.info-tabs,.info-orb,.info-orb span,.info-orb i,.info-body.swap .view>*,.subs-chip{animation:none!important}.info-tabs u{transition:none}}'
+    ].join('\n');
+    document.head.appendChild(st);
+    var sw = document.getElementById('langSw');
+    if (sw && !document.getElementById('subsChip')) {
+      var c = document.createElement('div'); c.className = 'subs-chip'; c.id = 'subsChip';
+      c.title = 'Obunachilar / Подписчики';
+      c.innerHTML = '<span class="si">👥</span><b id="subsNum">—</b>';
+      sw.appendChild(c);
+      lvStart();
+    }
   })();
 
   render();
