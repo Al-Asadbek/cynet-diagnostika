@@ -10359,6 +10359,12 @@
       '.fy-ds{font-size:15px;line-height:1.5;opacity:.9;white-space:pre-line;word-break:break-word}',
       '.fy-go{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;min-height:54px;border:0;border-radius:16px;font-size:17px;font-weight:800;color:#06231a;background:linear-gradient(135deg,#19e6a0,#0aa37a);box-shadow:0 6px 18px rgba(25,230,160,.35);cursor:pointer;text-decoration:none}',
       '.fy-go.off{background:rgba(255,255,255,.1);color:inherit;box-shadow:none;opacity:.6}',
+      '.fy-go:disabled{opacity:.7}',
+      '.fy-msg{font-size:14.5px;line-height:1.45;font-weight:700}',
+      '.fy-msg:empty{display:none}',
+      '.fy-msg.ok{color:#19e6a0}',
+      '.fy-msg.err{color:#ff8a80}',
+      '.fy-chat{width:100%;box-sizing:border-box;min-height:48px;border-radius:14px;border:1.5px solid #19e6a0;background:transparent;color:#19e6a0;font-size:16px;font-weight:800}',
       '.fy-empty{text-align:center;padding:34px 18px;opacity:.85;font-size:15px;line-height:1.5}',
       '.fy-empty b{display:block;font-size:44px;margin-bottom:8px}',
       '.fy-ov{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}',
@@ -10379,8 +10385,7 @@
   function fyItemName(it){ return state.lang === 'uz' ? it.nomi : (it.nomi_ru || it.nomi); }
   function fyItemDesc(it){ return state.lang === 'uz' ? it.tavsif : (it.tavsif_ru || it.tavsif); }
   function fyPlatLabel(p){
-    var m = { android:'🤖 Android', web:'🌐 Web', pc:'💻 PC', boshqa:'📱 ' + L('Ilova','Приложение') };
-    if (p === 'ios') return '🍎 iOS';
+    var m = { android:'🤖 Android', ios:'🍎 iOS', web:'🌐 Web', pc:'💻 ' + L('Dastur','Программа'), boshqa:'📦 ' + L('Fayl','Файл') };
     return m[p] || m.boshqa;
   }
   function fyTechOf(key){
@@ -10439,26 +10444,61 @@
     mainView.querySelectorAll('[data-fy]').forEach(function(b){
       b.addEventListener('click', function(){
         var it = items[parseInt(b.getAttribute('data-fy'), 10)];
-        if (!it || !it.havola) return;
-        haptic('select'); mkOpenExternal(it.havola);
+        if (!it) return;
+        haptic('select'); fySend(it, b);
       });
     });
   }
 
+  // Tanlangan ilovani Telegram bot orqali foydalanuvchining shaxsiy chatiga yuboradi
+  function fySend(it, btn){
+    var card = btn.closest('.fy-card');
+    var msg = card.querySelector('.fy-msg');
+    var say = function(txt, kind){ msg.className = 'fy-msg ' + (kind || ''); msg.textContent = txt; };
+    if (btn.disabled) return;
+    if (!getInitData()) { say(L("Ilovani olish uchun mini appni Telegram ichida oching.",'Чтобы получить приложение, откройте мини-апп внутри Telegram.'), 'err'); return; }
+    var label = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '⏳ ' + L('Yuborilmoqda...','Отправляется...');
+    say('', '');
+    apiPost('/api/public/foyd/send', { init_data:getInitData(), lang:srvLang(), id:it.id }).then(function(res){
+      btn.disabled = false; btn.innerHTML = label;
+      if (res.data && res.data.ok) {
+        haptic('success');
+        say('✅ ' + L("Ilova botga yuborildi! Telegram chatidan oching.",'Приложение отправлено в бот! Откройте его в чате Telegram.'), 'ok');
+        if (!card.querySelector('.fy-chat')) {
+          var c = document.createElement('button'); c.type = 'button'; c.className = 'fy-chat';
+          c.textContent = '💬 ' + L('Chatni ochish','Открыть чат');
+          c.addEventListener('click', function(){ if (tg && tg.close) tg.close(); });
+          msg.after(c);
+        }
+      } else {
+        say('⚠️ ' + ((res.data && res.data.error) || L("Yuborib bo'lmadi",'Не удалось отправить')), 'err');
+      }
+    }).catch(function(){
+      btn.disabled = false; btn.innerHTML = label;
+      say('⚠️ ' + L("Internetni tekshirib, qayta urinib ko'ring",'Проверьте интернет и повторите'), 'err');
+    });
+  }
+
+  function fyFmtSize(b){
+    if (!b) return '';
+    return b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+  }
+
   function fyCardHTML(it, idx){
+    var tx = fyTechOf(it.tex_key);
     var ic = it.has_icon
       ? '<span class="fy-ic" style="background-image:url(\'' + esc(fyIconUrl(it)) + '\')"></span>'
-      : '<span class="fy-ic">' + esc((fyTechOf(it.tex_key) || {}).emoji || '📱') + '</span>';
-    var tx = fyTechOf(it.tex_key);
+      : '<span class="fy-ic">' + esc((tx && tx.emoji) || '📱') + '</span>';
     var ds = fyItemDesc(it);
+    var sz = fyFmtSize(it.file_size);
     return '<div class="fy-card"><div class="fy-head">' + ic + '<div class="fy-inf"><div class="fy-nm">' + esc(fyItemName(it)) + '</div>' +
       '<div class="fy-tags"><span class="fy-tag">' + esc(tx ? ((tx.emoji || '') + ' ' + fyTechName(tx)) : it.texnika) + '</span>' +
-      '<span class="fy-tag pf">' + fyPlatLabel(it.platforma) + '</span></div></div></div>' +
+      '<span class="fy-tag pf">' + fyPlatLabel(it.platforma) + '</span>' +
+      (sz ? '<span class="fy-tag">💾 ' + sz + '</span>' : '') + '</div></div></div>' +
       (ds ? '<div class="fy-ds">' + esc(ds) + '</div>' : '') +
-      (it.havola
-        ? '<button type="button" class="fy-go" data-fy="' + idx + '">⬇️ ' + L('Ochish / Yuklab olish','Открыть / Скачать') + '</button>'
-        : '<div class="fy-go off">' + L('Havola hali qo\'shilmagan','Ссылка пока не добавлена') + '</div>') +
-      '</div>';
+      '<button type="button" class="fy-go" data-fy="' + idx + '">📩 ' + L('Botga yuborish','Получить в боте') + '</button>' +
+      '<div class="fy-msg"></div></div>';
   }
 
   function fyOpenSheet(){
