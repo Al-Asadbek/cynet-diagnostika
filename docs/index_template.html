@@ -1641,59 +1641,94 @@ body.intro-on .tile{ animation-play-state:paused; }
 .adbar.img .ad-ic,.adbar.img .ad-tx,.adbar.img .ad-tag,.adbar.img .ad-cta{ display:none; }
 
 /* ---------- Kirish animatsiyasi (intro) ---------- */
-#intro{ position:fixed; left:0; right:0; bottom:0; top:var(--adh); z-index:900; overflow:hidden; color:#fff; font-family:var(--f-big); animation:in-fs 0s 7s forwards; }
+/* ================= KIRISH ANIMATSIYASI (logo: tuning-fork "U") ================= */
+#intro{ position:fixed; left:0; right:0; bottom:0; top:var(--adh); z-index:900; overflow:hidden; color:#fff; font-family:var(--f-big); animation:in-fs 0s 8s forwards; }
 @keyframes in-fs{ to{ visibility:hidden; pointer-events:none } }
 #intro .in-half{ position:absolute; top:0; bottom:0; width:50.5%; z-index:0; transition:transform .85s cubic-bezier(.76,0,.24,1) .24s; will-change:transform; }
-#intro .in-half.l{ left:0; background:linear-gradient(90deg,#04050a,#0a0d1d); }
-#intro .in-half.r{ right:0; background:linear-gradient(270deg,#04050a,#0a0d1d); }
+#intro .in-half.l{ left:0; background:linear-gradient(90deg,#04070b,#0a1118); }
+#intro .in-half.r{ right:0; background:linear-gradient(270deg,#04070b,#0a1118); }
 #intro .in-seam{ position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; z-index:3; opacity:0; pointer-events:none;
-  background:linear-gradient(transparent,#27e0c0 18%,#ffb52e 50%,#b98bff 82%,transparent); box-shadow:0 0 26px 5px rgba(39,224,192,.55); }
+  background:linear-gradient(transparent,#62d4b6 20%,#ff9142 62%,transparent); box-shadow:0 0 26px 5px rgba(98,212,182,.5); }
 #intro.go .in-seam{ animation:in-seam 1.05s .1s ease forwards; }
 @keyframes in-seam{ 0%{ opacity:0; transform:scaleY(.15) } 28%{ opacity:1; transform:scaleY(1) } 100%{ opacity:0; transform:scaleY(1) } }
 #intro.go .in-half.l{ transform:translateX(-101%); }
 #intro.go .in-half.r{ transform:translateX(101%); }
-#intro .in-stage{ position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center; transition:opacity .42s ease, transform .7s ease; }
-#intro.go .in-stage{ opacity:0; transform:scale(1.14); }
-#intro .in-stage::before{ content:""; position:absolute; inset:0; opacity:0; animation:in-fade 1.4s .3s forwards;
-  background:linear-gradient(rgba(120,200,255,.10) 1px,transparent 1px) 0 0/100% 36px,linear-gradient(90deg,rgba(120,200,255,.10) 1px,transparent 1px) 0 0/36px 100%;
-  -webkit-mask:radial-gradient(ellipse at 50% 45%,#000,transparent 70%); mask:radial-gradient(ellipse at 50% 45%,#000,transparent 70%); }
+#intro .in-stage{ position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center; transition:opacity .42s ease, transform .7s cubic-bezier(.5,0,.2,1); }
+#intro.go .in-stage{ opacity:0; transform:scale(1.18); }
+/* fon: chuqur ko'k-qora + logo ranglari (teal / orange) nuri */
+#intro .in-stage::before{ content:""; position:absolute; inset:0; opacity:0; animation:in-fade 1.2s .1s forwards;
+  background:
+    radial-gradient(60vmax 50vmax at 18% 12%,rgba(98,212,182,.20),transparent 60%),
+    radial-gradient(60vmax 50vmax at 86% 92%,rgba(238,154,79,.20),transparent 60%),
+    linear-gradient(rgba(150,230,215,.07) 1px,transparent 1px) 0 0/100% 34px,
+    linear-gradient(90deg,rgba(150,230,215,.07) 1px,transparent 1px) 0 0/34px 100%;
+  -webkit-mask:radial-gradient(ellipse at 50% 44%,#000 25%,rgba(0,0,0,.55) 60%,#000 100%); mask:radial-gradient(ellipse at 50% 44%,#000 25%,rgba(0,0,0,.55) 60%,#000 100%); }
 @keyframes in-fade{ to{ opacity:1 } }
-.in-aurora i{ position:absolute; width:90vmax; height:90vmax; border-radius:50%; opacity:0; animation:in-au 6s ease-in-out infinite alternate, in-fade 1.2s .1s forwards; }
-.in-aurora i:nth-child(1){ left:-45vmax; top:-42vmax; background:radial-gradient(circle,rgba(255,150,40,.42),transparent 60%); }
-.in-aurora i:nth-child(2){ right:-52vmax; top:8vh; background:radial-gradient(circle,rgba(170,60,255,.38),transparent 60%); animation-delay:-2s,.1s; }
-.in-aurora i:nth-child(3){ left:-24vmax; bottom:-58vmax; background:radial-gradient(circle,rgba(30,140,255,.42),transparent 60%); animation-delay:-4s,.1s; }
-@keyframes in-au{ from{ transform:translate(0,0) scale(1) } to{ transform:translate(7vmax,-5vmax) scale(1.2) } }
-.in-stars i{ position:absolute; width:2px; height:2px; border-radius:50%; background:#fff; opacity:0; animation:in-tw 3s var(--d) ease-in-out infinite; }
-@keyframes in-tw{ 0%,100%{ opacity:0 } 50%{ opacity:.9 } }
-.in-center{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:20px; margin-top:-7vh; padding:0 12px; }
-.in-emblem{ position:relative; width:176px; height:176px; opacity:0; transform:scale(.55); animation:in-emb 1.1s .15s cubic-bezier(.2,.9,.3,1.25) forwards; }
-@keyframes in-emb{ to{ opacity:1; transform:none } }
-.in-emblem::before{ content:""; position:absolute; inset:-45%; z-index:0; background:radial-gradient(circle,rgba(39,224,192,.34),rgba(255,181,46,.12) 45%,transparent 68%); animation:in-pulse 2.2s ease-in-out infinite; }
-@keyframes in-pulse{ 0%,100%{ transform:scale(.9); opacity:.8 } 50%{ transform:scale(1.12); opacity:1 } }
-.in-emblem::after{ content:""; position:absolute; inset:-8px; border-radius:50%; z-index:0;
-  background:conic-gradient(from 0deg,transparent 0 55%,rgba(255,181,46,.95) 92%,transparent);
-  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px)); mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));
-  animation:in-spin 1.9s linear infinite; }
+.in-stars i{ position:absolute; width:2px; height:2px; border-radius:50%; background:#bff5e8; opacity:0; animation:in-tw 3s var(--d,0s) ease-in-out infinite; }
+.in-stars i:nth-child(3n){ background:#ffc48a; }
+@keyframes in-tw{ 0%,100%{ opacity:0 } 50%{ opacity:.85 } }
+.in-center{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:22px; margin-top:-6vh; padding:0 12px; }
+
+/* ---- emblema ---- */
+.in-emblem{ position:relative; width:min(58vw,236px); aspect-ratio:1; }
+.in-glow{ position:absolute; inset:-38%; z-index:0; opacity:0; pointer-events:none;
+  background:radial-gradient(circle at 50% 50%,rgba(98,212,182,.30),rgba(238,154,79,.10) 46%,transparent 68%); animation:in-glow 3.4s .2s ease-in-out forwards; }
+@keyframes in-glow{ 0%{ opacity:0; transform:scale(.6) } 35%{ opacity:1; transform:scale(1) } 100%{ opacity:1; transform:scale(1.08) } }
+.in-orbit{ position:absolute; inset:-17%; z-index:0; opacity:0; animation:in-fade .8s 1.5s forwards; }
+.in-orbit svg{ width:100%; height:100%; overflow:visible; animation:in-spin 14s linear infinite; }
 @keyframes in-spin{ to{ transform:rotate(360deg) } }
-.in-emblem svg{ position:relative; z-index:1; width:100%; height:100%; fill:none; stroke-linecap:round; stroke-linejoin:round; overflow:visible; filter:drop-shadow(0 0 14px rgba(39,224,192,.55)); }
-.in-emblem .d{ stroke-dasharray:1; stroke-dashoffset:1; animation:in-draw 1.2s var(--t,.3s) cubic-bezier(.6,.1,.2,1) forwards; }
+.in-emblem > svg.in-logo{ position:relative; z-index:1; width:100%; height:100%; overflow:visible; display:block;
+  opacity:0; transform:scale(.82); animation:in-pop .9s .05s cubic-bezier(.2,.9,.25,1.15) forwards; filter:drop-shadow(0 10px 28px rgba(0,0,0,.55)); }
+@keyframes in-pop{ to{ opacity:1; transform:none } }
+.in-logo path,.in-logo line{ vector-effect:none; }
+/* 1) olti burchak konturi o'zi chiziladi */
+.in-logo .hx{ stroke-dasharray:1; stroke-dashoffset:1; animation:in-draw 1.15s .15s cubic-bezier(.6,.05,.2,1) forwards; }
+.in-logo .hxfill{ opacity:0; animation:in-fade .7s .55s forwards; }
+.in-logo .hxin{ stroke-dasharray:1; stroke-dashoffset:1; animation:in-draw .9s .85s ease forwards; }
 @keyframes in-draw{ to{ stroke-dashoffset:0 } }
-.in-orb{ transform-origin:100px 100px; animation:in-spin 2.6s linear infinite; }
-.in-title{ display:flex; justify-content:center; flex-wrap:wrap; max-width:96vw; font-weight:800; font-size:clamp(24px,8vw,40px); letter-spacing:.13em; margin-right:-.13em; filter:drop-shadow(0 0 18px rgba(255,150,40,.4)); }
-.in-title i{ font-style:normal; display:inline-block; opacity:0; background:linear-gradient(100deg,#fff 20%,#ffd9a0 55%,#ff9c3a); -webkit-background-clip:text; background-clip:text; color:transparent;
-  animation:in-let .85s calc(.95s + var(--k)*.055s) cubic-bezier(.2,.9,.3,1.2) forwards; }
+/* 2) kamerton "U" chiziladi, so'ng dastasi va teal nuqta */
+.in-logo .fk{ stroke-dasharray:1; stroke-dashoffset:1; animation:in-draw .8s 1.05s cubic-bezier(.6,.05,.2,1) forwards; }
+.in-logo .stem{ transform-box:fill-box; transform-origin:50% 0; transform:scaleY(0); animation:in-stem .35s 1.75s cubic-bezier(.3,1.3,.5,1) forwards; }
+@keyframes in-stem{ to{ transform:scaleY(1) } }
+.in-logo .tdot{ transform-box:fill-box; transform-origin:50% 50%; transform:scale(0); animation:in-dot .5s 2s cubic-bezier(.2,1.6,.4,1) forwards; }
+@keyframes in-dot{ to{ transform:scale(1) } }
+/* 3) to'q-sariq nuqta "uriladi" — kamerton tebranadi va to'lqin tarqaladi */
+.in-logo .orb{ transform-box:fill-box; transform-origin:50% 50%; transform:scale(0); animation:in-orb .6s 2.15s cubic-bezier(.2,1.7,.4,1) forwards, in-orbp 1.7s 2.8s ease-in-out infinite; }
+@keyframes in-orb{ to{ transform:scale(1) } }
+@keyframes in-orbp{ 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.07) } }
+.in-logo .fkg{ transform-box:view-box; transform-origin:240px 340px; animation:in-vib .75s 2.3s ease-out; }
+@keyframes in-vib{ 0%{ transform:rotate(0) } 14%{ transform:rotate(-2.6deg) } 30%{ transform:rotate(2.2deg) } 46%{ transform:rotate(-1.5deg) } 62%{ transform:rotate(1deg) } 80%{ transform:rotate(-.5deg) } 100%{ transform:rotate(0) } }
+.in-logo .wv{ fill:none; stroke:#ff9142; stroke-width:3; opacity:0; transform-box:view-box; transform-origin:312px 135px; }
+.in-logo .wv.w1{ animation:in-wave 2.2s 2.3s ease-out infinite; }
+.in-logo .wv.w2{ animation:in-wave 2.2s 2.95s ease-out infinite; }
+.in-logo .wv.w3{ animation:in-wave 2.2s 3.6s ease-out infinite; }
+@keyframes in-wave{ 0%{ opacity:.85; transform:scale(.55) } 70%{ opacity:.12 } 100%{ opacity:0; transform:scale(4.2) } }
+/* 4) yorqin chiziq logo bo'ylab o'tadi */
+.in-sheen{ opacity:0; transform:translateX(-140px) skewX(-18deg); animation:in-sheen 1.1s 2.5s ease-in-out forwards; }
+@keyframes in-sheen{ 0%{ opacity:0; transform:translateX(-140px) skewX(-18deg) } 20%{ opacity:1 } 80%{ opacity:1 } 100%{ opacity:0; transform:translateX(560px) skewX(-18deg) } }
+
+/* ---- matn ---- */
+.in-title{ display:flex; justify-content:center; flex-wrap:wrap; max-width:96vw; font-weight:800; font-size:clamp(24px,7.6vw,38px); letter-spacing:.14em; margin-right:-.14em; filter:drop-shadow(0 0 20px rgba(98,212,182,.28)); }
+.in-title i{ font-style:normal; display:inline-block; opacity:0; background:linear-gradient(100deg,#fff 10%,#c8fff0 40%,#ffd7aa 72%,#ff9a45); background-size:260% 100%; background-position:0 0;
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:in-let .8s calc(1.35s + var(--k)*.05s) cubic-bezier(.2,.9,.3,1.2) forwards, in-shift 1.4s 2.7s ease-in-out forwards; }
 .in-title i.sp{ width:.45em; }
-@keyframes in-let{ from{ opacity:0; transform:translateY(26px) scale(.7); filter:blur(10px) } to{ opacity:1; transform:none; filter:blur(0) } }
-.in-line{ height:2px; width:0; background:linear-gradient(90deg,transparent,#27e0c0,#ffb52e,transparent); animation:in-ln 1s 1.8s ease forwards; margin-top:-6px; }
+@keyframes in-let{ from{ opacity:0; transform:translateY(24px) scale(.72); filter:blur(9px) } to{ opacity:1; transform:none; filter:blur(0) } }
+@keyframes in-shift{ to{ background-position:100% 0 } }
+.in-line{ height:2px; width:0; background:linear-gradient(90deg,transparent,#62d4b6,#ff9142,transparent); animation:in-ln .9s 2.15s ease forwards; margin-top:-8px; }
 @keyframes in-ln{ to{ width:min(72vw,300px) } }
-.in-sub{ display:flex; align-items:center; gap:10px; font:600 10.5px/1 var(--font-mono); letter-spacing:.24em; color:#9aa6c8; opacity:0; animation:in-up .8s 1.9s ease forwards; white-space:nowrap; }
-.in-sub i{ display:block; width:4px; height:4px; background:#ffb52e; transform:rotate(45deg); }
-@keyframes in-up{ from{ opacity:0; transform:translateY(10px) } to{ opacity:1; transform:none } }
-.in-load{ position:absolute; left:0; right:0; bottom:calc(28px + env(safe-area-inset-bottom,0px)); z-index:2; display:flex; flex-direction:column; align-items:center; gap:8px; opacity:0; animation:in-fade .6s .4s forwards; }
-.in-bar{ width:190px; height:3px; border-radius:3px; background:rgba(255,255,255,.1); overflow:hidden; }
-.in-bar b{ display:block; height:100%; transform:scaleX(0); transform-origin:left; background:linear-gradient(90deg,#27e0c0,#ffb52e,#ff5fa8); animation:in-bar 2.4s .2s cubic-bezier(.5,0,.2,1) forwards; }
+.in-sub{ display:flex; align-items:center; gap:10px; font:600 10.5px/1 var(--font-mono); letter-spacing:.24em; color:#9fb4b8; white-space:nowrap; }
+.in-sub span{ opacity:0; transform:translateY(8px); animation:in-up .6s ease forwards; }
+.in-sub span:nth-child(1){ animation-delay:2.2s } .in-sub span:nth-child(3){ animation-delay:2.34s } .in-sub span:nth-child(5){ animation-delay:2.48s }
+.in-sub i{ display:block; width:4px; height:4px; background:#ff9142; transform:rotate(45deg) scale(0); animation:in-dia .4s ease forwards; }
+.in-sub i:nth-child(2){ animation-delay:2.28s } .in-sub i:nth-child(4){ animation-delay:2.42s }
+@keyframes in-dia{ to{ transform:rotate(45deg) scale(1) } }
+@keyframes in-up{ to{ opacity:1; transform:none } }
+.in-load{ position:absolute; left:0; right:0; bottom:calc(28px + env(safe-area-inset-bottom,0px)); z-index:2; display:flex; flex-direction:column; align-items:center; gap:8px; opacity:0; animation:in-fade .6s .5s forwards; }
+.in-bar{ width:200px; height:3px; border-radius:3px; background:rgba(255,255,255,.1); overflow:hidden; }
+.in-bar b{ display:block; height:100%; transform:scaleX(0); transform-origin:left; background:linear-gradient(90deg,#62d4b6,#e9e9cf,#ff9142); animation:in-bar 3s .3s cubic-bezier(.5,0,.2,1) forwards; }
 @keyframes in-bar{ to{ transform:scaleX(1) } }
-.in-pct{ font:600 10.5px/1 var(--font-mono); letter-spacing:.18em; color:#7f8bb0; }
+.in-pct{ font:600 10.5px/1 var(--font-mono); letter-spacing:.18em; color:#7f9296; }
 @media (prefers-reduced-motion:reduce){ #intro{ display:none } }
 
 /* ---------- 3 ta birlashtirilgan bo'lim: kirish animatsiyalari ---------- */
@@ -1731,19 +1766,32 @@ body.intro-on .tile{ animation-play-state:paused; }
 <div id="intro" aria-hidden="true">
   <div class="in-half l"></div><div class="in-half r"></div><div class="in-seam"></div>
   <div class="in-stage">
-    <div class="in-aurora"><i></i><i></i><i></i></div>
     <div class="in-stars" id="inStars"></div>
     <div class="in-center">
       <div class="in-emblem">
-        <svg viewBox="0 0 200 200">
+        <div class="in-glow"></div>
+        <div class="in-orbit"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="none" stroke="rgba(98,212,182,.28)" stroke-width=".35" stroke-dasharray="1.2 2.4"/><circle cx="50" cy="1" r="1.7" fill="#ff9142"/></svg></div>
+        <svg class="in-logo" viewBox="0 0 480 480">
           <defs>
-            <linearGradient id="inGA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb52e"/><stop offset="1" stop-color="#ff5fa8"/></linearGradient>
-            <linearGradient id="inGB" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#27e0c0"/><stop offset="1" stop-color="#4fb4ff"/></linearGradient>
+            <linearGradient id="inHex" gradientUnits="userSpaceOnUse" x1="46" y1="26" x2="434" y2="454"><stop offset="0" stop-color="#62d4b6"/><stop offset="1" stop-color="#ee9a4f"/></linearGradient>
+            <linearGradient id="inFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2530"/><stop offset="1" stop-color="#0d1319"/></linearGradient>
+            <linearGradient id="inU" gradientUnits="userSpaceOnUse" x1="150" y1="144" x2="330" y2="345"><stop offset="0" stop-color="#90f0e0"/><stop offset=".55" stop-color="#e9e9cf"/><stop offset="1" stop-color="#f0d0a6"/></linearGradient>
+            <linearGradient id="inStem" gradientUnits="userSpaceOnUse" x1="0" y1="338" x2="0" y2="394"><stop offset="0" stop-color="#c3af7a"/><stop offset="1" stop-color="#ad9867"/></linearGradient>
+            <radialGradient id="inOrb" cx="312" cy="135" r="43" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff9142"/><stop offset=".44" stop-color="#ff9142"/><stop offset=".47" stop-color="#79503a"/><stop offset=".85" stop-color="#302c2e"/><stop offset="1" stop-color="#302c2e"/></radialGradient>
+            <linearGradient id="inShine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".3"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+            <clipPath id="inClip"><path d="M210.5 40.9 Q240.0 24.0 269.5 40.9L397.0 113.9 Q426.5 130.8 426.5 164.8L426.5 315.2 Q426.5 349.2 397.0 366.1L269.5 439.1 Q240.0 456.0 210.5 439.1L83.0 366.1 Q53.5 349.2 53.5 315.2L53.5 164.8 Q53.5 130.8 83.0 113.9Z"/></clipPath>
           </defs>
-          <circle class="d" pathLength="1" style="--t:.2s" cx="100" cy="100" r="90" stroke="url(#inGA)" stroke-width="3"/>
-          <path class="d" pathLength="1" style="--t:.45s" d="M100 36l55 32v64l-55 32-55-32V68z" stroke="url(#inGB)" stroke-width="4"/>
-          <path class="d" pathLength="1" style="--t:.9s" d="M58 104h24l10-30 18 56 12-36 8 10h22" stroke="#fff" stroke-width="5"/>
-          <g class="in-orb"><circle cx="100" cy="8" r="5" fill="#ffb52e" stroke="none"/></g>
+          <path class="hxfill" d="M210.5 40.9 Q240.0 24.0 269.5 40.9L397.0 113.9 Q426.5 130.8 426.5 164.8L426.5 315.2 Q426.5 349.2 397.0 366.1L269.5 439.1 Q240.0 456.0 210.5 439.1L83.0 366.1 Q53.5 349.2 53.5 315.2L53.5 164.8 Q53.5 130.8 83.0 113.9Z" fill="url(#inFill)"/>
+          <path class="hxin" pathLength="1" d="M214.0 59.6 Q240.0 44.7 266.0 59.6L382.5 126.3 Q408.5 141.2 408.5 171.2L408.5 308.8 Q408.5 338.8 382.5 353.7L266.0 420.4 Q240.0 435.3 214.0 420.4L97.5 353.7 Q71.5 338.8 71.5 308.8L71.5 171.2 Q71.5 141.2 97.5 126.3Z" fill="none" stroke="#29313a" stroke-width="3"/>
+          <path class="hx" pathLength="1" d="M210.5 40.9 Q240.0 24.0 269.5 40.9L397.0 113.9 Q426.5 130.8 426.5 164.8L426.5 315.2 Q426.5 349.2 397.0 366.1L269.5 439.1 Q240.0 456.0 210.5 439.1L83.0 366.1 Q53.5 349.2 53.5 315.2L53.5 164.8 Q53.5 130.8 83.0 113.9Z" fill="none" stroke="url(#inHex)" stroke-width="13" stroke-linejoin="round"/>
+          <g class="fkg">
+            <path class="fk" pathLength="1" d="M168 144 V255 A72 72 0 0 0 312 255 V198" fill="none" stroke="url(#inU)" stroke-width="36"/>
+            <line class="stem" x1="240" y1="338" x2="240" y2="394" stroke="url(#inStem)" stroke-width="12" stroke-linecap="round"/>
+            <circle class="tdot" cx="240" cy="400" r="10.5" fill="#4fd8c9"/>
+          </g>
+          <circle class="wv w1" cx="312" cy="135" r="40"/><circle class="wv w2" cx="312" cy="135" r="40"/><circle class="wv w3" cx="312" cy="135" r="40"/>
+          <circle class="orb" cx="312" cy="135" r="40" fill="url(#inOrb)" stroke="#7e5133" stroke-width="5.5"/>
+          <g clip-path="url(#inClip)"><rect class="in-sheen" x="0" y="0" width="70" height="480" fill="url(#inShine)"/></g>
         </svg>
       </div>
       <div class="in-title" id="inTitle"></div>
@@ -1769,21 +1817,21 @@ body.intro-on .tile{ animation-play-state:paused; }
     t.appendChild(s);
   }
   var st = document.getElementById('inStars');
-  for (i = 0; i < 34; i++) {
+  for (i = 0; i < 30; i++) {
     s = document.createElement('i');
     s.style.cssText = 'left:' + (Math.random() * 100) + '%;top:' + (Math.random() * 100) + '%;--d:' + (Math.random() * 3).toFixed(2) + 's;transform:scale(' + (0.6 + Math.random() * 1.4).toFixed(2) + ')';
     st.appendChild(s);
   }
   var pct = document.getElementById('inPct'), t0 = Date.now();
   (function tick(){
-    var p = Math.max(0, Math.min(1, (Date.now() - t0 - 200) / 2400)), e = 1 - Math.pow(1 - p, 3);
+    var p = Math.max(0, Math.min(1, (Date.now() - t0 - 300) / 3000)), e = 1 - Math.pow(1 - p, 3);
     pct.textContent = Math.round(e * 100) + '%';
     if (p < 1 && el.parentNode) requestAnimationFrame(tick);
   })();
   var gone = false;
   function go(){ if (gone) return; gone = true; el.classList.add('go'); setTimeout(function(){ b.classList.remove('intro-on'); }, 380); setTimeout(kill, 1300); }
   el.addEventListener('click', go);
-  setTimeout(go, 2900);
+  setTimeout(go, 3600);
 })();
 </script>
 <div class="adbar" id="adBar" role="complementary" aria-label="Reklama">
@@ -1818,6 +1866,6 @@ body.intro-on .tile{ animation-play-state:paused; }
 
 <script id="APP_DATA" type="application/json">__DATA_PLACEHOLDER__</script>
 <script id="API_BASE" type="application/json">"__API_BASE_URL__"</script>
-<script src="app.js?v=20261121foyd2"></script>
+<script src="app.js?v=20261122intro1"></script>
 </body>
 </html>
