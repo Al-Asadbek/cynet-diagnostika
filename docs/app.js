@@ -3714,6 +3714,19 @@
   // "tekshirish" sxemasi biriktirilishi mumkin. Yangi bandlar uchun shu
   // formatda qo'shib borish mumkin — key = last.py'dagi D lug'ati kaliti.
   var ILLUSTRATIONS = {
+    "printer_epson_10": {
+      device: "🖨️",
+      scene: "epdamper",
+      steps: [
+        { icon:"🖨️", caption_uz:"Nozzle Check chop eting: ba'zi ranglar chiziqlari yo'q yoki uzilgan", caption_ru:"Напечатайте Nozzle Check: у некоторых цветов нет линий или они прерываются" },
+        { icon:"🔌", caption_uz:"Printerni o'chiring, kabelni rozetkadan uzing (karetka o'rtada tursin)", caption_ru:"Выключите принтер, выдерните кабель (каретка в центре)" },
+        { icon:"🔍", caption_uz:"Chiqmayotgan rang damperini toping: karetkadagi shaffof blok, ustida nipel", caption_ru:"Найдите демпфер нужного цвета: прозрачный блок на каретке с ниппелем" },
+        { icon:"💉", caption_uz:"Shpritsga (10–20 ml, ignasiz) silikon naycha kiygizib, nipelga ulang", caption_ru:"Наденьте на шприц (10–20 мл, без иглы) силиконовую трубку и подключите к ниппелю" },
+        { icon:"🫧", caption_uz:"Pistonni JUDA SEKIN torting: avval havo pufakchalari, so'ng siyoh keladi (3–5 ml)", caption_ru:"ОЧЕНЬ МЕДЛЕННО потяните поршень: сначала пузырьки воздуха, затем чернила (3–5 мл)" },
+        { icon:"✅", caption_uz:"Siyoh pufaksiz oqqach to'xtang, shpritsni ajrating, asl naychani joyiga kiying", caption_ru:"Когда чернила идут без пузырей — остановитесь, снимите шприц, наденьте родную трубку" },
+        { icon:"🧹", caption_uz:"Printerni yoqing: 1 marta Head Cleaning va Nozzle Check — hamma ranglar chiqdi!", caption_ru:"Включите принтер: 1 прочистка и Nozzle Check — все цвета печатают!" },
+      ],
+    },
     "printer_canon_p07": {
       device: "🖨️",
       scene: "p07",
@@ -4941,6 +4954,34 @@
     var st = document.createElement('style'); st.id = 'p7Css'; st.textContent = css; document.head.appendChild(st);
   }
 
+  // ---- Epson "ba'zi ranglar chiqmaydi" (damperdan havo chiqarish) sahnasi uchun CSS ----
+  function edInjectCss(){
+    if (document.getElementById('edCss')) return;
+    var css = '';
+    function only(cls, list){
+      var sel = list.map(function(i){ return ':not([data-step="' + i + '"])'; }).join('');
+      css += '.vp' + sel + ' .' + cls + '{display:none}\n';
+    }
+    only('ed-bad', [0]); only('ed-ok', [6]); only('ed-car', [1,2,3,4,5]);
+    only('ed-s1', [1]); only('ed-s2', [2]); only('ed-air', [1,2,3]); only('ed-rise', [4]);
+    only('ed-tube', [1,2,5]); only('ed-tubeoff', [3,4]); only('ed-syr', [3,4,5]);
+    only('ed-hint', [4]); only('ed-done', [5]);
+    css += '@keyframes ed-move{from{transform:translateX(-34px)}to{transform:none}}\n' +
+      '.vp[data-step="1"] .ed-carg{animation:ed-move 2.6s ease-in-out forwards}\n' +
+      '@keyframes ed-in{from{transform:translateY(-46px);opacity:0}to{transform:none;opacity:1}}\n' +
+      '.vp[data-step="3"] .ed-syr{animation:ed-in 1.8s ease-out forwards}\n' +
+      '@keyframes ed-pull{to{transform:translateY(-18px)}}\n' +
+      '.vp[data-step="4"] .ed-plg{animation:ed-pull 3.4s ease-in-out forwards}\n' +
+      '.vp[data-step="5"] .ed-plg{transform:translateY(-18px)}\n' +
+      '.ed-liq{transform-box:fill-box;transform-origin:center bottom;transform:scaleY(.03)}\n' +
+      '@keyframes ed-fill{to{transform:scaleY(.75)}}\n' +
+      '.vp[data-step="4"] .ed-liq{animation:ed-fill 3.4s ease-in-out forwards}\n' +
+      '.vp[data-step="5"] .ed-liq{transform:scaleY(.75)}\n' +
+      '@keyframes ed-away{to{transform:translateY(-70px);opacity:0}}\n' +
+      '.vp[data-step="5"] .ed-syr{animation:ed-away 1.6s ease-in .6s forwards}\n';
+    var st = document.createElement('style'); st.id = 'edCss'; st.textContent = css; document.head.appendChild(st);
+  }
+
   var SCENES = {
     tv: function(){
       var bars = ['#fff','#ffe14a','#2be4e4','#3be15b','#ff4bd8','#ff4040','#3a5bff'].map(function(c,i){
@@ -5145,6 +5186,74 @@
           '<rect x="30" y="146" width="170" height="8" rx="4" fill="#1b1f33"/>' +
           '<g clip-path="url(#p7c)"><g class="sv-feed"><rect x="62" y="128" width="106" height="60" fill="#fff" rx="3"/><path d="M72 142 h86 M72 154 h70 M72 166 h86" stroke="#4a5bd0" stroke-width="3.5"/></g></g></g>' +
         '<g class="p7-7"><g class="sv-pulse"><circle cx="192" cy="50" r="16" fill="#2fd27a"/><path d="M184 50 l6 7 l12 -15" stroke="#fff" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>';
+    },
+    epdamper: function(){
+      var cols = ['#23232b', '#00b7ff', '#ff2bd0', '#ffe14a', '#8fe3ff', '#ff9be8'];
+      var names = ['K', 'C', 'M', 'Y', 'LC', 'LM'];
+      var HI = 5, hx = 43 + 24 * HI + 9;             // muammoli damper (LM) markazi
+      /* ---- Nozzle Check varag'i (0 va 6-qadam) ---- */
+      var sheet = function(ok){
+        var s = '<rect x="30" y="10" width="170" height="156" rx="7" fill="#fff"/>' +
+          '<text x="115" y="26" text-anchor="middle" font-size="9" font-weight="800" fill="#59627f">NOZZLE CHECK</text>';
+        for (var i = 0; i < 6; i++) {
+          var y = 42 + i * 19, bad = !ok && (i === 2 || i === 5);
+          s += '<text x="40" y="' + (y + 6) + '" font-size="8" font-weight="800" fill="#59627f">' + names[i] + '</text>';
+          for (var j = 0; j < 4; j++) {
+            var x = 62 + j * 34;
+            if (bad && j % 2 === 0) s += '<rect x="' + x + '" y="' + y + '" width="28" height="7" rx="3.5" fill="none" stroke="#c3c8da" stroke-width="1.2" stroke-dasharray="3 3"/>';
+            else s += '<rect x="' + x + '" y="' + y + '" width="28" height="7" rx="3.5" fill="' + cols[i] + '"/>';
+          }
+          if (bad) s += '<rect class="sv-blink" x="36" y="' + (y - 5) + '" width="160" height="17" rx="8" fill="none" stroke="#ff4d4d" stroke-width="2"/>';
+        }
+        return s;
+      };
+      /* ---- karetka + dampherlar ---- */
+      var dampers = '', tubes = '', labels = '';
+      for (var i = 0; i < 6; i++) {
+        var x = 43 + 24 * i, cx = x + 9, full = (i !== HI);
+        dampers += '<rect x="' + x + '" y="72" width="18" height="36" rx="4" fill="' + cols[i] + '" fill-opacity=".85" stroke="rgba(255,255,255,.6)" stroke-width="1.4"/>' +
+          '<rect x="' + (cx - 2.5) + '" y="64" width="5" height="9" rx="1.5" fill="#9aa3bd"/>';
+        labels += '<text x="' + cx + '" y="94" text-anchor="middle" font-size="7.5" font-weight="900" fill="' + (i === 0 ? '#fff' : '#161a33') + '">' + names[i] + '</text>';
+        if (i !== HI) tubes += '<path d="M' + cx + ' 64 V20" stroke="' + cols[i] + '" stroke-width="3" fill="none" stroke-linecap="round"/>';
+      }
+      var carriage =
+        '<g class="ed-car"><g transform="translate(-24 -4) scale(1.18)"><rect x="22" y="40" width="178" height="5" rx="2.5" fill="#3b4163"/>' +
+        '<g class="ed-carg">' +
+          tubes +
+          '<g class="ed-tube"><path d="M' + hx + ' 64 V20" stroke="' + cols[HI] + '" stroke-width="3" fill="none" stroke-linecap="round"/></g>' +
+          '<g class="ed-tubeoff"><path d="M' + (hx + 12) + ' 18 C ' + (hx + 28) + ' 26, ' + (hx + 40) + ' 40, ' + (hx + 34) + ' 58" stroke="' + cols[HI] + '" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+            '<circle cx="' + (hx + 34) + '" cy="60" r="2.6" fill="#fff" fill-opacity=".85"/></g>' +
+          '<rect x="36" y="56" width="152" height="94" rx="14" fill="#262b47" fill-opacity=".92" stroke="rgba(255,255,255,.35)" stroke-width="2"/>' +
+          '<rect x="44" y="112" width="136" height="24" rx="7" fill="#3b4163"/>' +
+          '<g fill="#9aa3bd">' + (function(){ var d = ''; for (var k = 0; k < 17; k++) d += '<circle cx="' + (52 + k * 7.6) + '" cy="128" r="1.4"/>'; return d; })() + '</g>' +
+          dampers + labels +
+          /* damperdagi havo pufakchalari */
+          '<g class="ed-air"><circle cx="' + (hx - 3) + '" cy="79" r="3.2" fill="#fff" fill-opacity=".92"/><circle cx="' + (hx + 3) + '" cy="86" r="2.2" fill="#fff" fill-opacity=".92"/><circle cx="' + (hx - 2) + '" cy="93" r="1.6" fill="#fff" fill-opacity=".85"/></g>' +
+        '</g>' +
+        /* 1-qadam: o'chirish belgisi */
+        '<g class="ed-s1"><text x="204" y="34" text-anchor="middle" font-size="26">🔌</text><text class="sv-blink" x="204" y="60" text-anchor="middle" font-size="12" font-weight="900" fill="#ff5a5a">OFF</text></g>' +
+        /* 2-qadam: muammoli damperni ajratib ko'rsatish */
+        '<g class="ed-s2"><rect class="sv-pulse" x="' + (hx - 13) + '" y="62" width="26" height="50" rx="8" fill="none" stroke="#ffb02e" stroke-width="2.6"/>' +
+          '<text class="sv-bob" x="' + hx + '" y="52" text-anchor="middle" font-size="20">👇</text></g>' +
+        /* 3-5: shprits */
+        '<g class="ed-syr">' +
+          '<path d="M' + hx + ' 56 V66" stroke="#cfd8ff" stroke-width="3.2" stroke-linecap="round" opacity=".9"/>' +
+          '<rect x="' + (hx - 8) + '" y="20" width="16" height="36" rx="2.5" fill="rgba(230,240,255,.16)" stroke="#cfd8ff" stroke-width="1.6"/>' +
+          '<path d="M' + (hx - 8) + ' 30 h5 M' + (hx - 8) + ' 38 h5 M' + (hx - 8) + ' 46 h5" stroke="#cfd8ff" stroke-width="1"/>' +
+          '<rect class="ed-liq" x="' + (hx - 6.5) + '" y="30" width="13" height="24" fill="' + cols[HI] + '" fill-opacity=".92"/>' +
+          '<g class="ed-plg"><rect x="' + (hx - 7.5) + '" y="50" width="15" height="4.5" rx="1.5" fill="#2a2f45"/><rect x="' + (hx - 1.6) + '" y="14" width="3.2" height="37" fill="#cfd8ff"/><rect x="' + (hx - 9) + '" y="10" width="18" height="4" rx="2" fill="#e8ecff"/></g>' +
+        '</g>' +
+        /* 4: yuqoriga ko'tarilayotgan havo pufakchalari + eslatma */
+        '<g class="ed-rise"><circle class="sv-rise" cx="' + hx + '" cy="84" r="2.6" fill="#fff"/><circle class="sv-rise" style="animation-delay:.8s" cx="' + (hx - 2) + '" cy="88" r="2" fill="#fff"/><circle class="sv-rise" style="animation-delay:1.6s" cx="' + (hx + 2) + '" cy="82" r="2.3" fill="#fff"/></g>' +
+
+        /* 5: tayyor */
+        '<g class="ed-done"><g class="sv-pulse"><circle cx="204" cy="84" r="14" fill="#2fd27a"/><path d="M197 84 l5 6 l10 -13" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>' +
+        '</g></g>';
+      return '<ellipse cx="115" cy="200" rx="90" ry="6" fill="rgba(0,0,0,.28)"/>' +
+        '<g class="ed-bad">' + sheet(false) + '</g>' +
+        '<g class="ed-ok">' + sheet(true) + '<g class="sv-pulse"><circle cx="190" cy="26" r="13" fill="#2fd27a"/><path d="M183 26 l5 6 l10 -13" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></g>' +
+        carriage +
+        '<g class="ed-hint"><text class="sv-pulse" x="115" y="186" text-anchor="middle" font-size="14" font-weight="900" fill="#ffe08a">' + L('Juda sekin! 3–5 ml', 'Очень медленно! 3–5 мл') + '</text></g>';
     },
     _gen: function(){
       return '<g class="sv-spin slow" style="transform-origin:115px 100px"><text x="115" y="140" text-anchor="middle" font-size="130">⚙️</text></g><text class="sv-wrench" x="140" y="180" font-size="52">🔧</text>';
@@ -5808,6 +5917,7 @@
     var cid = cat ? cat.id : '';
     var sc = (conf && conf.scene && SCENES[conf.scene]) ? conf.scene : (SCENES[cid] ? cid : '_gen');
     if (sc === 'p07') p7InjectCss();
+    if (sc === 'epdamper') edInjectCss();
     curIllus = { steps: steps, scene: sc };
     var segs = steps.map(function(s, i){ return '<div class="vp-seg" data-i="' + i + '"><i></i></div>'; }).join('');
     return '<div class="vp playing" id="vp" data-step="0" style="--dur:' + (STEP_MS/1000) + 's">' +
