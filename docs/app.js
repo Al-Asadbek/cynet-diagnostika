@@ -2577,33 +2577,45 @@
   }
 
   // ---------- Joylashuvni aniqlash (Telegram LocationManager -> brauzer GPS) ----------
-  function pfGetLocation(){
+  // opts.noSettings — ruxsat avval rad etilgan bo'lsa ham Telegram sozlamalarini o'zi ochmaydi (xaritaga kirganda).
+  // Muhim: Telegram ruxsat dialogi ochiq turganda brauzer GPS'ga o'tilmaydi — aks holda foydalanuvchi
+  // "Ruxsat berish"ni bosguncha brauzer "denied" qaytarib, joylashuv ko'rsatilmay qolardi.
+  function pfGetLocation(opts){
+    opts = opts || {};
     return new Promise(function(resolve){
-      var done = false;
+      var done = false, lmAnswered = false;
       function fin(v){ if (!done) { done = true; resolve(v); } }
       function viaBrowser(){
+        if (done) return;
         if (!navigator.geolocation) { fin({ error:'unsupported' }); return; }
         navigator.geolocation.getCurrentPosition(
           function(pos){ fin({ lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy }); },
           function(err){ fin({ error: (err && err.code === 1) ? 'denied' : 'failed' }); },
-          { enableHighAccuracy: true, timeout: 12000, maximumAge: 15000 }
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 15000 }
         );
       }
       try {
         var lm = tg && tg.LocationManager;
         if (lm && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0')) {
           lm.init(function(){
+            lmAnswered = true;
+            if (done) return;
             if (!lm.isLocationAvailable) { viaBrowser(); return; }
-            if (!lm.isAccessGranted) {
-              if (lm.isAccessRequested) { fin({ error:'denied' }); try { lm.openSettings(); } catch(e){} return; }
-              // birinchi so'rov — getLocation ruxsat dialogini ochadi
+            if (!lm.isAccessGranted && lm.isAccessRequested) {
+              fin({ error:'denied' });
+              if (!opts.noSettings) { try { lm.openSettings(); } catch(e){} }
+              return;
             }
+            // birinchi so'rov — getLocation ruxsat dialogini ochadi (foydalanuvchi javobini kutamiz)
             lm.getLocation(function(data){
               if (data && data.latitude != null) fin({ lat: data.latitude, lon: data.longitude, acc: data.horizontal_accuracy || null });
               else fin({ error:'denied' });
             });
           });
-          setTimeout(function(){ if (!done) viaBrowser(); }, 4000);
+          // init umuman javob bermasa (eski klient) — brauzer GPS'ga o'tamiz
+          setTimeout(function(){ if (!done && !lmAnswered) viaBrowser(); }, 3500);
+          // ruxsat dialogi javobsiz qolib ketsa — cheksiz kutmaymiz
+          setTimeout(function(){ fin({ error:'timeout' }); }, 90000);
           return;
         }
       } catch(e){}
@@ -6237,6 +6249,15 @@
       '.mapx-card .master-card{box-shadow:0 10px 30px rgba(0,0,0,.5)}',
       '.mapx-close{position:absolute;top:6px;right:6px;z-index:2;width:30px;height:30px;border-radius:50%;background:var(--bg-panel-2);border:1px solid var(--border);color:var(--text-2);font-size:13px}',
       '.mapx-hint{margin-top:8px;color:var(--text-3);font-size:11px}',
+      '.mapx-addr{margin-top:8px;color:var(--text-2);font-size:12.5px;line-height:1.45}',
+      '.mapx-prompt{position:absolute;left:10px;right:10px;bottom:26px;z-index:1000;background:rgba(23,27,33,.98);border:1px solid var(--amber-dim);border-radius:16px;padding:14px 14px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5);animation:view-in .2s ease both}',
+      '.mapx-prompt .pt{font-weight:800;font-size:14.5px;color:var(--text-1)}',
+      '.mapx-prompt .ps{margin-top:4px;font-size:12.5px;line-height:1.45;color:var(--text-2)}',
+      '.mapx-prompt .pb{display:flex;gap:8px;margin-top:10px}',
+      '.mapx-prompt button{flex:1;border-radius:12px;padding:11px 10px;font-size:13px;font-weight:700;font-family:var(--font-body);border:1px solid var(--border);background:transparent;color:var(--text-2)}',
+      '.mapx-prompt button.go{background:var(--cyan);border-color:var(--cyan);color:#06201d}',
+      '.mapx-own{width:42px;height:42px;box-sizing:border-box;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--cyan);border:3px solid #fff;box-shadow:0 0 0 3px rgba(79,216,201,.45),0 4px 10px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}',
+      '.mapx-own span{transform:rotate(45deg);font-size:18px;line-height:1}',
       '.mapx-pin-wrap,.mapx-me-wrap,.mapx-cluster{background:none;border:none}',
       '.mapx-pin{width:38px;height:38px;box-sizing:border-box;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--bg-panel);border:3px solid var(--green);box-shadow:0 4px 10px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}',
       '.mapx-pin span{transform:rotate(45deg);font-size:17px;line-height:1}',
@@ -6302,14 +6323,27 @@
       '<div class="mc-actions">' +
       '<a class="tel" href="tel:' + mapEsc(m.telefon) + '">📞 ' + mapEsc(m.telefon) + '</a>' +
       '<a class="tg" href="' + mapEsc(link) + '" target="_blank">✈️ ' + t().topishWrite + '</a></div>' +
+      (m.approx ? '' : '<div class="mapx-addr" id="mapxAddr">📍 ' + L('Manzil aniqlanmoqda...', 'Определяем адрес...') + '</div>') +
       '<div class="mapx-hint">📍 ' + (where ? where + ' · ' : '') + (m.approx ? L('Aniq joylashuv kiritilmagan — viloyat/tuman bo\'yicha taxminiy nuqta', 'Точное место не указано — примерная точка по области/району') : L('Taxminiy joylashuv', 'Примерное местоположение')) + '</div>' +
       '</div>';
     card.hidden = false;
+    rt.cardFor = m.tg_id;
+    mapShowPrompt();
     card.querySelector('#mapxClose').addEventListener('click', function(){ haptic('tap'); mapCloseCard(); });
     haptic('select');
+    // Usta profilida kiritgan joylashuvi bo'yicha manzil (koordinatadan aniqlanadi)
+    if (!m.approx) {
+      mapGeoAddr(m.lat, m.lon, false, function(txt){
+        if (mapRt !== rt || rt.cardFor !== m.tg_id) return;
+        var el = rt.cardEl && rt.cardEl.querySelector('#mapxAddr');
+        if (!el) return;
+        if (txt) el.textContent = '📍 ' + txt; else el.parentNode.removeChild(el);
+      });
+    }
   }
   function mapCloseCard(){
-    if (mapRt && mapRt.cardEl) { mapRt.cardEl.hidden = true; mapRt.cardEl.innerHTML = ''; }
+    if (mapRt && mapRt.cardEl) { mapRt.cardEl.hidden = true; mapRt.cardEl.innerHTML = ''; mapRt.cardFor = null; }
+    mapShowPrompt();
   }
 
   function mapBadge(text, warn){
@@ -6330,11 +6364,14 @@
   }
   function mapFitResults(items){
     var rt = mapRt; if (!rt) return;
-    var pts = items.slice(0, 20).map(function(m){ return [m.lat, m.lon]; });
+    var list = items;
+    // foydalanuvchi joyi ma'lum bo'lsa — faqat 30 km ichidagi ustalar bilan (uzoqdagilar xaritani juda kichraytirib yubormasin)
+    if (rt.user) list = items.filter(function(m){ return mapKm(rt.user, { lat: m.lat, lon: m.lon }) <= 30; });
+    var pts = list.slice(0, 20).map(function(m){ return [m.lat, m.lon]; });
     if (rt.user) pts.push([rt.user.lat, rt.user.lon]);
     if (!pts.length) return;
     rt.progUntil = Date.now() + 1200;
-    if (pts.length === 1) { rt.map.setView(pts[0], 14, { animate: true }); return; }
+    if (pts.length === 1) { rt.map.setView(pts[0], rt.user ? 15 : 14, { animate: true }); return; }
     rt.map.fitBounds(pts, { paddingTopLeft:[40, 170], paddingBottomRight:[40, 60], maxZoom:15, animate:true });
   }
 
@@ -6342,6 +6379,8 @@
     var rt = mapRt; if (!rt) return;
     var LF = window.L;
     rt.group.clearLayers();
+    var own = (rt.me && rt.me.is_master && rt.me.has_location) ? rt.me.tg_id : null;
+    if (own != null) items = items.filter(function(m){ return m.tg_id !== own; });
     var markers = items.map(function(m){
       var mk = LF.marker([m.lat, m.lon], { icon: mapPinIcon(m), title: m.ism || '', keyboard: false });
       mk.on('click', function(){ mapOpenCard(m); });
@@ -6360,7 +6399,7 @@
     if (!getInitData()) { mapMsg(t().topishNoInitData); mapBadge(''); return; }
     if (!API_BASE) { mapMsg(t().topishApiMissing); mapBadge(''); return; }
     mapMsg(null);
-    mapBadge('⏳ ' + L('Qidirilmoqda...', 'Поиск...'));
+    if (Date.now() >= (rt.youUntil || 0)) mapBadge('⏳ ' + L('Qidirilmoqda...', 'Поиск...'));
     apiPost('/api/public/map/nearby', {
       init_data: getInitData(), layer: mapUI.layer, lat: clat, lon: clon,
       ulat: rt.user ? rt.user.lat : null, ulon: rt.user ? rt.user.lon : null,
@@ -6371,18 +6410,130 @@
       if (!body || !body.ok) { mapBadge(''); mapMsg(body && body.error ? body.error : t().orderErrGeneric); return; }
       var items = body.items || [];
       mapRt.items = items;
+      mapRt.me = body.me || null;
       mapRt.lastCenter = { lat: clat, lon: clon };
       mapRt.hereBtn.hidden = true;
       mapCloseCard();
       mapRenderMarkers(items);
       var unit = L(mapLayerDef().unit_uz, mapLayerDef().unit_ru);
-      if (!items.length) mapBadge('😔 ' + t().topishNoResults, true);
-      else mapBadge(items.length + ' ' + unit);
+      if (!items.length) mapBadgeCount('😔 ' + t().topishNoResults, true);
+      else mapBadgeCount(items.length + ' ' + unit);
+      mapApplyMe();
       if (o.refit && items.length) mapFitResults(items);
     }).catch(function(){
       if (!mapRt || id !== mapRt.reqId) return;
       mapBadge(''); mapMsg(t().orderErrGeneric);
     });
+  }
+
+  // --- Koordinatadan manzilni aniqlash (OpenStreetMap Nominatim), natija keshlanadi ---
+  var mapGeoCache = {};
+  function mapAddrFromNominatim(d, exact){
+    var a = d && d.address;
+    if (!a) return d && d.display_name ? String(d.display_name).split(',').slice(0, 3).join(',').trim() : '';
+    var parts = [];
+    var road = a.road || a.pedestrian || a.footway || a.residential || '';
+    if (road) parts.push(exact && a.house_number ? (road + ' ' + a.house_number) : road);
+    var area = a.neighbourhood || a.quarter || a.suburb || a.city_district || '';
+    if (area) parts.push(area);
+    var place = a.city || a.town || a.village || a.municipality || a.county || '';
+    if (place) parts.push(place);
+    if (!parts.length && a.state) parts.push(a.state);
+    var out = [];
+    parts.forEach(function(x){ if (x && out.indexOf(x) < 0) out.push(x); });
+    return out.join(', ');
+  }
+  function mapGeoAddr(lat, lon, exact, cb){
+    var key = Number(lat).toFixed(4) + ',' + Number(lon).toFixed(4) + (exact ? 'x' : '');
+    if (mapGeoCache[key] !== undefined) { cb(mapGeoCache[key]); return; }
+    var called = false, ctrl = window.AbortController ? new AbortController() : null, to = null;
+    function fin(v){ if (called) return; called = true; clearTimeout(to); if (v) mapGeoCache[key] = v; cb(v); }
+    to = setTimeout(function(){ if (ctrl) ctrl.abort(); fin(''); }, 6000);
+    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&accept-language=' +
+      (state.lang === 'uz' ? 'uz,ru' : (state.lang + ',ru')) + '&lat=' + lat + '&lon=' + lon, ctrl ? { signal: ctrl.signal } : undefined)
+      .then(function(r){ return r.json(); })
+      .then(function(d){ fin(mapAddrFromNominatim(d, exact)); })
+      .catch(function(){ fin(''); });
+  }
+
+  // --- Belgi (badge): vaqtinchalik xabar ("Siz shu yerdasiz") va natijalar soni ---
+  function mapBadgeCount(text, warn){
+    var rt = mapRt; if (!rt) return;
+    rt.countText = text || ''; rt.countWarn = !!warn;
+    if (Date.now() < (rt.youUntil || 0)) return;
+    mapBadge(rt.countText, rt.countWarn);
+  }
+  function mapFlash(text, warn, ms){
+    var rt = mapRt; if (!rt) return;
+    rt.youUntil = Date.now() + ms;
+    mapBadge(text, warn);
+    setTimeout(function(){ if (mapRt === rt && Date.now() >= rt.youUntil) mapBadge(rt.countText, rt.countWarn); }, ms + 60);
+  }
+
+  // --- Ustaning o'z joylashuvi: o'z nuqtasi (aniq) yoki "joylashuv kiriting" so'rovi ---
+  function mapMeAsMaster(me){
+    return { tg_id: me.tg_id, ism: me.ism, viloyat: me.viloyat, tuman: me.tuman,
+      lat: me.has_location ? me.lat : null, lon: me.has_location ? me.lon : null, has_location: !!me.has_location,
+      extra: { moljal: me.moljal || '', has_location: !!me.has_location } };
+  }
+  function mapShowPrompt(){
+    var rt = mapRt; if (!rt || !rt.promptEl) return;
+    var me = rt.me;
+    var cardOpen = rt.cardEl && !rt.cardEl.hidden;
+    if (!me || !me.is_master || me.has_location || mapUI.promptOff || cardOpen) { rt.promptEl.hidden = true; return; }
+    rt.promptEl.innerHTML =
+      '<div class="pt">📍 ' + L('Joylashuvingiz kiritilmagan', 'Местоположение не указано') + '</div>' +
+      '<div class="ps">' + L('Mijozlar sizni xaritada topishi uchun ustaxonangiz joylashuvini belgilang. Bu 20 soniya vaqt oladi.', 'Отметьте местоположение мастерской, чтобы клиенты нашли вас на карте. Это займёт 20 секунд.') + '</div>' +
+      '<div class="pb"><button id="mapxPromptLater">' + L('Keyinroq', 'Позже') + '</button>' +
+      '<button class="go" id="mapxPromptGo">📍 ' + L('Joylashuvni kiritish', 'Указать место') + '</button></div>';
+    rt.promptEl.hidden = false;
+    rt.promptEl.querySelector('#mapxPromptGo').addEventListener('click', function(){
+      haptic('select'); push({ view:'profileMasterLocation', master: mapMeAsMaster(me) });
+    });
+    rt.promptEl.querySelector('#mapxPromptLater').addEventListener('click', function(){
+      haptic('tap'); mapUI.promptOff = true; rt.promptEl.hidden = true;
+    });
+  }
+  function mapOpenOwnCard(me){
+    var rt = mapRt; if (!rt) return;
+    rt.cardFor = 'own';
+    var card = rt.cardEl;
+    card.innerHTML =
+      '<button class="mapx-close" id="mapxClose" aria-label="close">✕</button>' +
+      '<div class="master-card"><div class="mc-top"><div class="mc-avatar">' + mapAvatarHTML(me) + '</div>' +
+      '<div class="mc-id"><div class="mc-name">' + mapEsc(me.ism || '') + '</div>' +
+      '<div class="mc-stats"><span class="mc-stat">🛠️ ' + L('Sizning ustaxonangiz', 'Ваша мастерская') + '</span></div></div></div>' +
+      '<div class="mapx-addr" id="mapxAddr">📍 ' + L('Manzil aniqlanmoqda...', 'Определяем адрес...') + '</div>' +
+      (me.moljal ? '<div class="mapx-addr">📌 ' + mapEsc(me.moljal) + '</div>' : '') +
+      '<div class="mc-actions"><a class="tg" id="mapxOwnEdit" href="#">✏️ ' + L('Joylashuvni yangilash', 'Обновить местоположение') + '</a></div>' +
+      (me.fuzz ? '<div class="mapx-hint">' + L('Mijozlarga aniq manzil emas, taxminiy nuqta (150–400 m) ko\'rsatiladi.', 'Клиентам показывается приблизительная точка (150–400 м).') + '</div>' : '') +
+      '</div>';
+    card.hidden = false;
+    mapShowPrompt();
+    card.querySelector('#mapxClose').addEventListener('click', function(){ haptic('tap'); mapCloseCard(); });
+    card.querySelector('#mapxOwnEdit').addEventListener('click', function(e){
+      e.preventDefault(); haptic('select'); push({ view:'profileMasterLocation', master: mapMeAsMaster(me) });
+    });
+    haptic('select');
+    mapGeoAddr(me.lat, me.lon, true, function(txt){
+      if (mapRt !== rt || rt.cardFor !== 'own') return;
+      var el = rt.cardEl && rt.cardEl.querySelector('#mapxAddr');
+      if (!el) return;
+      if (txt) el.textContent = '📍 ' + txt; else el.parentNode.removeChild(el);
+    });
+  }
+  function mapApplyMe(){
+    var rt = mapRt; if (!rt || !rt.map) return;
+    var LF = window.L, me = rt.me;
+    if (rt.meMarker) { try { rt.map.removeLayer(rt.meMarker); } catch(e){} rt.meMarker = null; }
+    if (me && me.is_master && me.has_location) {
+      rt.meMarker = LF.marker([me.lat, me.lon], {
+        icon: LF.divIcon({ className:'mapx-pin-wrap', html:'<div class="mapx-own"><span>🛠️</span></div>', iconSize:[42, 50], iconAnchor:[21, 48] }),
+        title: L('Sizning ustaxonangiz', 'Ваша мастерская'), keyboard: false, zIndexOffset: 900
+      }).addTo(rt.map);
+      rt.meMarker.on('click', function(){ mapOpenOwnCard(me); });
+    }
+    mapShowPrompt();
   }
 
   function mapSetUser(loc){
@@ -6394,16 +6545,31 @@
       icon: LF.divIcon({ className:'mapx-me-wrap', html:'<div class="mapx-me"></div>', iconSize:[18, 18], iconAnchor:[9, 9] }),
       interactive: false, keyboard: false, zIndexOffset: 1000
     }).addTo(rt.map);
+    try {
+      if (rt.userAcc) { rt.map.removeLayer(rt.userAcc); rt.userAcc = null; }
+      if (loc.acc && loc.acc < 1500) rt.userAcc = LF.circle([loc.lat, loc.lon], { radius: loc.acc, color:'#3b82f6', weight:1, fillColor:'#3b82f6', fillOpacity:.12, interactive:false }).addTo(rt.map);
+    } catch(e){}
   }
 
   function mapLocate(initial){
-    var rt = mapRt; if (!rt) return;
-    requestLocation().then(function(loc){
-      if (!mapRt) return;
-      if (!loc) { if (!initial) { mapBadge('⚠️ ' + L('Joylashuvga ruxsat berilmadi', 'Нет доступа к геолокации'), true); } return; }
-      mapSetUser(loc);
-      mapSetView([loc.lat, loc.lon], 14);
-      mapFetch({ center: loc, refit: true });
+    var rt = mapRt; if (!rt || rt.locating) return;
+    rt.locating = true;
+    mapFlash('📡 ' + L('Joylashuv aniqlanmoqda...', 'Определяем местоположение...'), false, 20000);
+    pfGetLocation({ noSettings: !!initial }).then(function(res){
+      if (mapRt !== rt) return;
+      rt.locating = false;
+      if (!res || res.lat == null) {
+        var denied = res && res.error === 'denied';
+        if (initial && !denied) { rt.youUntil = 0; mapBadge(rt.countText, rt.countWarn); return; }
+        mapFlash('⚠️ ' + (denied
+          ? L('Joylashuvga ruxsat berilmadi — Telegram sozlamalarida yoqing', 'Нет доступа к геолокации — включите в настройках Telegram')
+          : L('Joylashuvni aniqlab bo\'lmadi', 'Не удалось определить местоположение')), true, 5000);
+        return;
+      }
+      mapSetUser(res);
+      mapFlash('📍 ' + L('Siz shu yerdasiz', 'Вы здесь'), false, 3000);
+      mapSetView([res.lat, res.lon], 15);
+      mapFetch({ center: res, refit: true });
     });
   }
 
@@ -6434,6 +6600,7 @@
       '</div>' +
       '<div class="mapx-msg" id="mapxMsg" hidden></div>' +
       '<div class="mapx-card" id="mapxCard" hidden></div>' +
+      '<div class="mapx-prompt" id="mapxPrompt" hidden></div>' +
       '</div></div>';
 
     var root = mainView.querySelector('#mapx');
@@ -6479,6 +6646,8 @@
     mapRt = {
       map: null, group: null, items: [], user: null, userMarker: null, reqId: 0, lastCenter: null, progUntil: 0,
       qTimer: null, onResize: fit,
+      me: null, meMarker: null, userAcc: null, locating: false, youUntil: 0, countText: '', countWarn: false, cardFor: null,
+      promptEl: mainView.querySelector('#mapxPrompt'),
       cardEl: mainView.querySelector('#mapxCard'), badgeEl: mainView.querySelector('#mapxBadge'),
       msgEl: mainView.querySelector('#mapxMsg'), hereBtn: mainView.querySelector('#mapxHere')
     };
