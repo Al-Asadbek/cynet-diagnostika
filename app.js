@@ -7483,7 +7483,7 @@
         var d = res.data || {};
         if (d.ok) {
           mkStoreSet(MK_PROFILE_KEY, { ism:f.ism, familya:f.familya, telefon:f.telefon, manzil:f.manzil, lat:f.lat, lon:f.lon });
-          m.pay = { order_id:d.order_id, jami:d.jami, links:d.links || {}, stars:d.stars || 0, snap:{ ism:f.ism, familya:f.familya, telefon:f.telefon, manzil:f.manzil } };
+          m.pay = { order_id:d.order_id, jami:d.jami, links:d.links || {}, manual:d.manual || null, stars:d.stars || 0, snap:{ ism:f.ism, familya:f.familya, telefon:f.telefon, manzil:f.manzil } };
           m.orders = null;
           // ilova to'lov paytida yopilib/qayta ochilsa ham buyurtma holatini tiklash uchun
           mkStoreSet(MK_PENDING_KEY, { order_id:d.order_id, t:Date.now() });
@@ -8092,7 +8092,7 @@
         var d = res.data || {};
         if (d.ok) {
           a.buying = false;
-          a.pay = { order_id:d.order_id, jami:d.jami, links:d.links || {}, stars:d.stars || 0, model:d.model || (p.brend + ' ' + p.model) };
+          a.pay = { order_id:d.order_id, jami:d.jami, links:d.links || {}, manual:d.manual || null, stars:d.stars || 0, model:d.model || (p.brend + ' ' + p.model) };
           mkStoreSet(ADJ_PENDING_KEY, { order_id:d.order_id, t:Date.now() });
           haptic('ok'); push({ view:'marketAdjPay' });
         } else reset(d.error ? String(d.error) : L("Xatolik yuz berdi. Qayta urinib ko'ring.","Произошла ошибка. Повторите попытку."));
